@@ -220,6 +220,7 @@ async function main() {
     spreads,
     coverImageUrl: cover.imageUrl,
     coverPrintImageUrl: cover.printImageUrl,
+    peopleNames: config.people.map((p) => p.name),
   };
 
   const puppeteer = await import('puppeteer-core');

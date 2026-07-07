@@ -37,8 +37,15 @@ export const FONT_PAIRINGS: Record<FontPairingId, FontPairing> = {
   },
 };
 
+/** Script face used for the personalized dedication (Widmung), independent of pairing. */
+export const SCRIPT_FONT = { family: 'Caveat', googleFamily: 'Caveat:wght@700', weight: 700 } as const;
+
 export function fontStylesheetUrl(pairing: FontPairing): string {
-  const families = new Set([pairing.display.googleFamily, pairing.body.googleFamily]);
+  const families = new Set([
+    pairing.display.googleFamily,
+    pairing.body.googleFamily,
+    SCRIPT_FONT.googleFamily,
+  ]);
   const query = [...families].map((f) => `family=${f}`).join('&');
   return `https://fonts.googleapis.com/css2?${query}&display=swap`;
 }

@@ -27,6 +27,10 @@ export interface BookData {
   spreads: SpreadData[];
   coverImageUrl: string | null;
   coverPrintImageUrl: string | null;
+  /** Logo for the title/closing pages; defaults to the hosted WFSC logo. */
+  logoUrl?: string | null;
+  /** Names of the people in the story, for the title-page byline. */
+  peopleNames?: string[];
 }
 
 export type FontPairingId =

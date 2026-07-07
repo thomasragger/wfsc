@@ -1,4 +1,4 @@
-import { FONT_PAIRINGS, fontStylesheetUrl } from './fonts';
+import { FONT_PAIRINGS, SCRIPT_FONT, fontStylesheetUrl } from './fonts';
 import { PRINT } from './print';
 import type { BookData, SpreadData } from './types';
 
@@ -73,8 +73,39 @@ function baseCss(book: BookData): string {
       display: flex; align-items: center; justify-content: center;
       text-align: center; font-size: 17pt; line-height: 1.6;
     }
-    .greeting { font-size: 21pt; font-style: italic; line-height: 1.8; }
+    .greeting {
+      font-family: '${SCRIPT_FONT.family}', cursive;
+      font-weight: ${SCRIPT_FONT.weight};
+      font-size: 30pt; line-height: 1.7; color: #4a3f39;
+      transform: rotate(-4deg);
+    }
+    .inset-illustration-page {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .inset-illustration-page img {
+      width: 78%; aspect-ratio: 1; object-fit: cover; border-radius: 6px;
+    }
+    .byline { font-size: 12pt; color: #6b5d55; }
+    .byline-logo { width: 1.5in; height: auto; margin-top: 0.12in; }
+    .subtitle { font-size: 14pt; color: #4a3f39; margin-top: 0.3in; }
     .title-page-title { font-size: 42pt; line-height: 1.2; }
+    .title-illustration { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .title-scrim {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(255,253,248,0.88) 0%, rgba(255,253,248,0.55) 34%, rgba(255,253,248,0) 62%);
+    }
+    .title-block {
+      position: absolute; left: ${PRINT.bleedIn + PRINT.safeMarginIn}in; right: ${PRINT.bleedIn + PRINT.safeMarginIn}in;
+      top: ${PRINT.bleedIn + PRINT.safeMarginIn}in; height: 30%;
+      display: flex; align-items: center; justify-content: center; text-align: center;
+    }
+    .logo-page {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 0.35in; height: 100%;
+    }
+    .logo-page img { width: 2.4in; height: auto; }
+    .logo-page .tagline { font-size: 11pt; color: #8a7c73; }
   `;
 }
 
@@ -119,9 +150,12 @@ export function renderSpreadPages(book: BookData, spread: SpreadData, forPrint =
     book,
     `<div class="page"><div class="text-block">${textToParagraphs(text)}</div></div>`,
   );
+  // Story illustrations sit inset on the cream page (like the brand's example
+  // books) rather than full-bleed; 'full-bleed-overlay' remains the big-moment
+  // full-bleed treatment.
   const illustrationPage = doc(
     book,
-    `<div class="page"><img class="illustration" src="${img}"/></div>`,
+    `<div class="page"><div class="inset-illustration-page"><img src="${img}"/></div></div>`,
   );
 
   switch (spread.layout) {
@@ -168,12 +202,74 @@ export function renderSpreadPages(book: BookData, spread: SpreadData, forPrint =
   }
 }
 
-/** Title page (first interior page): book title + byline. */
-export function renderTitlePage(book: BookData): string {
+/** Default logo used on the closing page (overridable via book.logoUrl). */
+export const DEFAULT_LOGO_URL = 'https://wfsc-studio.vercel.app/logo.png';
+
+/**
+ * Illustrated title page (first interior page): the cover illustration under a
+ * soft cream scrim, with the title set large in the display font.
+ */
+export function renderTitlePage(book: BookData, forPrint = false): string {
+  const img = escapeHtml((forPrint ? book.coverPrintImageUrl : book.coverImageUrl) ?? '');
+  if (!img) {
+    return doc(
+      book,
+      `<div class="page"><div class="text-block">
+         <div class="display title-page-title">${escapeHtml(book.title)}</div>
+       </div></div>`,
+    );
+  }
+  return doc(
+    book,
+    `<div class="page">
+       <img class="title-illustration" src="${img}"/>
+       <div class="title-scrim"></div>
+       <div class="title-block">
+         <div class="display title-page-title">${escapeHtml(book.title)}</div>
+       </div>
+     </div>`,
+  );
+}
+
+/** Personalized dedication (Widmung): script font, gently tilted. */
+export function renderDedicationPage(book: BookData): string {
+  if (!book.greeting) return doc(book, `<div class="page"></div>`);
+  return doc(
+    book,
+    `<div class="page"><div class="text-block greeting">${textToParagraphs(book.greeting)}</div></div>`,
+  );
+}
+
+/**
+ * Typographic title page (faces the dedication, like the brand's example
+ * books): title, "A special story with …" subtitle, and the logo byline.
+ */
+export function renderTypographicTitlePage(book: BookData): string {
+  const logo = escapeHtml(book.logoUrl ?? DEFAULT_LOGO_URL);
+  const names = (book.peopleNames ?? []).map(escapeHtml);
+  const withLine =
+    names.length > 0
+      ? `<div class="subtitle">A special story with<br/>${names.join(' and ')}</div>`
+      : '';
   return doc(
     book,
     `<div class="page"><div class="text-block">
        <div class="display title-page-title">${escapeHtml(book.title)}</div>
+       ${withLine}
+       <div class="byline" style="margin-top: 0.9in;">Text &amp; Illustrations by</div>
+       <img class="byline-logo" src="${logo}" alt="Warm Fuzzy Story Club"/>
+     </div></div>`,
+  );
+}
+
+/** Closing page: the WFSC logo, centered. Always the last interior page. */
+export function renderLogoPage(book: BookData): string {
+  const logo = escapeHtml(book.logoUrl ?? DEFAULT_LOGO_URL);
+  return doc(
+    book,
+    `<div class="page"><div class="logo-page">
+       <img src="${logo}" alt="Warm Fuzzy Story Club"/>
+       <div class="tagline">Made with love &middot; warmfuzzystoryclub.com</div>
      </div></div>`,
   );
 }
@@ -184,29 +280,29 @@ export function renderBlankPage(book: BookData): string {
 }
 
 /**
- * Assemble the ordered list of interior page HTML documents:
- * title page, greeting (if any), story spreads, padded to PRINT.interiorPages.
+ * Assemble the ordered list of interior page HTML documents, mirroring the
+ * brand's example books:
+ *   p1 (recto):  illustrated half-title (cover art + display title)
+ *   p2 (verso):  personalized dedication, script font, tilted
+ *   p3 (recto):  typographic title page (subtitle + logo byline)
+ *   p4…:         story spreads (verso+recto pairs)
+ *   …blanks…
+ *   last (verso): logo closing page ("Made with love")
+ * Total = PRINT.interiorPages.
  */
 export function renderInteriorPages(book: BookData, forPrint = false): string[] {
-  const pages: string[] = [renderTitlePage(book)];
-  if (book.greeting) {
-    const greetingSpread: SpreadData = {
-      id: 'greeting',
-      position: 0,
-      kind: 'greeting',
-      text: book.greeting,
-      layout: 'text-left',
-      imageUrl: null,
-      printImageUrl: null,
-    };
-    pages.push(...renderSpreadPages(book, greetingSpread, forPrint).map((p) => p.html));
-  }
+  const pages: string[] = [
+    renderTitlePage(book, forPrint),
+    renderDedicationPage(book),
+    renderTypographicTitlePage(book),
+  ];
   const story = [...book.spreads]
     .filter((s) => s.kind === 'story')
     .sort((a, b) => a.position - b.position);
   for (const spread of story) {
     pages.push(...renderSpreadPages(book, spread, forPrint).map((p) => p.html));
   }
-  while (pages.length < PRINT.interiorPages) pages.push(renderBlankPage(book));
+  while (pages.length < PRINT.interiorPages - 1) pages.push(renderBlankPage(book));
+  pages.push(renderLogoPage(book));
   return pages;
 }

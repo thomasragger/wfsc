@@ -1,0 +1,113 @@
+{% comment %}
+  WFSC Dynamic category frames — scalloped-squircle photo masks on gradient
+  cards with idle float + hover lift/rotate. Add via theme editor.
+{% endcomment %}
+
+{%- assign uid = section.id | replace: '_', '' | downcase -%}
+
+<style>
+  .wfsc-cats-{{ uid }} { padding: {{ section.settings.padding_y }}px 0; }
+  .wfsc-cats-{{ uid }} .wfsc-cats__title { text-align: {{ section.settings.title_align }}; font-size: 1.6rem; margin: 0 auto 1.4rem; max-width: 1200px; padding: 0 1.5rem; color: #2b2320; }
+  .wfsc-cats-{{ uid }} .wfsc-cats__row {
+    display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory;
+    padding: 8px 1.5rem 24px; max-width: 1240px; margin: 0 auto;
+    scrollbar-width: none;
+  }
+  .wfsc-cats-{{ uid }} .wfsc-cats__row::-webkit-scrollbar { display: none; }
+  .wfsc-cats-{{ uid }} .wfsc-cat {
+    position: relative; flex: 0 0 clamp(180px, 22vw, 250px); aspect-ratio: 0.82;
+    border-radius: 22px; scroll-snap-align: start; text-decoration: none;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    animation: wfsc-cat-float-{{ uid }} 6s ease-in-out infinite;
+  }
+  .wfsc-cats-{{ uid }} .wfsc-cat:nth-child(odd) { animation-delay: 1.6s; }
+  .wfsc-cats-{{ uid }} .wfsc-cat:hover {
+    transform: translateY(-8px) rotate(-1.5deg) scale(1.03);
+    box-shadow: 0 18px 40px rgba(90, 60, 30, 0.22);
+    animation-play-state: paused;
+  }
+  .wfsc-cats-{{ uid }} .wfsc-cat__img {
+    width: 78%; aspect-ratio: 1; object-fit: cover;
+    clip-path: url(#wfsc-scallop-{{ uid }});
+    transition: transform 0.3s ease;
+  }
+  .wfsc-cats-{{ uid }} .wfsc-cat:hover .wfsc-cat__img { transform: scale(1.05) rotate(1deg); }
+  .wfsc-cats-{{ uid }} .wfsc-cat__label {
+    position: absolute; bottom: 14px; left: 14px;
+    background: #fffdf8; color: #2b2320; font-weight: 700; font-size: 0.9rem;
+    padding: 7px 16px; border-radius: 999px; box-shadow: 0 4px 12px rgba(90, 60, 30, 0.15);
+  }
+  @keyframes wfsc-cat-float-{{ uid }} {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wfsc-cats-{{ uid }} .wfsc-cat { animation: none; }
+  }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <clipPath id="wfsc-scallop-{{ uid }}" clipPathUnits="objectBoundingBox">
+      <path d="M0.5,0.02 C0.58,-0.01,0.68,0,0.73,0.06 C0.82,0.03,0.92,0.09,0.93,0.19 C1,0.23,1.02,0.34,0.97,0.42 C1.02,0.5,1.02,0.6,0.97,0.67 C1.01,0.76,0.97,0.87,0.88,0.9 C0.85,0.98,0.74,1.02,0.66,0.98 C0.58,1.03,0.45,1.03,0.37,0.98 C0.28,1.02,0.17,0.98,0.13,0.9 C0.04,0.86,0,0.76,0.04,0.67 C-0.01,0.6,-0.01,0.49,0.04,0.42 C-0.01,0.34,0.02,0.23,0.09,0.19 C0.1,0.09,0.2,0.03,0.28,0.06 C0.34,0,0.43,-0.01,0.5,0.02 Z"/>
+    </clipPath>
+  </defs>
+</svg>
+
+<div class="wfsc-cats-{{ uid }}">
+  {%- if section.settings.title != blank -%}
+    <h2 class="wfsc-cats__title">{{ section.settings.title }}</h2>
+  {%- endif -%}
+  <div class="wfsc-cats__row">
+    {%- for block in section.blocks -%}
+      <a class="wfsc-cat" {{ block.shopify_attributes }}
+         href="{{ block.settings.link | default: '#' }}"
+         style="background: linear-gradient({{ block.settings.angle }}deg, {{ block.settings.color_a }}, {{ block.settings.color_b }});">
+        {%- if block.settings.image -%}
+          {{ block.settings.image | image_url: width: 480 | image_tag: class: 'wfsc-cat__img', loading: 'lazy', alt: block.settings.label }}
+        {%- endif -%}
+        <span class="wfsc-cat__label">{{ block.settings.label }}</span>
+      </a>
+    {%- endfor -%}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "WFSC Category frames",
+  "settings": [
+    { "type": "text", "id": "title", "label": "Heading", "default": "Gifts for all your favorite people" },
+    { "type": "select", "id": "title_align", "label": "Heading alignment", "default": "left",
+      "options": [ { "value": "left", "label": "Left" }, { "value": "center", "label": "Center" } ] },
+    { "type": "range", "id": "padding_y", "label": "Vertical padding", "min": 0, "max": 120, "step": 8, "default": 48 }
+  ],
+  "blocks": [
+    {
+      "type": "category",
+      "name": "Category",
+      "settings": [
+        { "type": "image_picker", "id": "image", "label": "Photo" },
+        { "type": "text", "id": "label", "label": "Label", "default": "Grandparents" },
+        { "type": "url", "id": "link", "label": "Link" },
+        { "type": "color", "id": "color_a", "label": "Card gradient start", "default": "#F6B73C" },
+        { "type": "color", "id": "color_b", "label": "Card gradient end", "default": "#E8622C" },
+        { "type": "range", "id": "angle", "label": "Gradient angle", "min": 0, "max": 360, "step": 15, "default": 120 }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "WFSC Category frames",
+      "blocks": [
+        { "type": "category", "settings": { "label": "Mums", "color_a": "#F9C5D1", "color_b": "#E8622C" } },
+        { "type": "category", "settings": { "label": "Dads", "color_a": "#F6B73C", "color_b": "#E8622C" } },
+        { "type": "category", "settings": { "label": "Grandparents", "color_a": "#FBE6C4", "color_b": "#F6B73C" } },
+        { "type": "category", "settings": { "label": "Siblings", "color_a": "#9DB8F0", "color_b": "#2E5FD7" } },
+        { "type": "category", "settings": { "label": "Babies", "color_a": "#F9E0C8", "color_b": "#F0A45C" } },
+        { "type": "category", "settings": { "label": "Kids", "color_a": "#BFE3C0", "color_b": "#6FA872" } }
+      ]
+    }
+  ]
+}
+{% endschema %}
