@@ -1,0 +1,24 @@
+# WFSC Studio — single-store custom app configuration.
+# Managed declaratively: edit here, then `npx shopify app deploy` pushes it to Shopify.
+
+name = "WFSC Studio"
+application_url = "https://wfsc-studio.vercel.app"
+embedded = false
+client_id = "0e70455bb7d3770df91558a4f3896dc1"
+
+[access_scopes]
+scopes = "read_orders,write_fulfillments,read_merchant_managed_fulfillment_orders,write_merchant_managed_fulfillment_orders,read_products,write_products"
+optional_scopes = [ ]
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = [ "https://wfsc-studio.vercel.app/api/auth/callback" ]
+
+[webhooks]
+api_version = "2026-07"
+
+  [[webhooks.subscriptions]]
+  uri = "/api/webhooks/shopify"
+  topics = [ "orders/paid", "orders/cancelled", "refunds/create" ]
+
+[build]

@@ -1,7 +1,12 @@
+import path from "node:path";
+
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Monorepo root (silences the multi-lockfile workspace-root warning).
+  turbopack: {
+    root: path.join(__dirname, "../.."),
+  },
 };
 
 export default nextConfig;
