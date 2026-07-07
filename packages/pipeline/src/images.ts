@@ -18,6 +18,35 @@ function client(): Replicate {
   return new Replicate(); // reads REPLICATE_API_TOKEN
 }
 
+/**
+ * Run a Replicate model with 429/transient-error retries. Low-credit accounts
+ * are burst-limited to 5 prediction creates, so parallel page generation must
+ * tolerate throttling.
+ */
+async function runWithRetry(
+  replicate: Replicate,
+  model: `${string}/${string}`,
+  input: Record<string, unknown>,
+  maxAttempts = 6,
+): Promise<unknown> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await replicate.run(model, { input });
+    } catch (err) {
+      lastError = err;
+      const message = err instanceof Error ? err.message : String(err);
+      const status = (err as { response?: { status?: number } }).response?.status;
+      const retryable = status === 429 || (status !== undefined && status >= 500) || /429|throttled|timeout/i.test(message);
+      if (!retryable || attempt === maxAttempts) throw err;
+      const retryAfterMatch = message.match(/"retry_after"\s*:\s*(\d+)/);
+      const baseMs = retryAfterMatch ? Number(retryAfterMatch[1]) * 1000 : 2 ** attempt * 1000;
+      await new Promise((r) => setTimeout(r, baseMs + Math.random() * 1500));
+    }
+  }
+  throw lastError;
+}
+
 function firstUrl(output: unknown): string {
   if (typeof output === 'string') return output;
   if (Array.isArray(output) && output.length > 0) return String(output[0]);
@@ -39,13 +68,11 @@ Character turnaround sheet on a plain white background: full-body front view, 3/
 Keep the person's recognizable features (hair, face shape, build, typical clothing) while fully translating them into this illustration style.
 Style: ${style.stylePrompt}. No text, no labels, no watermark.`;
 
-  const output = await replicate.run(MODELS.characterSheet, {
-    input: {
+  const output = await runWithRetry(replicate, MODELS.characterSheet, {
       prompt,
       image_input: [...person.photoUrls, ...style.referenceImageUrls.slice(0, 2)],
       aspect_ratio: '1:1',
       output_format: 'png',
-    },
   });
   return { sheetUrl: firstUrl(output) };
 }
@@ -86,8 +113,7 @@ Reserve quiet, uncluttered copy space: ${spread.copy_space}.
 ${req.regenNote ? `Adjustment requested: ${req.regenNote}.` : ''}
 Style: ${style.stylePrompt}`;
 
-  const output = await replicate.run(MODELS.spread, {
-    input: {
+  const output = await runWithRetry(replicate, MODELS.spread, {
       prompt,
       image_input: [
         ...characters.map((c) => c.sheetUrl),
@@ -96,7 +122,6 @@ Style: ${style.stylePrompt}`;
       size: 'custom',
       width: isWide ? 4096 : 2048,
       height: 2048,
-    },
   });
   return { imageUrl: firstUrl(output) };
 }
@@ -106,8 +131,6 @@ export async function upscaleImage(
   imageUrl: string,
   replicate: Replicate = client(),
 ): Promise<{ imageUrl: string }> {
-  const output = await replicate.run(MODELS.upscale, {
-    input: { image: imageUrl },
-  });
+  const output = await runWithRetry(replicate, MODELS.upscale, { image: imageUrl });
   return { imageUrl: firstUrl(output) };
 }

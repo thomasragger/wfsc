@@ -28,9 +28,29 @@ import { generateCharacterSheet, generateSpreadImage, upscaleImage } from '../im
 import { judgeSpread } from '../qa';
 import { generateStory } from '../story';
 import { BUILTIN_STYLES } from '../styles';
-import type { CharacterSheet, StyleDef } from '../types';
+import type { CharacterSheet, Story, StyleDef } from '../types';
 
 const MAX_RETRIES_PER_SPREAD = 2;
+/** Low-credit Replicate accounts allow a burst of only 5 prediction creates. */
+const SPREAD_CONCURRENCY = Number(process.env.WFSC_SPREAD_CONCURRENCY ?? 3);
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (next < items.length) {
+        const i = next++;
+        results[i] = await fn(items[i]);
+      }
+    }),
+  );
+  return results;
+}
 
 const MIME: Record<string, string> = {
   '.jpg': 'image/jpeg',
@@ -95,15 +115,22 @@ async function main() {
     ),
   };
 
-  // 1. Story ------------------------------------------------------------------
-  console.log('▸ Writing story…');
-  const story = await generateStory({
-    memoryText: config.memoryText,
-    people: config.people.map((p) => ({ name: p.name, role: p.role, photoUrls: [] })),
-    spreadCount: config.spreadCount,
-  });
-  await writeFile(join(outDir, 'story.json'), JSON.stringify(story, null, 2));
-  console.log(`  "${story.title}" — ${story.spreads.length} spreads`);
+  // 1. Story (cached across reruns) --------------------------------------------
+  let story!: Story;
+  const storyPath = join(outDir, 'story.json');
+  try {
+    story = JSON.parse(await readFile(storyPath, 'utf8'));
+    console.log(`▸ Reusing cached story: "${story.title}"`);
+  } catch {
+    console.log('▸ Writing story…');
+    story = await generateStory({
+      memoryText: config.memoryText,
+      people: config.people.map((p) => ({ name: p.name, role: p.role, photoUrls: [] })),
+      spreadCount: config.spreadCount,
+    });
+    await writeFile(storyPath, JSON.stringify(story, null, 2));
+    console.log(`  "${story.title}" — ${story.spreads.length} spreads`);
+  }
 
   // 2. Character sheets --------------------------------------------------------
   const characters: CharacterSheet[] = [];
@@ -139,8 +166,7 @@ async function main() {
     })),
   ];
 
-  const results = await Promise.all(
-    spreadJobs.map(async (job) => {
+  const results = await mapWithConcurrency(spreadJobs, SPREAD_CONCURRENCY, async (job) => {
       let lastUrl = '';
       let lastNotes = '';
       for (let attempt = 0; attempt <= MAX_RETRIES_PER_SPREAD; attempt++) {
@@ -159,19 +185,16 @@ async function main() {
       }
       console.warn(`  ! ${job.isCover ? 'cover' : `spread ${job.index}`} kept best-effort after retries (${lastNotes})`);
       return { ...job, imageUrl: lastUrl, score: 0 };
-    }),
-  );
+  });
 
   // 4. Upscale + download --------------------------------------------------------
   console.log('▸ Upscaling to print resolution…');
-  const upscaled = await Promise.all(
-    results.map(async (r) => {
+  const upscaled = await mapWithConcurrency(results, SPREAD_CONCURRENCY, async (r) => {
       const { imageUrl } = await upscaleImage(r.imageUrl);
       const file = join(outDir, 'spreads', r.isCover ? 'cover.png' : `spread-${String(r.index).padStart(2, '0')}.png`);
       await download(imageUrl, file);
       return { ...r, printImageUrl: imageUrl, localPath: file };
-    }),
-  );
+  });
 
   // 5. Compose PDF ----------------------------------------------------------------
   console.log('▸ Rendering PDF…');
