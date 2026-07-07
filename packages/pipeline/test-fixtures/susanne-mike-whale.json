@@ -5,7 +5,7 @@
     { "name": "Mike", "role": "papa", "photoPaths": ["/Users/thomasragger/Desktop/personal-lab/wfsc-website/archive/book-examples/people-references/mike.png"] }
   ],
   "styleId": "flat-vector",
-  "styleReferencePaths": [],
+  "styleReferencePaths": ["../style-refs/flat-vector/sea.png"],
   "spreadCount": 12,
   "greeting": "For Susanne & Mike — and the whale who waved back.",
   "fontPairing": "storybook"

@@ -11,6 +11,12 @@ importers:
       '@shopify/cli':
         specifier: ^4.4.0
         version: 4.4.0
+      '@supabase/supabase-js':
+        specifier: ^2.110.1
+        version: 2.110.1
+      replicate:
+        specifier: ^1.4.0
+        version: 1.4.0
 
   apps/shopify-app: {}
 

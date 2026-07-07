@@ -14,6 +14,8 @@
     "node": ">=22"
   },
   "devDependencies": {
-    "@shopify/cli": "^4.4.0"
+    "@shopify/cli": "^4.4.0",
+    "@supabase/supabase-js": "^2.110.1",
+    "replicate": "^1.4.0"
   }
 }
