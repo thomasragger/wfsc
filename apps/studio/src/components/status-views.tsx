@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkle } from "@/components/decor";
+import { Doodle, Sparkle } from "@/components/decor";
 import type { BookPayload } from "@/lib/book-payload";
 
 /** Animated "the magic is happening" state for generating phases. */
@@ -13,11 +13,13 @@ export function MagicHappening({
 }) {
   return (
     <div className="card relative mx-auto flex w-full max-w-2xl flex-col items-center gap-5 overflow-hidden px-8 py-16 text-center">
-      <div className="relative h-24 w-24">
-        <span className="absolute inset-0 animate-float rounded-full bg-gradient-to-br from-marigold to-coral opacity-90" />
+      <Doodle src="cloud.png" size={44} className="animate-float absolute left-8 top-8 opacity-70" />
+      <Doodle src="flower.png" size={26} className="animate-drift absolute right-10 top-10 [animation-delay:0.6s]" />
+      <div className="relative h-28 w-28">
+        <Doodle src="/mascot/part3.png" size={112} className="animate-float" alt="Warm Fuzzy mascot conjuring your book" />
         <Sparkle className="absolute -left-3 top-1 animate-twinkle text-cobalt" size={20} />
         <Sparkle className="absolute -right-4 top-8 animate-twinkle text-coral [animation-delay:0.7s]" size={16} />
-        <Sparkle className="absolute -bottom-2 left-6 animate-twinkle text-sage [animation-delay:1.3s]" size={18} />
+        <Sparkle className="absolute -bottom-2 left-6 animate-twinkle text-marigold [animation-delay:1.3s]" size={18} />
       </div>
       <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">{title}</h1>
       <p className="max-w-md text-sm leading-relaxed text-ink-soft">{body}</p>

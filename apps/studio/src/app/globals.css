@@ -12,10 +12,12 @@
   --color-cobalt: #2e5fd7;
   --color-sage: #7fa678;
   --color-lavender: #ece5f8;
+  --color-lavender-deep: #d9cbf0;
   --color-peach: #fbe3cb;
 
-  --shadow-fuzzy: 0 12px 30px -10px rgb(43 35 32 / 0.16);
-  --shadow-polaroid: 0 14px 28px -12px rgb(43 35 32 / 0.25);
+  --shadow-fuzzy: 0 18px 40px -18px rgb(43 35 32 / 0.22);
+  --shadow-polaroid: 0 22px 44px -18px rgb(43 35 32 / 0.32);
+  --shadow-pop: 0 12px 26px -10px rgb(232 98 44 / 0.4);
 }
 
 @theme inline {
@@ -33,20 +35,37 @@ body {
   background-color: var(--color-cream);
 }
 
-/* Warm pastel wash, pinned to the viewport so it never tiles or seams. */
+/* Soft grainy pastel wash: lavender -> cream -> marigold -> coral edge,
+   pinned to the viewport so it never tiles or seams. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(120% 90% at 88% 108%, rgb(232 98 44 / 0.42) 0%, rgb(232 98 44 / 0) 46%),
+    radial-gradient(90% 80% at 8% -8%, rgb(217 203 240 / 0.85) 0%, rgb(217 203 240 / 0) 52%),
+    linear-gradient(
+      152deg,
+      #ece5f8 0%,
+      #f4ecfb 14%,
+      #fffdf8 40%,
+      #fff6ea 62%,
+      #fde3c6 82%,
+      #f8c98d 100%
+    );
+}
+
+/* Film-grain overlay via feTurbulence, very low opacity. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
   z-index: -1;
-  background: linear-gradient(
-    165deg,
-    #eee7f9 0%,
-    #fffdf8 34%,
-    #fffdf8 62%,
-    #fdeeda 88%,
-    #fbe3cb 100%
-  );
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 @layer components {
@@ -54,6 +73,7 @@ body::before {
     font-family: var(--font-display);
   }
 
+  /* --- buttons: chunky pill CTAs --------------------------------------- */
   .btn {
     display: inline-flex;
     align-items: center;
@@ -63,7 +83,7 @@ body::before {
     font-family: var(--font-display);
     font-weight: 700;
     line-height: 1.1;
-    padding: 0.875rem 1.75rem;
+    padding: 0.9rem 1.9rem;
     border: 2px solid transparent;
     cursor: pointer;
     transition:
@@ -79,69 +99,96 @@ body::before {
   }
   .btn:focus-visible {
     outline: 3px solid var(--color-cobalt);
-    outline-offset: 2px;
+    outline-offset: 3px;
   }
 
   .btn-coral {
     background: var(--color-coral);
     color: var(--color-cream);
-    box-shadow: 0 4px 0 var(--color-coral-deep);
+    box-shadow: 0 5px 0 var(--color-coral-deep), var(--shadow-pop);
   }
   .btn-coral:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 0 var(--color-coral-deep);
+    box-shadow: 0 7px 0 var(--color-coral-deep), var(--shadow-pop);
   }
   .btn-coral:active:not(:disabled) {
-    transform: translateY(1px);
+    transform: translateY(2px);
     box-shadow: 0 2px 0 var(--color-coral-deep);
   }
 
   .btn-marigold {
     background: var(--color-marigold);
     color: var(--color-ink);
-    box-shadow: 0 4px 0 var(--color-marigold-deep);
+    box-shadow: 0 5px 0 var(--color-marigold-deep);
   }
   .btn-marigold:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 6px 0 var(--color-marigold-deep);
+    box-shadow: 0 7px 0 var(--color-marigold-deep);
   }
   .btn-marigold:active:not(:disabled) {
-    transform: translateY(1px);
+    transform: translateY(2px);
     box-shadow: 0 2px 0 var(--color-marigold-deep);
   }
 
   .btn-ghost {
-    background: transparent;
+    background: rgb(255 255 255 / 0.7);
     color: var(--color-ink);
-    border-color: color-mix(in srgb, var(--color-ink) 20%, transparent);
+    border-color: color-mix(in srgb, var(--color-ink) 16%, transparent);
+    box-shadow: 0 5px 0 rgb(43 35 32 / 0.08);
   }
   .btn-ghost:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--color-ink) 6%, transparent);
+    background: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 7px 0 rgb(43 35 32 / 0.08);
+  }
+  .btn-ghost:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 rgb(43 35 32 / 0.08);
   }
 
+  /* --- surfaces --------------------------------------------------------- */
   .polaroid {
     background: #ffffff;
-    padding: 0.5rem 0.5rem 2.5rem;
-    border-radius: 0.5rem;
+    padding: 0.6rem 0.6rem 0.6rem;
+    border-radius: 1.1rem;
     box-shadow: var(--shadow-polaroid);
   }
 
   .card {
-    background: rgb(255 255 255 / 0.75);
-    border: 1px solid rgb(43 35 32 / 0.08);
-    border-radius: 1.5rem;
+    background: rgb(255 255 255 / 0.82);
+    border: 1px solid rgb(255 255 255 / 0.9);
+    border-radius: 1.75rem;
     box-shadow: var(--shadow-fuzzy);
+    backdrop-filter: blur(6px);
   }
 
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.75);
+    border: 1.5px solid var(--color-lavender-deep);
+    padding: 0.4rem 0.95rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--color-cobalt);
+  }
+
+  /* --- pill inputs ------------------------------------------------------ */
   .input {
     width: 100%;
-    border-radius: 1rem;
-    border: 2px solid rgb(43 35 32 / 0.12);
+    border-radius: 1.4rem;
+    border: 2px solid var(--color-lavender-deep);
     background: #fff;
-    padding: 0.75rem 1rem;
+    padding: 0.85rem 1.15rem;
     font-family: var(--font-body);
+    font-weight: 500;
     color: var(--color-ink);
-    transition: border-color 150ms ease;
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
   }
   .input::placeholder {
     color: rgb(111 96 88 / 0.55);
@@ -149,6 +196,34 @@ body::before {
   .input:focus {
     outline: none;
     border-color: var(--color-marigold);
+    box-shadow: 0 0 0 4px rgb(246 183 60 / 0.22);
+  }
+  .input-pill {
+    border-radius: 9999px;
+  }
+
+  /* --- scalloped photo mask (bumpy-cloud edge) -------------------------- */
+  .scallop {
+    clip-path: url(#wfsc-scallop);
+  }
+
+  /* --- how-it-works blob frame ----------------------------------------- */
+  .blob-frame {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1 / 1;
+  }
+  .blob-frame svg.blob-outline {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .blob-frame .blob-inner {
+    position: relative;
+    z-index: 1;
+    width: 76%;
   }
 }
 
@@ -157,22 +232,45 @@ body::before {
 @keyframes wfsc-float {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translateY(0) rotate(var(--tilt, 0deg));
   }
   50% {
-    transform: translateY(-8px);
+    transform: translateY(-14px) rotate(var(--tilt, 0deg));
+  }
+}
+
+@keyframes wfsc-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(var(--tilt, 0deg));
+  }
+  50% {
+    transform: translate(6px, -10px) rotate(calc(var(--tilt, 0deg) + 4deg));
   }
 }
 
 @keyframes wfsc-twinkle {
   0%,
   100% {
-    opacity: 0.25;
-    transform: scale(0.8);
+    opacity: 0.3;
+    transform: scale(0.82) rotate(var(--tilt, 0deg));
   }
   50% {
     opacity: 1;
-    transform: scale(1.1);
+    transform: scale(1.12) rotate(var(--tilt, 0deg));
+  }
+}
+
+@keyframes wfsc-wobble {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-2.5deg);
+  }
+  75% {
+    transform: rotate(2.5deg);
   }
 }
 
@@ -185,21 +283,39 @@ body::before {
   }
 }
 
+@keyframes wfsc-spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .animate-float {
-  animation: wfsc-float 5s ease-in-out infinite;
+  animation: wfsc-float 5.5s ease-in-out infinite;
+}
+.animate-drift {
+  animation: wfsc-drift 7s ease-in-out infinite;
 }
 .animate-twinkle {
-  animation: wfsc-twinkle 2.4s ease-in-out infinite;
+  animation: wfsc-twinkle 2.6s ease-in-out infinite;
 }
 .animate-shimmer {
   background-size: 200% 100%;
   animation: wfsc-shimmer 2.2s linear infinite;
 }
+.animate-spin-slow {
+  animation: wfsc-spin-slow 26s linear infinite;
+}
+.hover-wobble:hover {
+  animation: wfsc-wobble 0.6s ease-in-out;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .animate-float,
+  .animate-drift,
   .animate-twinkle,
-  .animate-shimmer {
+  .animate-shimmer,
+  .animate-spin-slow,
+  .hover-wobble:hover {
     animation: none;
   }
   html {

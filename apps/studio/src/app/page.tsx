@@ -1,6 +1,14 @@
+import Image from "next/image";
 import Link from "next/link";
 
-import { ArtPlaceholder, Sparkle, SparkleField } from "@/components/decor";
+import {
+  ArtPlaceholder,
+  BlobFrame,
+  Doodle,
+  DoodleField,
+  DoodleSprinkle,
+  Sparkle,
+} from "@/components/decor";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -48,73 +56,51 @@ async function loadInspiration(): Promise<{
   }
 }
 
+/** Best-guess brand photo for a category header, keyed loosely by name. */
+function categoryPhoto(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes("mum") || n.includes("mom")) return "mums";
+  if (n.includes("dad")) return "dads";
+  if (n.includes("grand")) return "grandparents";
+  if (n.includes("sib")) return "siblings";
+  if (n.includes("bab") || n.includes("first")) return "babies";
+  return "kids";
+}
+
 const STEPS = [
   {
-    n: 1,
-    title: "Tell us your story",
+    label: "Tell us your story",
     body: "A trip to the sea, pancake Sundays, the day the training wheels came off. Write it the way you'd tell it at bedtime.",
-    color: "bg-coral text-cream",
+    art: "/mascot/part1.png",
+    shape: "cloud" as const,
+    from: "#f6b73c",
+    to: "#e8622c",
+    labelClass: "text-coral",
   },
   {
-    n: 2,
-    title: "Upload your pictures",
+    label: "Upload your pictures",
     body: "A few photos of the people in your story. Our illustrators turn them into storybook characters that are unmistakably them.",
-    color: "bg-marigold text-ink",
+    art: "/mascot/part2.png",
+    shape: "shell" as const,
+    from: "#f6b73c",
+    to: "#f0913a",
+    labelClass: "text-marigold-deep",
   },
   {
-    n: 3,
-    title: "Experience the magic",
+    label: "Experience the magic",
     body: "Watch your memory become a fully illustrated picture book, then hold the printed copy in your hands.",
-    color: "bg-cobalt text-cream",
+    art: "/mascot/part3.png",
+    shape: "coil" as const,
+    from: "#2e5fd7",
+    to: "#9d8ce8",
+    labelClass: "text-cobalt",
   },
 ];
 
-const HERO_POLAROIDS = [
-  {
-    caption: "Nana's lighthouse",
-    rotate: "-rotate-6",
-    art: (
-      <svg viewBox="0 0 160 160" className="h-full w-full" aria-hidden="true">
-        <rect width="160" height="160" fill="#ECE5F8" />
-        <circle cx="122" cy="38" r="20" fill="#F6B73C" />
-        <path d="M0 118 Q40 92 80 112 T160 106 V160 H0 Z" fill="#7FA678" />
-        <rect x="66" y="52" width="28" height="60" rx="4" fill="#E8622C" />
-        <rect x="70" y="42" width="20" height="14" rx="3" fill="#2E5FD7" />
-      </svg>
-    ),
-  },
-  {
-    caption: "Papa's pancake day",
-    rotate: "rotate-3",
-    art: (
-      <svg viewBox="0 0 160 160" className="h-full w-full" aria-hidden="true">
-        <rect width="160" height="160" fill="#FBE3CB" />
-        <ellipse cx="80" cy="112" rx="52" ry="14" fill="#E8622C" />
-        <ellipse cx="80" cy="102" rx="52" ry="14" fill="#F6B73C" />
-        <ellipse cx="80" cy="92" rx="52" ry="14" fill="#DD9C1B" />
-        <circle cx="80" cy="44" r="16" fill="#2E5FD7" />
-        <path d="M64 44 q16 18 32 0" stroke="#FFFDF8" strokeWidth="4" fill="none" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    caption: "Our first snow",
-    rotate: "-rotate-2",
-    art: (
-      <svg viewBox="0 0 160 160" className="h-full w-full" aria-hidden="true">
-        <rect width="160" height="160" fill="#2E5FD7" />
-        <circle cx="34" cy="34" r="4" fill="#FFFDF8" />
-        <circle cx="120" cy="24" r="3" fill="#FFFDF8" />
-        <circle cx="88" cy="52" r="3.5" fill="#FFFDF8" />
-        <circle cx="140" cy="70" r="4" fill="#FFFDF8" />
-        <circle cx="80" cy="118" r="26" fill="#FFFDF8" />
-        <circle cx="80" cy="82" r="18" fill="#FFFDF8" />
-        <circle cx="76" cy="78" r="2.4" fill="#2B2320" />
-        <circle cx="86" cy="78" r="2.4" fill="#2B2320" />
-        <path d="M78 86 l8 2 -8 2 z" fill="#E8622C" />
-      </svg>
-    ),
-  },
+const MEMORY_CARDS = [
+  { photo: "grandparents", caption: "Ella & Grandpa", tilt: "-7deg", className: "z-10 w-40 sm:w-52" },
+  { photo: "mums", caption: "Malia & Mama", tilt: "5deg", className: "z-20 w-44 sm:w-56", float: true },
+  { photo: "siblings", caption: "Theo & Sam", tilt: "-3deg", className: "z-10 w-36 sm:w-48" },
 ];
 
 export default async function HomePage() {
@@ -122,19 +108,20 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-      {/* Hero */}
-      <section className="relative grid items-center gap-12 py-16 sm:py-24 lg:grid-cols-[1.1fr_1fr]">
-        <SparkleField />
+      {/* ---------------------------------------------------------------- Hero */}
+      <section className="relative grid items-center gap-10 py-14 sm:py-20 lg:grid-cols-[1.05fr_1fr]">
+        <DoodleField />
         <div className="relative z-10 flex flex-col items-start gap-6">
-          <p className="rounded-full bg-lavender px-4 py-1.5 text-sm font-semibold text-cobalt">
+          <span className="eyebrow">
+            <Sparkle size={13} className="text-marigold" />
             A storybook starring your family
-          </p>
-          <h1 className="font-display text-5xl font-extrabold leading-[1.05] tracking-tight text-ink sm:text-6xl">
+          </span>
+          <h1 className="font-display text-[2.7rem] font-extrabold leading-[1.02] tracking-tight text-ink sm:text-6xl">
             Turning memories into <span className="text-coral">art</span> for a lifetime.
           </h1>
           <p className="max-w-xl text-lg leading-relaxed text-ink-soft">
             Tell us about a day you never want to forget. We turn it into a beautifully
-            illustrated, printed children&rsquo;s book — with your family as the heroes.
+            illustrated, printed children&rsquo;s book &mdash; with your family as the heroes.
           </p>
           <div className="flex flex-wrap items-center gap-4">
             <Link href="/create" className="btn btn-coral text-lg">
@@ -146,93 +133,144 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="relative z-10 mx-auto flex max-w-md items-center justify-center py-6">
-          <div className="flex items-start -space-x-3">
-            {HERO_POLAROIDS.map((p, i) => (
-              <figure
-                key={p.caption}
-                className={`polaroid w-32 shrink-0 sm:w-40 ${p.rotate} ${
-                  i === 1 ? "z-10 -translate-y-8 animate-float" : i === 2 ? "translate-y-4" : ""
-                }`}
-              >
-                <div className="aspect-square overflow-hidden rounded-sm">{p.art}</div>
-                <figcaption className="pt-2 text-center text-xs font-semibold text-ink-soft">
-                  {p.caption}
-                </figcaption>
-              </figure>
-            ))}
-          </div>
+        {/* Floating memory cards */}
+        <div className="relative z-10 mx-auto flex min-h-[22rem] max-w-md items-center justify-center gap-0 py-4">
+          {MEMORY_CARDS.map((card, i) => (
+            <figure
+              key={card.photo}
+              className={`group relative -mx-3 shrink-0 rounded-2xl bg-white p-2 shadow-polaroid ring-1 ring-black/5 ${card.className} ${
+                card.float ? "animate-float" : "animate-drift"
+              }`}
+              style={
+                {
+                  "--tilt": card.tilt,
+                  transform: `rotate(${card.tilt}) translateY(${i === 1 ? "-1.5rem" : i === 2 ? "1rem" : "0"})`,
+                  animationDelay: `${i * 0.5}s`,
+                } as React.CSSProperties
+              }
+            >
+              <div className="overflow-hidden rounded-xl">
+                <Image
+                  src={`/categories/${card.photo}.jpg`}
+                  alt={card.caption}
+                  width={280}
+                  height={336}
+                  priority={i === 1}
+                  className="h-auto w-full"
+                />
+              </div>
+              <figcaption className="px-1 pb-1 pt-2 text-center font-display text-sm font-bold text-ink">
+                {card.caption}
+              </figcaption>
+            </figure>
+          ))}
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="py-12 sm:py-16">
-        <h2 className="font-display text-3xl font-bold text-ink sm:text-4xl">How it works</h2>
-        <p className="mt-2 max-w-lg text-ink-soft">
-          From a memory at the kitchen table to a hardcover on the shelf, in three steps.
-        </p>
-        <ol className="mt-10 grid gap-6 sm:grid-cols-3">
-          {STEPS.map((step) => (
-            <li key={step.n} className="card flex flex-col gap-4 p-7">
-              <span
-                className={`flex h-11 w-11 items-center justify-center rounded-full font-display text-lg font-bold ${step.color}`}
+      {/* ------------------------------------------------------- How it works */}
+      <section className="relative py-14 sm:py-20">
+        <DoodleSprinkle />
+        <div className="relative z-10 text-center">
+          <span className="eyebrow mx-auto">How it works</span>
+          <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl font-extrabold leading-tight text-ink sm:text-[2.6rem]">
+            From a memory at the kitchen table to a hardcover on the shelf.
+          </h2>
+        </div>
+
+        <ol className="relative z-10 mt-14 grid gap-x-6 gap-y-10 sm:grid-cols-3">
+          {STEPS.map((step, i) => (
+            <li key={step.label} className="flex flex-col items-center text-center">
+              <BlobFrame
+                shape={step.shape}
+                from={step.from}
+                to={step.to}
+                className="w-52 sm:w-full sm:max-w-[15rem]"
               >
-                {step.n}
-              </span>
-              <h3 className="font-display text-xl font-bold text-ink">{step.title}</h3>
-              <p className="text-sm leading-relaxed text-ink-soft">{step.body}</p>
+                <Image
+                  src={step.art}
+                  alt=""
+                  width={260}
+                  height={260}
+                  loading="lazy"
+                  className="h-auto w-full drop-shadow-sm"
+                />
+              </BlobFrame>
+              <p className={`mt-5 font-display text-xl font-extrabold ${step.labelClass}`}>
+                <span className="mr-1.5 text-ink/25">{i + 1}</span>
+                {step.label}
+              </p>
+              <p className="mt-2 max-w-xs text-sm leading-relaxed text-ink-soft">{step.body}</p>
             </li>
           ))}
         </ol>
       </section>
 
-      {/* Inspiration gallery */}
+      {/* --------------------------------------------------- Inspiration gallery */}
       <section id="ideas" className="scroll-mt-24 py-12 sm:py-16">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="font-display text-3xl font-bold text-ink sm:text-4xl">
+            <span className="eyebrow">
+              <Sparkle size={13} className="text-marigold" />
               Need a spark?
+            </span>
+            <h2 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
+              Start from a story other families love.
             </h2>
             <p className="mt-2 max-w-lg text-ink-soft">
-              Start from a story idea other families love, then make it entirely yours.
+              Pick an idea to begin, then make it entirely yours.
             </p>
           </div>
-          <Sparkle className="hidden text-marigold sm:block" size={32} />
+          <Doodle src="cloud.png" size={54} className="animate-float hidden sm:block" />
         </div>
 
         {inspiration ? (
-          <div className="mt-10 flex flex-col gap-12">
+          <div className="mt-10 flex flex-col gap-14">
             {inspiration.categories.map((cat) => {
               const templates = inspiration.templates.filter((t) => t.category_id === cat.id);
               if (templates.length === 0) return null;
+              const photo = categoryPhoto(cat.name);
               return (
                 <div key={cat.id}>
-                  <h3 className="font-display text-xl font-bold text-ink">{cat.name}</h3>
-                  {cat.tagline ? <p className="text-sm text-ink-soft">{cat.tagline}</p> : null}
-                  <div className="mt-5 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-                    {templates.map((tpl, i) => (
+                  <div className="flex items-center gap-4">
+                    <div className="scallop h-14 w-14 shrink-0 overflow-hidden sm:h-16 sm:w-16">
+                      <Image
+                        src={`/categories/${photo}.jpg`}
+                        alt=""
+                        width={80}
+                        height={80}
+                        loading="lazy"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-2xl font-extrabold text-ink">{cat.name}</h3>
+                      {cat.tagline ? (
+                        <p className="text-sm text-ink-soft">{cat.tagline}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+                    {templates.map((tpl) => (
                       <Link
                         key={tpl.id}
                         href={`/create?template=${encodeURIComponent(tpl.id)}`}
-                        className={`polaroid group transition-transform duration-200 hover:z-10 hover:rotate-0 hover:scale-105 ${
-                          i % 3 === 0 ? "-rotate-2" : i % 3 === 1 ? "rotate-1" : "rotate-2"
-                        }`}
+                        className="group flex flex-col rounded-3xl bg-white/70 p-3 shadow-fuzzy ring-1 ring-white transition-all duration-200 hover:-translate-y-1.5 hover:rotate-[-1.2deg] hover:shadow-polaroid"
                       >
-                        <div className="aspect-square overflow-hidden rounded-sm bg-lavender">
+                        <div className="scallop aspect-square overflow-hidden bg-lavender">
                           {tpl.example_image_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={tpl.example_image_url}
                               alt=""
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                               loading="lazy"
                             />
                           ) : (
                             <ArtPlaceholder />
                           )}
                         </div>
-                        <div className="pt-2 text-center">
-                          <p className="font-display text-sm font-bold leading-snug text-ink group-hover:text-coral">
+                        <div className="px-1 pb-1 pt-3 text-center">
+                          <p className="font-display text-sm font-extrabold leading-snug text-ink group-hover:text-coral">
                             {tpl.title}
                           </p>
                           {tpl.tagline ? (
@@ -248,42 +286,40 @@ export default async function HomePage() {
           </div>
         ) : (
           <div className="card mt-10 flex flex-col items-center gap-4 p-10 text-center">
-            <Sparkle className="animate-twinkle text-marigold" size={30} />
-            <p className="max-w-md font-display text-lg font-bold text-ink">
+            <Doodle src="sun.png" size={56} className="animate-drift" />
+            <p className="max-w-md font-display text-lg font-extrabold text-ink">
               Our story ideas are still being tucked in.
             </p>
             <p className="max-w-md text-sm text-ink-soft">
-              Every book here starts with your own memory anyway — days at the beach with
+              Every book here starts with your own memory anyway &mdash; days at the beach with
               grandma, dad&rsquo;s legendary pancakes, a little sister&rsquo;s first snow. Bring
               yours and we&rsquo;ll take it from there.
             </p>
-            <Link href="/create" className="btn btn-marigold mt-2">
+            <Link href="/create" className="btn btn-coral mt-2">
               Start from your own memory
             </Link>
           </div>
         )}
       </section>
 
-      {/* Closing CTA */}
+      {/* ------------------------------------------------------- Closing CTA */}
       <section className="py-12 sm:py-16">
-        <div className="relative overflow-hidden rounded-3xl bg-coral px-8 py-14 text-center sm:px-16">
-          <Sparkle className="absolute left-8 top-8 animate-twinkle text-marigold" size={24} />
-          <Sparkle
-            className="absolute bottom-8 right-10 animate-twinkle text-peach [animation-delay:0.8s]"
-            size={20}
-          />
-          <h2 className="font-display text-3xl font-extrabold text-cream sm:text-4xl">
-            Every family has a story worth keeping.
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-cream/90">
-            It takes about five minutes to tell us yours. The book lasts a lifetime.
-          </p>
-          <Link
-            href="/create"
-            className="btn btn-marigold mt-8 text-lg"
-          >
-            Make your storybook
-          </Link>
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-coral via-coral to-coral-deep px-8 py-16 text-center shadow-pop sm:px-16">
+          <Doodle src="sun.png" size={64} className="animate-drift absolute left-6 top-8 opacity-90" />
+          <Doodle src="cloud.png" size={56} className="animate-float absolute right-8 top-10 opacity-90 [animation-delay:0.7s]" />
+          <Doodle src="flower.png" size={34} className="animate-drift absolute bottom-10 left-[16%] [animation-delay:1.2s]" />
+          <Doodle src="heart-small.png" size={30} className="animate-twinkle absolute bottom-12 right-[18%]" />
+          <div className="relative z-10">
+            <h2 className="mx-auto max-w-xl font-display text-3xl font-extrabold text-cream sm:text-[2.6rem]">
+              Every family has a story worth keeping.
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-cream/90">
+              It takes about five minutes to tell us yours. The book lasts a lifetime.
+            </p>
+            <Link href="/create" className="btn btn-marigold mt-8 text-lg">
+              Make your storybook
+            </Link>
+          </div>
         </div>
       </section>
     </div>
