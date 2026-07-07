@@ -10,7 +10,7 @@ out/
 .vercel/
 .turbo/
 supabase/.temp/
-generated/
+generated*/
 *.log
 .vercel
 .env*

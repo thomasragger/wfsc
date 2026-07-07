@@ -1,0 +1,7 @@
+.git
+node_modules
+packages/pipeline/test-fixtures/generated*
+packages/pipeline/style-refs
+apps/theme
+archive
+*.pdf
