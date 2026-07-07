@@ -1,0 +1,25 @@
+{
+  "name": "@wfsc/pipeline",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "generate-book": "tsx src/cli/generate-book.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0",
+    "@wfsc/book-engine": "workspace:*",
+    "replicate": "^1.0.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "puppeteer-core": "^24.9.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5"
+  }
+}

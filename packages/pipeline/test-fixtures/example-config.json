@@ -1,0 +1,12 @@
+{
+  "memoryText": "Last summer, Phoebe (4) and her Papa spent a whole day at the Schönbrunn zoo in Vienna. Phoebe was obsessed with the elephants but got scared of the big tortoise. They ate ice cream twice, Papa lost his hat near the flamingos, and at the end Phoebe fell asleep on his shoulders on the way home.",
+  "people": [
+    { "name": "Phoebe", "role": "child", "photoPaths": ["./photos/phoebe.jpg"] },
+    { "name": "Papa", "role": "papa", "photoPaths": ["./photos/papa.jpg"] }
+  ],
+  "styleId": "flat-vector",
+  "styleReferencePaths": [],
+  "spreadCount": 14,
+  "greeting": "For Phoebe — may you always remember our zoo day. Love, Papa.",
+  "fontPairing": "storybook"
+}

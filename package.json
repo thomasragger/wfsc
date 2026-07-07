@@ -1,0 +1,16 @@
+{
+  "name": "wfsc",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.33.2",
+  "scripts": {
+    "dev": "pnpm --filter studio dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "generate-book": "pnpm --filter @wfsc/pipeline generate-book"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

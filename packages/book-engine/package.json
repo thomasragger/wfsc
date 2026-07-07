@@ -1,0 +1,28 @@
+{
+  "name": "@wfsc/book-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./pdf": "./src/pdf/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  },
+  "peerDependenciesMeta": {
+    "puppeteer-core": {
+      "optional": true
+    }
+  }
+}
