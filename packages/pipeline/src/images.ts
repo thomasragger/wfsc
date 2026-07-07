@@ -105,13 +105,17 @@ export async function generateSpreadImage(
     .join('\n');
   const styleRefIndex = characters.length + 1;
 
+  const styleRefLine =
+    style.referenceImageUrls.length > 0
+      ? `Image ${styleRefIndex} shows the illustration style to match exactly.\n`
+      : '';
   const prompt = `${characterIntro}
-Image ${styleRefIndex} shows the illustration style to match exactly.
+${styleRefLine}The finished illustration must be in EXACTLY the same illustration style as the character sheet image(s): same flat shapes, same line weight, same limited palette, same simplicity. Do not add realistic shading, painterly texture, or extra detail.
 
 Scene: ${spread.illustration_prompt}
 Reserve quiet, uncluttered copy space: ${spread.copy_space}.
 ${req.regenNote ? `Adjustment requested: ${req.regenNote}.` : ''}
-Style: ${style.stylePrompt}`;
+Style: ${style.stylePrompt}. Absolutely no text, no words, no names, no letters, no labels, no watermark anywhere in the image.`;
 
   const output = await runWithRetry(replicate, MODELS.spread, {
       prompt,

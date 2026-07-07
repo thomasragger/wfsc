@@ -56,8 +56,21 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 export interface LuluCoverDimensions {
   width: string; // points
   height: string;
-  spine_thickness: string;
   unit: string;
+}
+
+/**
+ * Derive the spine width from Lulu's cover dimensions. The wraparound canvas
+ * adds the same wrap+bleed margin on every edge, so:
+ *   extraPerEdge = (height - trimHeight) / 2
+ *   spine = width - 2*trimWidth - 2*extraPerEdge
+ * (verified against the 8.5×8.5in casewrap: 1368×738pt @ 32pp → 18pt spine)
+ */
+export function spineFromCoverDimensions(dims: LuluCoverDimensions, trimPt = 612): number {
+  const width = Number(dims.width);
+  const height = Number(dims.height);
+  const extraPerEdge = (height - trimPt) / 2;
+  return width - 2 * trimPt - 2 * extraPerEdge;
 }
 
 /** Exact wraparound cover dimensions for SKU + page count (drives the cover PDF). */

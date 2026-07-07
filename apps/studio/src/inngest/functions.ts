@@ -10,6 +10,8 @@ import {
   type StyleDef,
 } from '@wfsc/pipeline';
 
+import { createPrintJob, type LuluAddress } from '@/lib/lulu';
+import { renderAndUploadPdfs } from '@/lib/render';
 import { supabaseAdmin } from '@/lib/supabase';
 import { inngest } from './client';
 
@@ -315,4 +317,87 @@ export const regenerateSpread = inngest.createFunction(
   },
 );
 
-export const functions = [generatePreview, generateFullBook, regenerateSpread];
+/**
+ * After the customer approves the final book: render print PDFs, upload them
+ * publicly, and submit the Lulu print job with the order's shipping address.
+ */
+export const submitToPrint = inngest.createFunction(
+  { id: 'submit-to-print', concurrency: 2, retries: 3 },
+  { event: 'book/approved' },
+  async ({ event, step }) => {
+    const db = supabaseAdmin();
+    const book = await step.run('load-book', () => loadBook(event.data.bookId));
+    if (book.status !== 'approved') {
+      return { skipped: true, reason: `status is ${book.status}` };
+    }
+
+    const { data: order } = await db
+      .from('shopify_orders')
+      .select('shipping_address')
+      .eq('book_id', book.id)
+      .maybeSingle();
+    const addr = order?.shipping_address as {
+      name?: string;
+      first_name?: string;
+      last_name?: string;
+      address1?: string;
+      address2?: string;
+      city?: string;
+      zip?: string;
+      country_code?: string;
+      province_code?: string;
+      phone?: string;
+    } | null;
+    if (!addr?.address1) throw new Error(`Book ${book.id} has no shipping address`);
+
+    const pdfs = await step.run('render-pdfs', async () => {
+      const { data: spreads } = await db
+        .from('book_spreads')
+        .select('*')
+        .eq('book_id', book.id)
+        .order('position');
+      const result = await renderAndUploadPdfs(book, spreads ?? []);
+      await db
+        .from('books')
+        .update({ pdf_interior_url: result.interiorUrl, pdf_cover_url: result.coverUrl })
+        .eq('id', book.id);
+      return result;
+    });
+
+    const printJob = await step.run('submit-lulu', async () => {
+      const shippingAddress: LuluAddress = {
+        name: addr.name ?? `${addr.first_name ?? ''} ${addr.last_name ?? ''}`.trim(),
+        street1: addr.address1!,
+        street2: addr.address2 ?? undefined,
+        city: addr.city ?? '',
+        postcode: addr.zip ?? '',
+        country_code: addr.country_code ?? 'AT',
+        state_code: addr.province_code ?? undefined,
+        phone_number: addr.phone ?? undefined,
+        email: book.email ?? undefined,
+      };
+      const job = await createPrintJob({
+        externalId: book.id,
+        format: (book.format ?? 'hardcover') as 'softcover' | 'hardcover',
+        pageCount: book.page_count,
+        title: book.title ?? 'Personalized Storybook',
+        interiorPdfUrl: pdfs.interiorUrl,
+        coverPdfUrl: pdfs.coverUrl,
+        shippingAddress,
+      });
+      await db.from('print_jobs').insert({
+        book_id: book.id,
+        provider: 'lulu',
+        provider_job_id: String(job.id),
+        status: job.status?.name ?? 'CREATED',
+        raw: job,
+      });
+      await db.from('books').update({ status: 'submitted_to_print' }).eq('id', book.id);
+      return { luluJobId: job.id };
+    });
+
+    return { bookId: book.id, ...printJob };
+  },
+);
+
+export const functions = [generatePreview, generateFullBook, regenerateSpread, submitToPrint];
