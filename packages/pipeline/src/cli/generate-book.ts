@@ -39,10 +39,23 @@ const MIME: Record<string, string> = {
   '.webp': 'image/webp',
 };
 
+/**
+ * Local file → URL usable as a Replicate model input. Small files become data
+ * URIs; larger ones are uploaded via the Replicate Files API (data URIs are
+ * limited to ~256KB).
+ */
 async function fileToDataUri(path: string): Promise<string> {
   const bytes = await readFile(path);
   const mime = MIME[extname(path).toLowerCase()] ?? 'image/jpeg';
-  return `data:${mime};base64,${bytes.toString('base64')}`;
+  if (bytes.length < 200_000) {
+    return `data:${mime};base64,${bytes.toString('base64')}`;
+  }
+  const { default: Replicate } = await import('replicate');
+  const replicate = new Replicate();
+  const file = await replicate.files.create(
+    new File([bytes], path.split('/').pop() ?? 'image', { type: mime }),
+  );
+  return file.urls.get;
 }
 
 async function download(url: string, dest: string): Promise<void> {

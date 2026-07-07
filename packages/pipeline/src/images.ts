@@ -96,7 +96,6 @@ Style: ${style.stylePrompt}`;
       size: 'custom',
       width: isWide ? 4096 : 2048,
       height: 2048,
-      output_format: 'png',
     },
   });
   return { imageUrl: firstUrl(output) };

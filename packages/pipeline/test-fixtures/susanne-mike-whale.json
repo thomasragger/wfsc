@@ -1,0 +1,12 @@
+{
+  "memoryText": "Susanne and Mike took a boat trip off the coast to go whale watching. It was windy and they almost gave up hope after two hours of waiting, drinking hot chocolate to stay warm. Then suddenly a huge humpback whale surfaced right next to the boat and waved its tail — Susanne screamed with joy and Mike almost dropped his camera. They talked about that moment the whole way home.",
+  "people": [
+    { "name": "Susanne", "role": "mama", "photoPaths": ["/Users/thomasragger/Desktop/personal-lab/wfsc-website/archive/book-examples/people-references/susanne.png"] },
+    { "name": "Mike", "role": "papa", "photoPaths": ["/Users/thomasragger/Desktop/personal-lab/wfsc-website/archive/book-examples/people-references/mike.png"] }
+  ],
+  "styleId": "flat-vector",
+  "styleReferencePaths": [],
+  "spreadCount": 12,
+  "greeting": "For Susanne & Mike — and the whale who waved back.",
+  "fontPairing": "storybook"
+}
