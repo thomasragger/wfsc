@@ -23,7 +23,7 @@ export async function describeCharacter(
         content: [
           {
             type: 'text',
-            text: `This is the character sheet for ${person.name}${person.role ? ` (${person.role})` : ''} in a children's picture book. Write ONE sentence locking their appearance for illustration prompts: approximate age, hair, distinguishing features, and exact outfit as drawn. No name, no style words, just the visual description. Example: "a 5-year-old girl with curly red pigtails, rosy cheeks, and yellow dungarees over a striped shirt".`,
+            text: `This is the character sheet for ${person.name}${person.role ? ` (${person.role})` : ''} in a children's picture book. Write ONE sentence locking their appearance for illustration prompts: approximate age, hair, distinguishing features, and exact outfit as drawn. No name, no style words, just the visual description. NEVER mention any text, letters, logos or words printed on clothing — describe garments by color and type only (mentioning lettering makes image models render text). No quotation marks in your answer. Example: a 5-year-old girl with curly red pigtails, rosy cheeks, and yellow dungarees over a striped shirt.`,
           },
           { type: 'image', source: { type: 'url', url: sheetUrl } },
         ],

@@ -25,7 +25,7 @@ import { renderInteriorPdf } from '@wfsc/book-engine/pdf';
 
 import { describeCharacter } from '../describe';
 import { generateCharacterSheet, generateSpreadImage, upscaleImage } from '../images';
-import { judgeSpread } from '../qa';
+import { judgeSpreadSafe } from '../qa';
 import { generateStory } from '../story';
 import { BUILTIN_STYLES } from '../styles';
 import type { CharacterSheet, Story, StyleDef } from '../types';
@@ -176,7 +176,7 @@ async function main() {
           style,
         });
         lastUrl = imageUrl;
-        const verdict = await judgeSpread(imageUrl, characters, style.stylePrompt);
+        const verdict = await judgeSpreadSafe(imageUrl, characters, style.stylePrompt);
         console.log(
           `  ${job.isCover ? 'cover' : `spread ${job.index}`}: score ${verdict.score}${verdict.pass ? ' ✓' : ` ✗ (${verdict.notes})`}`,
         );

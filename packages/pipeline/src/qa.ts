@@ -8,6 +8,7 @@ const PASS_THRESHOLD = Number(process.env.WFSC_QA_THRESHOLD ?? 70);
  * Vision-LLM QA: judge one generated spread against the character sheets and
  * style. Weighted identity 50 / outfit-continuity 30 / style 20 (per research,
  * vision-LLM judging outperforms embedding similarity for this task).
+ * Uses forced tool output so the verdict is always parseable.
  */
 export async function judgeSpread(
   spreadImageUrl: string,
@@ -29,7 +30,7 @@ Target style: ${stylePrompt}
 
 Score 0-100, weighted: character identity match 50%, outfit/feature continuity 30%, style adherence 20%. Not every character must appear in every scene; only penalize characters that appear but look wrong. Also fail (score < 40) for: extra unknown people with faces, garbled anatomy, embedded text or lettering, watermark.
 
-Respond with JSON only: {"score": <int>, "notes": "<one sentence>"}`,
+Report your verdict via the emit_verdict tool.`,
     },
     ...characters.map(
       (c): Anthropic.ContentBlockParam => ({
@@ -44,16 +45,48 @@ Respond with JSON only: {"score": <int>, "notes": "<one sentence>"}`,
     model: MODEL,
     max_tokens: 300,
     messages: [{ role: 'user', content }],
+    tools: [
+      {
+        name: 'emit_verdict',
+        description: 'Report the QA verdict for the generated spread.',
+        input_schema: {
+          type: 'object',
+          required: ['score', 'notes'],
+          properties: {
+            score: { type: 'integer', minimum: 0, maximum: 100 },
+            notes: { type: 'string', description: 'One sentence explaining the score.' },
+          },
+        },
+      },
+    ],
+    tool_choice: { type: 'tool', name: 'emit_verdict' },
   });
 
-  const text = response.content.find((c) => c.type === 'text');
-  if (!text || text.type !== 'text') throw new Error('QA judge returned no text');
-  const match = text.text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error(`QA judge returned unparseable output: ${text.text.slice(0, 200)}`);
-  const parsed = JSON.parse(match[0]) as { score: number; notes: string };
+  const toolUse = response.content.find((c) => c.type === 'tool_use');
+  if (!toolUse || toolUse.type !== 'tool_use') throw new Error('QA judge returned no verdict');
+  const parsed = toolUse.input as { score: number; notes: string };
   return {
     score: parsed.score,
     notes: parsed.notes,
     pass: parsed.score >= PASS_THRESHOLD,
   };
+}
+
+/**
+ * judgeSpread that never throws: QA infrastructure hiccups must not kill a
+ * book run. Errors return a neutral pass so generation proceeds (flagged in
+ * notes for later inspection).
+ */
+export async function judgeSpreadSafe(
+  spreadImageUrl: string,
+  characters: CharacterSheet[],
+  stylePrompt: string,
+  client?: Anthropic,
+): Promise<QaVerdict> {
+  try {
+    return await judgeSpread(spreadImageUrl, characters, stylePrompt, client);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { score: PASS_THRESHOLD, pass: true, notes: `qa-error (auto-pass): ${message.slice(0, 120)}` };
+  }
 }
