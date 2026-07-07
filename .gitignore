@@ -12,3 +12,5 @@ out/
 supabase/.temp/
 generated/
 *.log
+.vercel
+.env*

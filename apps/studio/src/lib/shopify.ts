@@ -15,6 +15,42 @@ function shopDomain(): string {
   return d;
 }
 
+/**
+ * Admin access token. Dev-Dashboard custom apps don't expose a static token;
+ * we mint short-lived tokens via the client credentials grant (client ID +
+ * secret) and cache until expiry. A static SHOPIFY_ADMIN_TOKEN env var, if
+ * set, takes precedence (useful for legacy admin-created apps).
+ */
+let cachedAdminToken: { token: string; expiresAt: number } | null = null;
+
+async function adminToken(): Promise<string> {
+  if (process.env.SHOPIFY_ADMIN_TOKEN) return process.env.SHOPIFY_ADMIN_TOKEN;
+  if (cachedAdminToken && Date.now() < cachedAdminToken.expiresAt - 120_000) {
+    return cachedAdminToken.token;
+  }
+  const clientId = process.env.SHOPIFY_CLIENT_ID;
+  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error('SHOPIFY_CLIENT_ID / SHOPIFY_CLIENT_SECRET not configured');
+  }
+  const res = await fetch(`https://${shopDomain()}/admin/oauth/access_token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      grant_type: 'client_credentials',
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
+  });
+  if (!res.ok) throw new Error(`Shopify token grant failed ${res.status}: ${await res.text()}`);
+  const json = (await res.json()) as { access_token: string; expires_in?: number };
+  cachedAdminToken = {
+    token: json.access_token,
+    expiresAt: Date.now() + (json.expires_in ?? 86_000) * 1000,
+  };
+  return cachedAdminToken.token;
+}
+
 async function graphql<T>(
   endpoint: 'storefront' | 'admin',
   query: string,
@@ -28,7 +64,7 @@ async function graphql<T>(
   if (endpoint === 'storefront') {
     headers['X-Shopify-Storefront-Access-Token'] = process.env.SHOPIFY_STOREFRONT_TOKEN ?? '';
   } else {
-    headers['X-Shopify-Access-Token'] = process.env.SHOPIFY_ADMIN_TOKEN ?? '';
+    headers['X-Shopify-Access-Token'] = await adminToken();
   }
   const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ query, variables }) });
   if (!res.ok) throw new Error(`Shopify ${endpoint} HTTP ${res.status}: ${await res.text()}`);
@@ -87,8 +123,8 @@ export async function createCheckout(opts: {
 /** Verify X-Shopify-Hmac-Sha256 against the raw request body. */
 export function verifyWebhookHmac(rawBody: string | Buffer, hmacHeader: string | null): boolean {
   if (!hmacHeader) return false;
-  const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
-  if (!secret) throw new Error('SHOPIFY_WEBHOOK_SECRET not configured');
+  const secret = process.env.SHOPIFY_WEBHOOK_SECRET ?? process.env.SHOPIFY_CLIENT_SECRET;
+  if (!secret) throw new Error('SHOPIFY_WEBHOOK_SECRET / SHOPIFY_CLIENT_SECRET not configured');
   const digest = crypto.createHmac('sha256', secret).update(rawBody).digest('base64');
   try {
     return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(hmacHeader));
