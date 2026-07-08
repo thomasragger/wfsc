@@ -4,8 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
+import { CartButton } from "@/components/cart";
 import { ButtonLink } from "@/components/ui/button";
-import { IconChevronDown, IconClose, IconMenu } from "@/components/ui/icons";
+import { IconChevronDown, IconClose, IconMenu, IconUser } from "@/components/ui/icons";
 import type { AudienceCategory, OccasionCategory } from "@/lib/categories";
 
 /**
@@ -46,8 +47,16 @@ export function SiteNav({
           <NavLink href="/samples">Sample books</NavLink>
         </nav>
 
-        <div className="flex items-center gap-2">
-          <ButtonLink href="/create" size="sm" className="hidden sm:inline-flex sm:px-5">
+        <div className="flex items-center gap-1">
+          <Link
+            href="/account"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-ink/5"
+            aria-label="Your account"
+          >
+            <IconUser />
+          </Link>
+          <CartButton />
+          <ButtonLink href="/create" size="sm" className="ml-1 hidden sm:inline-flex sm:px-5">
             Write your story
           </ButtonLink>
           <button

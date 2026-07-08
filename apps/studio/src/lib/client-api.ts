@@ -1,6 +1,7 @@
 import type { FontPairingId, LayoutId } from "@wfsc/book-engine";
 
 import type { BookFormat, BookPayload, PersonRole } from "@/lib/book-payload";
+import type { EnrichedCart } from "@/lib/cart";
 
 /** Thin typed fetch helpers for the Studio API, used by client components. */
 
@@ -153,4 +154,25 @@ export async function approveBook(token: string): Promise<void> {
 
 export async function retryBook(token: string): Promise<void> {
   await request(`/api/books/${encodeURIComponent(token)}/retry`, { method: "POST" });
+}
+
+export async function getCart(): Promise<EnrichedCart | null> {
+  const { cart } = await request<{ cart: EnrichedCart | null }>("/api/cart");
+  return cart;
+}
+
+export async function addBookToCart(token: string, format: BookFormat): Promise<EnrichedCart> {
+  const { cart } = await request<{ cart: EnrichedCart }>("/api/cart", {
+    method: "POST",
+    body: JSON.stringify({ token, format }),
+  });
+  return cart;
+}
+
+export async function removeCartLine(lineId: string): Promise<EnrichedCart | null> {
+  const { cart } = await request<{ cart: EnrichedCart | null }>("/api/cart/remove", {
+    method: "POST",
+    body: JSON.stringify({ lineId }),
+  });
+  return cart;
 }

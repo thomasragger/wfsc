@@ -120,6 +120,201 @@ export async function createCheckout(opts: {
   return { checkoutUrl: cart.checkoutUrl, cartId: cart.id };
 }
 
+/* ----------------------------------------------------------------- cart -----
+ * Persistent Storefront cart. Each personalized book is one line (qty 1),
+ * distinguished by a hidden `_book_id` attribute so multiple books of the
+ * same format live as separate lines. The cart id is held in a cookie by the
+ * /api/cart routes; these helpers just talk to Shopify.
+ */
+
+export interface CartLine {
+  id: string;
+  quantity: number;
+  bookId: string | null;
+  variantTitle: string;
+  productTitle: string;
+  price: { amount: string; currencyCode: string };
+}
+
+export interface CartContents {
+  id: string;
+  checkoutUrl: string;
+  totalQuantity: number;
+  subtotal: { amount: string; currencyCode: string };
+  lines: CartLine[];
+}
+
+const CART_FRAGMENT = /* GraphQL */ `
+  fragment CartParts on Cart {
+    id
+    checkoutUrl
+    totalQuantity
+    cost { subtotalAmount { amount currencyCode } }
+    lines(first: 30) {
+      nodes {
+        id
+        quantity
+        attributes { key value }
+        merchandise {
+          ... on ProductVariant {
+            title
+            price { amount currencyCode }
+            product { title }
+          }
+        }
+      }
+    }
+  }
+`;
+
+interface RawCart {
+  id: string;
+  checkoutUrl: string;
+  totalQuantity: number;
+  cost: { subtotalAmount: { amount: string; currencyCode: string } };
+  lines: {
+    nodes: {
+      id: string;
+      quantity: number;
+      attributes: { key: string; value: string | null }[];
+      merchandise: { title: string; price: { amount: string; currencyCode: string }; product: { title: string } };
+    }[];
+  };
+}
+
+function normalizeCart(cart: RawCart): CartContents {
+  return {
+    id: cart.id,
+    checkoutUrl: cart.checkoutUrl,
+    totalQuantity: cart.totalQuantity,
+    subtotal: cart.cost.subtotalAmount,
+    lines: cart.lines.nodes.map((n) => ({
+      id: n.id,
+      quantity: n.quantity,
+      bookId: n.attributes.find((a) => a.key === "_book_id")?.value ?? null,
+      variantTitle: n.merchandise.title,
+      productTitle: n.merchandise.product.title,
+      price: n.merchandise.price,
+    })),
+  };
+}
+
+/** Add a book to the cart, creating the cart if `cartId` is null/expired. */
+export async function cartAddBook(opts: {
+  cartId: string | null;
+  variantId: string;
+  bookId: string;
+  bookTitle: string;
+}): Promise<CartContents> {
+  const lineInput = {
+    merchandiseId: opts.variantId,
+    quantity: 1,
+    attributes: [
+      { key: "_book_id", value: opts.bookId },
+      { key: "Book", value: opts.bookTitle },
+    ],
+  };
+
+  type CartWarning = { code: string; message: string };
+  const guardLineAdded = (cart: RawCart | null, warnings: CartWarning[], prevQty: number) => {
+    // Shopify silently drops a line (creating an empty cart) when the variant
+    // is out of stock or not published to this Storefront's sales channel —
+    // surface that instead of returning a mysteriously empty cart.
+    if (cart && cart.totalQuantity <= prevQty) {
+      const why = warnings[0]?.message ?? "the product isn't available on the storefront";
+      throw new Error(`Couldn't add the book to the cart — ${why}`);
+    }
+  };
+
+  if (opts.cartId) {
+    interface AddResult {
+      cartLinesAdd: { cart: RawCart | null; userErrors: { message: string }[]; warnings: CartWarning[] };
+    }
+    const prev = (await cartFetch(opts.cartId))?.totalQuantity ?? 0;
+    const data = await graphql<AddResult>(
+      "storefront",
+      /* GraphQL */ `
+        ${CART_FRAGMENT}
+        mutation CartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
+          cartLinesAdd(cartId: $cartId, lines: $lines) {
+            cart { ...CartParts }
+            userErrors { message }
+            warnings { code message }
+          }
+        }
+      `,
+      { cartId: opts.cartId, lines: [lineInput] },
+    );
+    // If the stored cart expired, cart comes back null — fall through to create.
+    if (data.cartLinesAdd.cart) {
+      guardLineAdded(data.cartLinesAdd.cart, data.cartLinesAdd.warnings, prev);
+      return normalizeCart(data.cartLinesAdd.cart);
+    }
+  }
+
+  interface CreateResult {
+    cartCreate: { cart: RawCart | null; userErrors: { message: string }[]; warnings: CartWarning[] };
+  }
+  const data = await graphql<CreateResult>(
+    "storefront",
+    /* GraphQL */ `
+      ${CART_FRAGMENT}
+      mutation CartCreate($input: CartInput!) {
+        cartCreate(input: $input) {
+          cart { ...CartParts }
+          userErrors { message }
+          warnings { code message }
+        }
+      }
+    `,
+    { input: { lines: [lineInput] } },
+  );
+  if (!data.cartCreate.cart) {
+    throw new Error(`cartCreate failed: ${JSON.stringify(data.cartCreate.userErrors)}`);
+  }
+  guardLineAdded(data.cartCreate.cart, data.cartCreate.warnings, 0);
+  return normalizeCart(data.cartCreate.cart);
+}
+
+/** Fetch cart contents; returns null if the cart no longer exists/expired. */
+export async function cartFetch(cartId: string): Promise<CartContents | null> {
+  interface CartResult {
+    cart: RawCart | null;
+  }
+  const data = await graphql<CartResult>(
+    "storefront",
+    /* GraphQL */ `
+      ${CART_FRAGMENT}
+      query Cart($id: ID!) {
+        cart(id: $id) { ...CartParts }
+      }
+    `,
+    { id: cartId },
+  );
+  return data.cart ? normalizeCart(data.cart) : null;
+}
+
+/** Remove a line from the cart. */
+export async function cartRemoveLine(cartId: string, lineId: string): Promise<CartContents | null> {
+  interface RemoveResult {
+    cartLinesRemove: { cart: RawCart | null; userErrors: { message: string }[] };
+  }
+  const data = await graphql<RemoveResult>(
+    "storefront",
+    /* GraphQL */ `
+      ${CART_FRAGMENT}
+      mutation CartLinesRemove($cartId: ID!, $lineIds: [ID!]!) {
+        cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
+          cart { ...CartParts }
+          userErrors { message }
+        }
+      }
+    `,
+    { cartId, lineIds: [lineId] },
+  );
+  return data.cartLinesRemove.cart ? normalizeCart(data.cartLinesRemove.cart) : null;
+}
+
 /** Verify X-Shopify-Hmac-Sha256 against the raw request body. */
 export function verifyWebhookHmac(rawBody: string | Buffer, hmacHeader: string | null): boolean {
   if (!hmacHeader) return false;

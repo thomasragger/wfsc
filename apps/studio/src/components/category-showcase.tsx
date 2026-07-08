@@ -54,13 +54,18 @@ export function CategoryShowcase({
             )}
             <div>
               {backHref ? (
-                <Link href={backHref} className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-coral hover:underline">
+                <Link
+                  href={backHref}
+                  className="mb-6 inline-flex items-center gap-1.5 rounded-full bg-white/85 px-3.5 py-1.5 text-xs font-bold text-ink shadow-sm ring-1 ring-white/60 transition hover:bg-white"
+                >
                   <IconArrowLeft className="h-3.5 w-3.5" /> {backLabel ?? "Back"}
                 </Link>
               ) : null}
-              <Eyebrow className={gradient ? "" : "mx-auto lg:mx-0"}>{eyebrow}</Eyebrow>
-              <h1 className="mt-3 font-display text-4xl font-extrabold text-ink sm:text-5xl">{title}</h1>
-              {tagline ? <p className="mx-auto mt-3 max-w-xl text-lg text-ink-soft lg:mx-0">{tagline}</p> : null}
+              <div>
+                <Eyebrow className="mx-auto lg:mx-0">{eyebrow}</Eyebrow>
+                <h1 className="mt-4 font-display text-4xl font-extrabold text-ink sm:text-5xl">{title}</h1>
+                {tagline ? <p className="mx-auto mt-3 max-w-xl text-lg text-ink-soft lg:mx-0">{tagline}</p> : null}
+              </div>
             </div>
           </div>
         </div>

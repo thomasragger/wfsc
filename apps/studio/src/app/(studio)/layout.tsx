@@ -34,13 +34,13 @@ export default function StudioLayout({
               Story Studio
             </span>
           </Link>
-          <a
-            href="https://www.warmfuzzystoryclub.com"
+          <Link
+            href="/"
             className="inline-flex items-center gap-1 text-xs font-semibold text-ink-soft transition-colors hover:text-coral"
           >
             <IconArrowLeft className="h-3 w-3" />
             back to warmfuzzystoryclub.com
-          </a>
+          </Link>
         </div>
       </header>
 

@@ -14,15 +14,15 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageTransition } from "@/components/ui/page-transition";
-import type { BookFormat, BookPayload, BookStatus } from "@/lib/book-payload";
+import type { BookFormat, BookPayload, BookStatus, PersonPayload } from "@/lib/book-payload";
 import {
+  addBookToCart,
   approveBook,
   getBook,
   patchBook,
   patchSpread,
   regenerateSpread,
   retryBook,
-  startCheckout,
 } from "@/lib/client-api";
 
 // If generation runs past this without finishing, surface a reassuring
@@ -59,6 +59,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
   const [confirmApprove, setConfirmApprove] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [slow, setSlow] = useState(false);
+  const [zoomed, setZoomed] = useState<PersonPayload | null>(null);
 
   // Poll while the pipeline is working so the page moves forward on its own.
   useEffect(() => {
@@ -208,10 +209,10 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
     setCheckingOut(true);
     setError(null);
     try {
-      const url = await startCheckout(token, format);
-      window.location.href = url;
+      await addBookToCart(token, format);
+      window.location.href = "/cart";
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Checkout failed — please try again");
+      setError(err instanceof Error ? err.message : "Couldn't add to cart — please try again");
       setCheckingOut(false);
     }
   }
@@ -369,18 +370,29 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                     const confirmed = confirmedPeople.has(person.id);
                     return (
                       <li key={person.id} className="flex items-center gap-3">
-                        <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-lavender ring-2 ring-white">
+                        <button
+                          type="button"
+                          className="group/av relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-lavender ring-2 ring-white disabled:cursor-default"
+                          disabled={!person.characterSheetUrl}
+                          aria-label={`View ${person.name} up close`}
+                          onClick={() => person.characterSheetUrl && setZoomed(person)}
+                        >
                           {person.characterSheetUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={person.characterSheetUrl}
-                              alt={`${person.name} as a storybook character`}
-                              className="h-full w-full object-cover"
-                            />
+                            <>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={person.characterSheetUrl}
+                                alt={`${person.name} as a storybook character`}
+                                className="h-full w-full object-cover"
+                              />
+                              <span className="absolute inset-0 flex items-center justify-center bg-ink/0 text-[10px] font-bold text-transparent transition-colors group-hover/av:bg-ink/40 group-hover/av:text-white">
+                                View
+                              </span>
+                            </>
                           ) : (
                             <ArtPlaceholder />
                           )}
-                        </div>
+                        </button>
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-display text-sm font-bold text-ink">{person.name}</p>
                           {person.role ? <p className="text-[11px] text-ink-soft">{person.role}</p> : null}
@@ -452,6 +464,37 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
             </Card>
           </aside>
         </div>
+
+        {zoomed?.characterSheetUrl ? (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${zoomed.name} up close`}
+            onClick={() => setZoomed(null)}
+          >
+            <div className="animate-fade-in absolute inset-0 bg-ink/50 backdrop-blur-sm" />
+            <div className="animate-page-in relative w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+              <div className="overflow-hidden rounded-3xl bg-cream shadow-polaroid">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={zoomed.characterSheetUrl} alt={`${zoomed.name} as a storybook character`} className="w-full" />
+                <div className="flex items-center justify-between gap-3 px-5 py-4">
+                  <div>
+                    <p className="font-display text-lg font-extrabold text-ink">{zoomed.name}</p>
+                    {zoomed.role ? <p className="text-xs text-ink-soft">{zoomed.role}</p> : null}
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-full bg-ink/5 px-4 py-2 text-sm font-bold text-ink hover:bg-ink/10"
+                    onClick={() => setZoomed(null)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </Shell>
     );
   }

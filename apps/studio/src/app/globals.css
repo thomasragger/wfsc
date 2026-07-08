@@ -460,6 +460,43 @@ body::after {
   }
 }
 
+/* Side-sheet (cart) entrance + backdrop. */
+@keyframes wfsc-sheet-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes wfsc-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Style-tile hover peek: stacked reference images cross-fade through on
+   hover. Each image runs this on a 3-slot loop, offset by animation-delay,
+   paused until the tile is hovered. */
+@keyframes wfsc-peek {
+  0% {
+    opacity: 0;
+  }
+  4% {
+    opacity: 1;
+  }
+  28% {
+    opacity: 1;
+  }
+  33%,
+  100% {
+    opacity: 0;
+  }
+}
+
 /* Character sheets landing on the wait screen flip into place. */
 @keyframes wfsc-flip-in {
   0% {
@@ -545,6 +582,12 @@ body::after {
 }
 .animate-spin-slow {
   animation: wfsc-spin-slow 26s linear infinite;
+}
+.animate-sheet-in {
+  animation: wfsc-sheet-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-fade-in {
+  animation: wfsc-fade-in 0.25s ease both;
 }
 .hover-wobble:hover {
   animation: wfsc-wobble 0.6s ease-in-out;

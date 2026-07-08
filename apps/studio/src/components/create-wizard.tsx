@@ -8,6 +8,7 @@ import { Alert } from "@/components/ui/alert";
 import { BookTileVisual } from "@/components/ui/book-tile";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Carousel } from "@/components/ui/carousel";
 import { Chip, PillLabel } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { IconArrowRight } from "@/components/ui/icons";
@@ -489,9 +490,9 @@ function TemplateHero({
             <p className="font-display text-sm font-extrabold uppercase tracking-wide text-ink/70">
               How the story goes
             </p>
-            <ol className="mt-3 grid gap-x-6 gap-y-2.5 sm:grid-cols-2">
+            <ol className="mt-3 flex flex-col gap-2.5">
               {beats.map((beat, i) => (
-                <li key={beat} className="flex items-start gap-2.5">
+                <li key={beat} className="flex items-start gap-3">
                   <span
                     className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white font-display text-[11px] font-extrabold text-coral shadow-sm"
                     aria-hidden="true"
@@ -505,12 +506,12 @@ function TemplateHero({
           </div>
         ) : null}
 
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <Button size="lg" className="whitespace-nowrap" onClick={onStart}>
+        <div className="mt-8 flex max-w-xs flex-col gap-3">
+          <Button size="lg" className="w-full whitespace-nowrap" onClick={onStart}>
             Make this book
           </Button>
-          <Button variant="ghost" className="whitespace-nowrap" onClick={onOwnMemory}>
-            Start from my own memory instead
+          <Button variant="ghost" size="lg" className="w-full whitespace-nowrap" onClick={onOwnMemory}>
+            Use my own memory
           </Button>
         </div>
         <p className="mt-3 text-xs text-ink-soft">
@@ -528,7 +529,6 @@ function StyleStep({
   stylesError,
   styleId,
   onSelect,
-  selectedStyle,
   recommendedId,
 }: {
   styles: StyleSummary[] | null;
@@ -543,12 +543,13 @@ function StyleStep({
       <header>
         <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">Choose your look</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          Every page will be illustrated in the style you pick. You can change it later.
+          Every page will be illustrated in the style you pick — hover to see it in action. You can
+          change it later.
         </p>
       </header>
 
       {styles === null && !stylesError ? (
-        <SkeletonGrid count={4} className="grid gap-4 sm:grid-cols-2" itemClassName="h-64" />
+        <SkeletonGrid count={3} className="grid gap-4 sm:grid-cols-3" itemClassName="h-52" />
       ) : null}
 
       {stylesError ? (
@@ -556,76 +557,91 @@ function StyleStep({
       ) : null}
 
       {styles ? (
-        <div className="grid gap-4 sm:grid-cols-2" role="radiogroup" aria-label="Illustration style">
-          {styles.map((style) => {
-            const selected = styleId === style.id;
-            const recommended = recommendedId === style.id;
-            return (
-              <button
-                key={style.id}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                onClick={() => onSelect(style.id)}
-                className={`tile-lift group relative overflow-hidden rounded-2xl border-2 bg-white text-left ${
-                  selected ? "border-coral" : "border-transparent hover:border-marigold"
-                }`}
-              >
-                <div className="aspect-[4/3] w-full overflow-hidden bg-lavender">
-                  {style.previewImageUrl ? (
-                    <ProgressiveImage
-                      src={style.previewImageUrl}
-                      alt={`${style.name} example`}
-                      className="h-full w-full"
-                      imgClassName="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <ArtPlaceholder label={style.name} />
-                  )}
-                </div>
-                {recommended ? (
-                  <span className="absolute left-3 top-3 rounded-full bg-marigold px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-ink shadow-sm">
-                    Recommended
-                  </span>
-                ) : null}
-                <div className="flex items-start justify-between gap-2 p-4">
-                  <div>
-                    <p className="font-display font-bold text-ink">{style.name}</p>
-                    {style.description ? (
-                      <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">{style.description}</p>
-                    ) : null}
-                  </div>
-                  <span
-                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-                      selected ? "bg-coral text-white" : "bg-ink/10 text-transparent"
-                    }`}
-                    aria-hidden="true"
-                  >
-                    ✓
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-
-      {/* Live "this is how yours will look" strip for the chosen style. */}
-      {selectedStyle && selectedStyle.referenceImageUrls.length > 0 ? (
-        <div className="rounded-2xl bg-lavender/40 p-4">
-          <p className="mb-3 font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
-            A peek at the {selectedStyle.name} style
-          </p>
-          <div className="flex gap-3 overflow-x-auto pb-1">
-            {selectedStyle.referenceImageUrls.slice(0, 4).map((url) => (
-              <div key={url} className="h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-white shadow-fuzzy">
-                <ProgressiveImage src={url} alt="" className="h-full w-full" imgClassName="h-full w-full object-cover" />
-              </div>
-            ))}
-          </div>
-        </div>
+        <Carousel ariaLabel="Illustration style" itemGap="gap-4">
+          {styles.map((style) => (
+            <StyleCard
+              key={style.id}
+              style={style}
+              selected={styleId === style.id}
+              recommended={recommendedId === style.id}
+              onSelect={() => onSelect(style.id)}
+            />
+          ))}
+        </Carousel>
       ) : null}
     </section>
+  );
+}
+
+function StyleCard({
+  style,
+  selected,
+  recommended,
+  onSelect,
+}: {
+  style: StyleSummary;
+  selected: boolean;
+  recommended: boolean;
+  onSelect: () => void;
+}) {
+  const peeks = style.referenceImageUrls.slice(0, 3);
+  const dur = 4.8; // seconds for a full cycle across the peek images
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+      className={`tile-lift group relative w-56 shrink-0 overflow-hidden rounded-2xl border-2 bg-white text-left ${
+        selected ? "border-coral" : "border-transparent hover:border-marigold"
+      }`}
+    >
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-lavender">
+        {style.previewImageUrl ? (
+          <ProgressiveImage
+            src={style.previewImageUrl}
+            alt={`${style.name} example`}
+            className="h-full w-full"
+            imgClassName="h-full w-full object-cover"
+          />
+        ) : (
+          <ArtPlaceholder label={style.name} />
+        )}
+        {/* Reference images cross-fade through on hover, over the preview. */}
+        {peeks.map((url, i) => (
+          <div
+            key={url}
+            className="absolute inset-0 opacity-0 [animation-play-state:paused] group-hover:[animation-play-state:running]"
+            style={{ animation: `wfsc-peek ${dur}s linear infinite`, animationDelay: `${(i * dur) / peeks.length}s` }}
+            aria-hidden="true"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={url} alt="" className="h-full w-full object-cover" />
+          </div>
+        ))}
+      </div>
+      {recommended ? (
+        <span className="absolute left-3 top-3 rounded-full bg-marigold px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-ink shadow-sm">
+          Recommended
+        </span>
+      ) : null}
+      <div className="flex items-start justify-between gap-2 p-4">
+        <div>
+          <p className="font-display font-bold text-ink">{style.name}</p>
+          {style.description ? (
+            <p className="mt-0.5 line-clamp-3 text-xs leading-relaxed text-ink-soft">{style.description}</p>
+          ) : null}
+        </div>
+        <span
+          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+            selected ? "bg-coral text-white" : "bg-ink/10 text-transparent"
+          }`}
+          aria-hidden="true"
+        >
+          ✓
+        </span>
+      </div>
+    </button>
   );
 }
 
