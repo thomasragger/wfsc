@@ -66,20 +66,31 @@
   .wfsc-hero-{{ uid }} .wfsc-polaroid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; display: block; }
   .wfsc-hero-{{ uid }} .wfsc-polaroid figcaption { font-size: 0.92rem; font-weight: 700; color: #761e0b; padding-top: 10px; text-align: center; }
   @keyframes wfsc-rise-{{ uid }} {
-    0%   { transform: translateY(6vh) rotate(var(--tilt, 0deg)); }
-    50%  { transform: translateY(calc(-0.5 * ({{ section.settings.height }}vh + 60vh))) rotate(calc(var(--tilt, 0deg) * -1)); }
-    100% { transform: translateY(calc(-1 * ({{ section.settings.height }}vh + 60vh))) rotate(var(--tilt, 0deg)); }
+    0%   { transform: translate(0, 6vh) rotate(var(--tilt, 0deg)); }
+    33%  { transform: translate(var(--sway, 20px), calc(-0.33 * ({{ section.settings.height }}vh + 60vh))) rotate(calc(var(--tilt, 0deg) * -0.6)); }
+    66%  { transform: translate(calc(var(--sway, 20px) * -0.7), calc(-0.66 * ({{ section.settings.height }}vh + 60vh))) rotate(var(--tilt, 0deg)); }
+    100% { transform: translate(0, calc(-1 * ({{ section.settings.height }}vh + 60vh))) rotate(calc(var(--tilt, 0deg) * -0.4)); }
   }
 
-  .wfsc-hero-{{ uid }} .wfsc-doodle { position: absolute; z-index: 3; animation: wfsc-twinkle-{{ uid }} 5s ease-in-out infinite; }
-  @keyframes wfsc-twinkle-{{ uid }} {
-    0%, 100% { transform: translateY(0) scale(1); opacity: 0.95; }
-    50% { transform: translateY(-10px) scale(1.1); opacity: 0.7; }
+  /* Doodles behave like particles: spawn below, drift up with sway + slow spin */
+  .wfsc-hero-{{ uid }} .wfsc-doodle {
+    position: absolute; z-index: 3; top: 100%;
+    animation: wfsc-drift-{{ uid }} var(--ddur, 22s) linear infinite;
+    animation-delay: var(--ddelay, 0s);
+    will-change: transform, opacity;
+  }
+  @keyframes wfsc-drift-{{ uid }} {
+    0%   { transform: translate(0, 0) rotate(0deg) scale(var(--dscale, 1)); opacity: 0; }
+    8%   { opacity: 0.9; }
+    50%  { transform: translate(var(--dsway, 30px), calc(-0.5 * ({{ section.settings.height }}vh + 40vh))) rotate(var(--dspin, 20deg)) scale(var(--dscale, 1)); opacity: 0.85; }
+    92%  { opacity: 0.9; }
+    100% { transform: translate(calc(var(--dsway, 30px) * -0.6), calc(-1 * ({{ section.settings.height }}vh + 40vh))) rotate(calc(var(--dspin, 20deg) * -1)) scale(var(--dscale, 1)); opacity: 0; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .wfsc-hero-{{ uid }} .wfsc-hero__gradient { animation: none; }
-    .wfsc-hero-{{ uid }} .wfsc-doodle { animation: none; }
+    .wfsc-hero-{{ uid }} .wfsc-doodle { animation: none; top: var(--static-y, 24%); opacity: 0.9; }
+    .wfsc-hero-{{ uid }} .wfsc-doodle[data-clone] { display: none; }
     .wfsc-hero-{{ uid }} .wfsc-polaroid { animation: none; top: auto; }
     .wfsc-hero-{{ uid }} .wfsc-polaroid:nth-child(n+3) { display: none; }
   }
@@ -133,7 +144,7 @@
         </figure>
       {%- when 'doodle' -%}
         <span class="wfsc-doodle" {{ block.shopify_attributes }}
-          style="left: {{ block.settings.x }}%; top: {{ block.settings.y }}%; width: {{ block.settings.size }}px; animation-delay: {{ forloop.index0 | times: 0.9 }}s;">
+          style="left: {{ block.settings.x }}%; --static-y: {{ block.settings.y }}%; width: {{ block.settings.size }}px;">
           {%- case block.settings.kind -%}
             {%- when 'sun' -%}
               <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="16" fill="#F6B73C"/><path d="M32 6v8M32 50v8M6 32h8M50 32h8M13 13l6 6M45 45l6 6M51 13l-6 6M19 45l-6 6" stroke="#ff4315" stroke-width="3.5" stroke-linecap="round"/><path d="M26 32c1.5 2 3.5 3 6 3s4.5-1 6-3" stroke="#761e0b" stroke-width="2.5" stroke-linecap="round"/><circle cx="26" cy="27" r="1.8" fill="#761e0b"/><circle cx="38" cy="27" r="1.8" fill="#761e0b"/></svg>
@@ -162,6 +173,48 @@
     {%- endif -%}
   </div>
 </div>
+
+<script>
+  /* Randomize card/doodle motion so the stream never looks synchronized, and
+     multiply doodles into a light particle field. Editor-tuned settings stay
+     the base; randomness jitters around them. */
+  (function () {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var hero = document.querySelector('.wfsc-hero-{{ uid }}');
+    if (!hero || hero.dataset.wfscRandomized) return;
+    hero.dataset.wfscRandomized = '1';
+    var r = function (min, max) { return min + Math.random() * (max - min); };
+
+    hero.querySelectorAll('.wfsc-polaroid').forEach(function (card) {
+      var baseX = parseFloat(card.style.left) || r(0, 80);
+      card.style.left = Math.min(88, Math.max(0, baseX + r(-10, 10))) + '%';
+      card.style.setProperty('--dur', r(20, 44).toFixed(1) + 's');
+      card.style.setProperty('--delay', '-' + r(0, 44).toFixed(1) + 's');
+      card.style.setProperty('--tilt', r(-8, 8).toFixed(1) + 'deg');
+      card.style.setProperty('--sway', r(-46, 46).toFixed(0) + 'px');
+    });
+
+    var randomizeDoodle = function (el) {
+      el.style.left = r(0, 92).toFixed(1) + '%';
+      el.style.setProperty('--ddur', r(14, 34).toFixed(1) + 's');
+      el.style.setProperty('--ddelay', '-' + r(0, 34).toFixed(1) + 's');
+      el.style.setProperty('--dscale', r(0.55, 1.4).toFixed(2));
+      el.style.setProperty('--dsway', r(-64, 64).toFixed(0) + 'px');
+      el.style.setProperty('--dspin', r(-35, 35).toFixed(0) + 'deg');
+    };
+
+    hero.querySelectorAll('.wfsc-doodle').forEach(function (doodle) {
+      randomizeDoodle(doodle);
+      for (var i = 0; i < 2; i++) {
+        var clone = doodle.cloneNode(true);
+        clone.setAttribute('data-clone', '1');
+        clone.removeAttribute('data-shopify-editor-block');
+        randomizeDoodle(clone);
+        doodle.parentNode.insertBefore(clone, doodle.nextSibling);
+      }
+    });
+  })();
+</script>
 
 {% schema %}
 {
