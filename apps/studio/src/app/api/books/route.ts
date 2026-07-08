@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 const CreateBookSchema = z.object({
   memoryText: z.string().trim().min(20, "Tell us a little more about your memory").max(5000),
-  title: z.string().trim().max(120).optional(),
+  title: z.string().trim().max(120).nullish(),
   templateId: z.string().trim().max(100).optional(),
   styleId: z.string().trim().min(1).max(100),
   email: z.string().trim().email(),
