@@ -100,7 +100,10 @@ export async function generateSpreadImage(
   replicate: Replicate = client(),
 ): Promise<{ imageUrl: string }> {
   const { spread, characters, style } = req;
-  const isWide = spread.layout === 'full-bleed-overlay';
+  // Square-only generation since layouts simplified to text-left/right;
+  // kept as a variable for potential future wide layouts.
+  const isWide = false as boolean;
+  void spread.layout;
 
   const characterIntro = characters
     .map(

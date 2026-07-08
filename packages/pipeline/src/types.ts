@@ -8,7 +8,7 @@ export const StorySpreadSchema = z.object({
   /** Where quiet copy space should be reserved, e.g. 'soft sky, upper third'. */
   copy_space: z.string(),
   /** Layout suggestion. */
-  layout: z.enum(['text-left', 'text-right', 'full-bleed-overlay', 'text-bottom']).default('text-left'),
+  layout: z.enum(['text-left', 'text-right']).default('text-left'),
 });
 
 export const StorySchema = z.object({

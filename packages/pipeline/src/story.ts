@@ -6,6 +6,8 @@ const MODEL = process.env.WFSC_STORY_MODEL ?? 'claude-sonnet-5';
 export interface StoryRequest {
   memoryText: string;
   people: PersonInput[];
+  /** Target listener/reader age; adapts length, vocabulary and complexity. */
+  targetAge?: number;
   /** Optional template scaffolding from story_templates. */
   template?: {
     title: string;
@@ -18,12 +20,12 @@ export interface StoryRequest {
 }
 
 const SYSTEM = `You are the head writer at Warm Fuzzy Story Club. You turn a family's real memory into a warm, read-aloud children's picture book. Rules:
-- Write for reading aloud to ages 2-6: short sentences, rhythm, gentle humor, concrete sensory details.
+- Adapt to the target age given in the request: ages 0-2 = very few words per spread (one short sentence, strong rhythm, sound words); ages 3-5 = 2-3 short sentences, playful rhythm, gentle humor; ages 6-8 = 3-5 sentences, richer vocabulary, light subplots and jokes. Default to ages 3-5 if unspecified.
 - Use the real names and real details from the memory. Never invent facts that contradict it.
 - Each spread's "text" is 2-4 short sentences.
 - Each spread's "illustration_prompt" describes ONLY the scene, action, setting, mood and composition. NEVER describe what the people look like (identity comes from reference images). Refer to people by their NAME in UPPERCASE.
 - Every illustration_prompt must note where quiet copy space should remain (matching "copy_space").
-- Vary layouts for pacing; use "full-bleed-overlay" for 2-3 big emotional moments.
+- Alternate layout between "text-left" and "text-right" for pacing. Never use other layouts.
 - The final spread lands on togetherness and love, not on the activity.`;
 
 export async function generateStory(req: StoryRequest, client?: Anthropic): Promise<Story> {
@@ -41,7 +43,9 @@ Beats:\n${req.template.storyBeats.map((b, i) => `${i + 1}. ${b}`).join('\n')}
 ${req.template.promptScaffold ? `Guidance: ${req.template.promptScaffold}` : ''}`
     : '';
 
+  const ageLine = req.targetAge ? `Target age of the child: ${req.targetAge} years old.\n` : '';
   const prompt = `Write a ${spreadCount}-spread picture book in ${req.language ?? 'English'}.
+${ageLine}
 
 The real memory, in the family's own words:
 """
@@ -80,7 +84,7 @@ Return the complete book via the emit_story tool.`;
                   copy_space: { type: 'string' },
                   layout: {
                     type: 'string',
-                    enum: ['text-left', 'text-right', 'full-bleed-overlay', 'text-bottom'],
+                    enum: ['text-left', 'text-right'],
                   },
                 },
               },

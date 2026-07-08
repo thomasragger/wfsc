@@ -10,7 +10,7 @@ import {
   type StyleDef,
 } from '@wfsc/pipeline';
 
-import { reviewReadyEmail, printSubmittedEmail, sendEmail } from '@/lib/email';
+import { previewReadyEmail, reviewReadyEmail, printSubmittedEmail, sendEmail } from '@/lib/email';
 import { createPrintJob, type LuluAddress } from '@/lib/lulu';
 import { persistImage } from '@/lib/persist';
 import { renderAndUploadPdfs } from '@/lib/render';
@@ -43,7 +43,7 @@ async function loadBook(bookId: string) {
 async function generateAndJudgeSpread(opts: {
   prompt: string;
   copySpace: string;
-  layout: 'text-left' | 'text-right' | 'full-bleed-overlay' | 'text-bottom';
+  layout: string;
   characters: CharacterSheet[];
   style: StyleDef;
   regenNote?: string;
@@ -53,7 +53,11 @@ async function generateAndJudgeSpread(opts: {
   let last = { imageUrl: '', score: 0, notes: 'no attempts' };
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const { imageUrl } = await generateSpreadImage({
-      spread: { illustration_prompt: opts.prompt, copy_space: opts.copySpace, layout: opts.layout },
+      spread: {
+        illustration_prompt: opts.prompt,
+        copy_space: opts.copySpace,
+        layout: opts.layout === 'text-right' ? 'text-right' : 'text-left',
+      },
       characters: opts.characters,
       style: opts.style,
       regenNote: opts.regenNote,
@@ -89,6 +93,7 @@ export const generatePreview = inngest.createFunction(
       if (book.story) return book.story as Story;
       const generated = await generateStory({
         memoryText: book.memory_text,
+        targetAge: book.target_age ?? undefined,
         people: book.book_people.map((p: { name: string; role: string | null }) => ({
           name: p.name,
           role: p.role ?? undefined,
@@ -181,6 +186,13 @@ export const generatePreview = inngest.createFunction(
         );
       }
       await db.from('books').update({ status: 'preview_ready' }).eq('id', book.id);
+    });
+
+    await step.run('send-preview-email', async () => {
+      if (!book.email) return { skipped: 'no email' };
+      const mail = previewReadyEmail(book);
+      await sendEmail({ to: book.email, ...mail });
+      return { sent: true };
     });
 
     return { bookId: book.id, previewImages: generated.length };

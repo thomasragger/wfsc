@@ -76,3 +76,29 @@ export function printSubmittedEmail(book: { title: string | null }): {
 </div>`,
   };
 }
+
+/** "Your preview is ready" — sent when the free preview finishes generating. */
+export function previewReadyEmail(book: { title: string | null; access_token: string }): {
+  subject: string;
+  html: string;
+} {
+  const link = `${studioUrl()}/book/${book.access_token}`;
+  const title = book.title ?? 'Your storybook';
+  return {
+    subject: `✨ Your preview of ${title} is ready`,
+    html: `
+<div style="font-family: Quicksand, 'Helvetica Neue', sans-serif; background: #fffaf7; padding: 40px 24px; color: #761e0b;">
+  <div style="max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 24px; padding: 40px 32px; text-align: center;">
+    <img src="${studioUrl()}/logo.png" alt="Warm Fuzzy Story Club" width="120" style="margin-bottom: 24px;"/>
+    <h1 style="font-size: 26px; margin: 0 0 12px;">Come take a peek! ✨</h1>
+    <p style="font-size: 16px; line-height: 1.6; margin: 0 0 28px;">
+      The first pages of <strong>${title}</strong> are illustrated and waiting for you.
+      Your private link never expires — come back anytime.
+    </p>
+    <a href="${link}" style="display: inline-block; background: #ff4315; color: #ffffff; font-weight: 700; padding: 14px 34px; border-radius: 999px; text-decoration: none;">
+      See your preview
+    </a>
+  </div>
+</div>`,
+  };
+}

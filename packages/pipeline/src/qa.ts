@@ -28,7 +28,13 @@ ${characters.map((c, i) => `- Reference image ${i + 1}: ${c.name} (${c.descripti
 
 Target style: ${stylePrompt}
 
-Score 0-100, weighted: character identity match 50%, outfit/feature continuity 30%, style adherence 20%. Not every character must appear in every scene; only penalize characters that appear but look wrong. Also fail (score < 40) for: extra unknown people with faces, garbled anatomy, embedded text or lettering, watermark.
+Score 0-100, weighted: character identity match 50%, outfit/feature continuity 30%, style adherence 20%. Not every character must appear in every scene; only penalize characters that appear but look wrong.
+HARD FAILURES (score < 40) — check each explicitly:
+- the same character appearing more than once in the scene (duplicates/clones)
+- anatomical errors: extra or missing limbs/fingers, three arms, two heads, merged bodies
+- a character's hair length/color, age, or build clearly different from their sheet
+- extra unknown people with detailed faces
+- embedded text, lettering, or watermark
 
 Report your verdict via the emit_verdict tool.`,
     },
