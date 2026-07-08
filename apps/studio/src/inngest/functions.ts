@@ -3,14 +3,16 @@ import {
   generateCharacterSheet,
   generateSpreadImage,
   generateStory,
-  judgeSpread,
+  judgeSpreadSafe,
   upscaleImage,
   type CharacterSheet,
   type Story,
   type StyleDef,
 } from '@wfsc/pipeline';
 
+import { reviewReadyEmail, printSubmittedEmail, sendEmail } from '@/lib/email';
 import { createPrintJob, type LuluAddress } from '@/lib/lulu';
+import { persistImage } from '@/lib/persist';
 import { renderAndUploadPdfs } from '@/lib/render';
 import { supabaseAdmin } from '@/lib/supabase';
 import { inngest } from './client';
@@ -45,6 +47,8 @@ async function generateAndJudgeSpread(opts: {
   characters: CharacterSheet[];
   style: StyleDef;
   regenNote?: string;
+  /** Storage path for the persisted image (Replicate URLs expire). */
+  persistPath: string;
 }): Promise<{ imageUrl: string; score: number; notes: string }> {
   let last = { imageUrl: '', score: 0, notes: 'no attempts' };
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -54,9 +58,12 @@ async function generateAndJudgeSpread(opts: {
       style: opts.style,
       regenNote: opts.regenNote,
     });
-    const verdict = await judgeSpread(imageUrl, opts.characters, opts.style.stylePrompt);
+    const verdict = await judgeSpreadSafe(imageUrl, opts.characters, opts.style.stylePrompt);
     last = { imageUrl, score: verdict.score, notes: verdict.notes };
     if (verdict.pass) break;
+  }
+  if (last.imageUrl) {
+    last.imageUrl = await persistImage(last.imageUrl, opts.persistPath);
   }
   return last;
 }
@@ -108,9 +115,13 @@ export const generatePreview = inngest.createFunction(
       book.book_people.map(
         (person: { id: string; name: string; role: string | null; photo_urls: string[] }) =>
           step.run(`character-${person.name}`, async (): Promise<CharacterSheet> => {
-            const { sheetUrl } = await generateCharacterSheet(
+            const { sheetUrl: transientSheetUrl } = await generateCharacterSheet(
               { name: person.name, role: person.role ?? undefined, photoUrls: person.photo_urls },
               style,
+            );
+            const sheetUrl = await persistImage(
+              transientSheetUrl,
+              `books/${book.id}/sheets/${person.id}.png`,
             );
             const description = await describeCharacter(
               { name: person.name, role: person.role ?? undefined, photoUrls: [] },
@@ -138,7 +149,12 @@ export const generatePreview = inngest.createFunction(
     const generated = await Promise.all(
       previewTargets.map((t) =>
         step.run(`preview-${t.key}`, () =>
-          generateAndJudgeSpread({ ...t, characters, style }).then((r) => ({ key: t.key, ...r })),
+          generateAndJudgeSpread({
+            ...t,
+            characters,
+            style,
+            persistPath: `books/${book.id}/${t.key}.png`,
+          }).then((r) => ({ key: t.key, ...r })),
         ),
       ),
     );
@@ -216,6 +232,7 @@ export const generateFullBook = inngest.createFunction(
             layout: s.layout,
             characters,
             style,
+            persistPath: `books/${book.id}/spread-${position}.png`,
           });
           await db.from('book_spreads').upsert(
             {
@@ -247,7 +264,8 @@ export const generateFullBook = inngest.createFunction(
         .map((s) =>
           step.run(`upscale-${s.id}`, async () => {
             const { imageUrl } = await upscaleImage(s.image_url!);
-            await db.from('book_spreads').update({ print_image_url: imageUrl }).eq('id', s.id);
+            const persisted = await persistImage(imageUrl, `books/${book.id}/print/${s.id}.png`);
+            await db.from('book_spreads').update({ print_image_url: persisted }).eq('id', s.id);
           }),
         ),
     );
@@ -255,13 +273,21 @@ export const generateFullBook = inngest.createFunction(
       const fresh = await loadBook(book.id);
       if (fresh.cover_image_url && !fresh.cover_print_image_url) {
         const { imageUrl } = await upscaleImage(fresh.cover_image_url);
-        await db.from('books').update({ cover_print_image_url: imageUrl }).eq('id', book.id);
+        const persisted = await persistImage(imageUrl, `books/${book.id}/print/cover.png`);
+        await db.from('books').update({ cover_print_image_url: persisted }).eq('id', book.id);
       }
     });
 
     await step.run('mark-ready', async () => {
       await db.from('books').update({ status: 'ready_for_review' }).eq('id', book.id);
-      // TODO(email): send review/approval link (books.access_token) to book.email
+    });
+
+    await step.run('send-review-email', async () => {
+      const fresh = await loadBook(book.id);
+      if (!fresh.email) return { skipped: 'no email on book' };
+      const mail = reviewReadyEmail(fresh);
+      await sendEmail({ to: fresh.email, ...mail });
+      return { sent: true };
     });
 
     return { bookId: book.id };
@@ -300,8 +326,13 @@ export const regenerateSpread = inngest.createFunction(
         characters,
         style,
         regenNote: spread.regen_note ?? undefined,
+        persistPath: `books/${book.id}/spread-${spread.position}-r${Date.now()}.png`,
       });
-      const { imageUrl: printUrl } = await upscaleImage(result.imageUrl);
+      const { imageUrl: transientPrintUrl } = await upscaleImage(result.imageUrl);
+      const printUrl = await persistImage(
+        transientPrintUrl,
+        `books/${book.id}/print/${spread.id}.png`,
+      );
       await db
         .from('book_spreads')
         .update({
@@ -394,6 +425,13 @@ export const submitToPrint = inngest.createFunction(
       });
       await db.from('books').update({ status: 'submitted_to_print' }).eq('id', book.id);
       return { luluJobId: job.id };
+    });
+
+    await step.run('send-print-email', async () => {
+      if (!book.email) return { skipped: 'no email on book' };
+      const mail = printSubmittedEmail(book);
+      await sendEmail({ to: book.email, ...mail });
+      return { sent: true };
     });
 
     return { bookId: book.id, ...printJob };
