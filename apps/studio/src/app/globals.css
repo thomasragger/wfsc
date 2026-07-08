@@ -36,6 +36,10 @@ body {
   color: var(--color-ink);
   font-family: var(--font-body);
   background-color: var(--color-cream);
+  /* Guard: full-bleed carousels extend to the viewport's right edge with a
+     vw-based margin; clip (not hidden, so sticky headers keep working) stops
+     any sub-pixel rounding there from ever adding a horizontal scrollbar. */
+  overflow-x: clip;
 }
 
 /* Whisper of the hero wash on every page: mostly #fffaf7 with faint

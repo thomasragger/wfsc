@@ -243,7 +243,7 @@ export default async function HomePage() {
           Gifts for all your favorite people
         </h2>
         {inspiration ? (
-          <Carousel className="mt-6" ariaLabel="Gift categories">
+          <Carousel className="mt-6" ariaLabel="Gift categories" bleedRight>
             {inspiration.categories.map((cat) => {
               const art = categoryArt(cat.id, cat.name);
               return (
@@ -309,7 +309,7 @@ export default async function HomePage() {
                       ) : null}
                     </div>
                   </div>
-                  <Carousel className="mt-5" ariaLabel={`${cat.name} story ideas`} itemGap="gap-5">
+                  <Carousel className="mt-5" ariaLabel={`${cat.name} story ideas`} itemGap="gap-5" bleedRight>
                     {templates.map((tpl) => {
                       const image = tpl.preview_image_url ?? tpl.example_image_url;
                       return (

@@ -4,8 +4,16 @@
  * WFSC design system — Carousel.
  * A physics-driven drag rail: pointer input sets a velocity, an animation
  * loop eases the track toward its target with inertia, and springs back at
- * both ends. Shadow-safe edge padding (see className below) keeps the last
- * card's hover-lift shadow from ever getting clipped by the scroll edge.
+ * both ends.
+ *
+ * Clipping uses `overflow-x: clip` + `overflow-y: visible` (NOT `hidden`,
+ * which forces BOTH axes to clip and slices the cards' hover-lift shadow
+ * off the bottom). That leaves the vertical shadow free to paint while the
+ * rail is still contained horizontally.
+ *
+ * `bleedRight` extends the rail to the viewport's right edge so off-screen
+ * cards flow off the side of the screen instead of being sliced mid-column
+ * with dead space beside them — the left stays aligned to the page column.
  * All new UI must come from src/components/ui/* — /styleguide is the living contract.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -17,10 +25,10 @@ const SPRING = 0.3; // pull-back strength past the bounds
 const FOLLOW_DRAGGING = 0.6; // how tightly the track tracks the pointer while held
 const FOLLOW_SETTLING = 0.24; // how tightly the track eases toward its target otherwise
 const SETTLE_EPSILON = 0.4;
-// The wrap carries px-6 (24px) of shadow-safe padding on each side (see
-// className below) so hover shadows never hit the overflow:hidden edge.
-// clientWidth includes that padding, so bounds math must subtract it back
-// out to reflect the actual visible track width.
+// The wrap carries pl-6/pr-6 (24px) of shadow-safe padding so the first and
+// last cards' horizontal shadow isn't clipped flush. clientWidth includes
+// that padding, so bounds math subtracts it back out: both sides in bounded
+// mode, only the left side when the right bleeds off the viewport edge.
 const EDGE_PADDING = 24;
 
 export function Carousel({
@@ -28,11 +36,14 @@ export function Carousel({
   className = "",
   itemGap = "gap-4",
   ariaLabel,
+  bleedRight = false,
 }: {
   children: React.ReactNode;
   className?: string;
   itemGap?: string;
   ariaLabel?: string;
+  /** Extend the rail to the viewport's right edge (left stays column-aligned). */
+  bleedRight?: boolean;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -46,8 +57,10 @@ export function Carousel({
   const visibleWidth = useCallback(() => {
     const wrap = wrapRef.current;
     if (!wrap) return 0;
-    return wrap.clientWidth - EDGE_PADDING * 2;
-  }, []);
+    // Bounded mode pads both sides; bleed mode only the left (right runs to
+    // the viewport edge), so the visible track ends at the screen edge.
+    return wrap.clientWidth - EDGE_PADDING * (bleedRight ? 1 : 2);
+  }, [bleedRight]);
 
   const measure = useCallback(() => {
     const track = trackRef.current;
@@ -190,10 +203,15 @@ export function Carousel({
         ref={wrapRef}
         role="region"
         aria-label={ariaLabel}
-        /* px-6/-mx-6 cancel out (content re-aligns to the caller's edge) but
-           push the overflow-hidden clip boundary outward, so a hover-lifted
-           card's shadow — first, last, top or bottom — never gets cut off. */
-        className="-mx-6 cursor-grab touch-pan-y select-none overflow-hidden px-6 pb-10 pt-6"
+        /* -ml-6/pl-6 cancel out (content re-aligns to the caller's edge) but
+           push the clip boundary 24px left so the first card's shadow shows.
+           overflow-x:clip + overflow-y:visible keeps the vertical hover
+           shadow uncut. In bleedRight mode the right margin runs to the
+           viewport edge (calc(50% - 50vw)) so cards flow off the screen
+           instead of being sliced in dead column space. */
+        className={`${
+          bleedRight ? "-ml-6 mr-[calc(50%_-_50vw)] pl-6 pr-6" : "-mx-6 px-6"
+        } cursor-grab touch-pan-y select-none overflow-x-clip overflow-y-visible pb-10 pt-6`}
       >
         <div ref={trackRef} className={`flex w-max ${itemGap}`} style={{ willChange: "transform" }}>
           {children}
