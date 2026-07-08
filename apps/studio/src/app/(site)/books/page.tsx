@@ -12,7 +12,6 @@ export default async function BooksPage() {
   const templates = await loadAllTemplates();
   return (
     <CategoryShowcase
-      eyebrow="The whole library"
       title="Every story, waiting for your family."
       tagline="Pick a story idea and make it yours — your names, your photos, your memory, illustrated cover to cover."
       templates={templates}

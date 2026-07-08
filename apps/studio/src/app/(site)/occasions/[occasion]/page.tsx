@@ -26,7 +26,6 @@ export default async function OccasionPage({
 
   return (
     <CategoryShowcase
-      eyebrow="For the moments that matter"
       title={data.occasion.name}
       tagline={data.occasion.tagline}
       templates={data.templates}

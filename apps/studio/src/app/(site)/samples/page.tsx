@@ -1,11 +1,10 @@
 import { Doodle } from "@/components/decor";
 import { BookTile } from "@/components/ui/book-tile";
 import { ButtonLink } from "@/components/ui/button";
-import { Carousel } from "@/components/ui/carousel";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { categoryArt } from "@/lib/category-art";
-import { fetchSamples, type SampleSummary } from "@/lib/samples";
+import { fetchSamples } from "@/lib/samples";
 
 export const dynamic = "force-dynamic";
 
@@ -16,15 +15,6 @@ export const metadata = {
 
 export default async function SamplesPage() {
   const samples = await fetchSamples();
-
-  // Group by category, keeping first-seen order; uncategorized last.
-  const groups = new Map<string, { id: string; name: string; items: SampleSummary[] }>();
-  for (const sample of samples) {
-    const key = sample.categoryId ?? "other";
-    const name = sample.categoryName ?? "More stories";
-    if (!groups.has(key)) groups.set(key, { id: key, name, items: [] });
-    groups.get(key)!.items.push(sample);
-  }
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
@@ -49,25 +39,20 @@ export default async function SamplesPage() {
           action={<ButtonLink href="/create">Write your story</ButtonLink>}
         />
       ) : (
-        <div className="mt-14 flex flex-col gap-14">
-          {[...groups.values()].map((group) => {
-            const art = categoryArt(group.id, group.name);
+        // One fuller grid reads better than one-book-per-category rows.
+        <div className="mt-14 grid grid-cols-2 justify-items-center gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
+          {samples.map((sample) => {
+            const art = categoryArt(sample.categoryId ?? "kids", sample.categoryName ?? "Kids");
             return (
-              <section key={group.id}>
-                <h2 className="font-display text-2xl font-extrabold text-ink">{group.name}</h2>
-                {/* Same tile, same size, same carousel as the homepage category row. */}
-                <Carousel className="mt-5" ariaLabel={`${group.name} sample books`} fullBleed>
-                  {group.items.map((sample) => (
-                    <BookTile
-                      key={sample.token}
-                      href={`/samples/${encodeURIComponent(sample.token)}`}
-                      image={sample.mockupImageUrl ?? sample.coverImageUrl ?? `/categories/${art.photo}.jpg`}
-                      title={sample.title ?? "A sample story"}
-                      category={sample.categoryName}
-                    />
-                  ))}
-                </Carousel>
-              </section>
+              <BookTile
+                key={sample.token}
+                href={`/samples/${encodeURIComponent(sample.token)}`}
+                image={sample.mockupImageUrl ?? sample.coverImageUrl ?? `/categories/${art.photo}.jpg`}
+                title={sample.title ?? "A sample story"}
+                category={sample.categoryName}
+                size="md"
+                aspectClassName="aspect-square"
+              />
             );
           })}
         </div>

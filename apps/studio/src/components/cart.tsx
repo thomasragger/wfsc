@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { ArtPlaceholder, Doodle } from "@/components/decor";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -53,28 +54,33 @@ export function CartButton() {
         ) : null}
       </button>
 
-      {open ? (
-        <div className="fixed inset-0 z-50" role="dialog" aria-label="Cart" aria-modal="true">
-          <div
-            className="animate-fade-in absolute inset-0 bg-ink/25 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
-          />
-          <div className="animate-sheet-in absolute right-0 top-0 flex h-full w-full max-w-[26rem] flex-col bg-cream shadow-[-24px_0_60px_-24px_rgba(118,30,11,0.3)]">
-            <div className="flex items-center justify-between px-6 pb-4 pt-6">
-              <p className="font-display text-xl font-extrabold text-ink">Your cart</p>
-              <button
-                type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-ink/5 hover:text-ink"
-                aria-label="Close cart"
+      {open && typeof document !== "undefined"
+        ? createPortal(
+            // Portalled to <body> so it escapes the sticky header's stacking
+            // context and reliably overlays the whole page.
+            <div className="fixed inset-0 z-[100]" role="dialog" aria-label="Cart" aria-modal="true">
+              <div
+                className="animate-fade-in absolute inset-0 bg-ink/25 backdrop-blur-sm"
                 onClick={() => setOpen(false)}
-              >
-                <IconClose className="h-5 w-5" />
-              </button>
-            </div>
-            <CartView cart={cart} onChange={setCart} />
-          </div>
-        </div>
-      ) : null}
+              />
+              <div className="animate-sheet-in absolute right-0 top-0 flex h-full w-full max-w-[26rem] flex-col bg-cream shadow-[-24px_0_60px_-24px_rgba(118,30,11,0.3)]">
+                <div className="flex items-center justify-between px-6 pb-4 pt-6">
+                  <p className="font-display text-xl font-extrabold text-ink">Your cart</p>
+                  <button
+                    type="button"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft transition-colors hover:bg-ink/5 hover:text-ink"
+                    aria-label="Close cart"
+                    onClick={() => setOpen(false)}
+                  >
+                    <IconClose className="h-5 w-5" />
+                  </button>
+                </div>
+                <CartView cart={cart} onChange={setCart} />
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }

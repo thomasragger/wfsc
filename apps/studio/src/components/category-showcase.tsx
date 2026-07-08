@@ -5,7 +5,6 @@ import { Doodle } from "@/components/decor";
 import { BookTile } from "@/components/ui/book-tile";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Eyebrow } from "@/components/ui/eyebrow";
 import { IconArrowLeft } from "@/components/ui/icons";
 import type { CategoryTemplate } from "@/lib/categories";
 
@@ -15,7 +14,6 @@ import type { CategoryTemplate } from "@/lib/categories";
  * closing CTA. Used by /books, /for/[category] and /occasions/[occasion].
  */
 export function CategoryShowcase({
-  eyebrow,
   title,
   tagline,
   heroImageUrl,
@@ -24,7 +22,6 @@ export function CategoryShowcase({
   backHref,
   backLabel,
 }: {
-  eyebrow: string;
   title: string;
   tagline: string | null;
   heroImageUrl?: string | null;
@@ -43,10 +40,13 @@ export function CategoryShowcase({
             : undefined
         }
       >
-        <div className={`mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 ${gradient ? "" : "flip-wash"}`}>
+        {/* Soft white wash over the saturated gradient so the dark title/
+            tagline stay legible. */}
+        {gradient ? <div className="absolute inset-0 bg-cream/45" aria-hidden="true" /> : null}
+        <div className={`relative mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 ${gradient ? "" : "flip-wash"}`}>
           <div className="flex flex-col items-center gap-6 text-center lg:flex-row lg:items-center lg:gap-10 lg:text-left">
             {heroImageUrl ? (
-              <div className="h-28 w-28 shrink-0 overflow-hidden rounded-full ring-4 ring-white/70 shadow-polaroid sm:h-36 sm:w-36">
+              <div className="h-28 w-28 shrink-0 overflow-hidden rounded-full ring-4 ring-white shadow-polaroid sm:h-36 sm:w-36">
                 <Image src={heroImageUrl} alt="" width={160} height={160} className="h-full w-full object-cover" />
               </div>
             ) : (
@@ -56,16 +56,13 @@ export function CategoryShowcase({
               {backHref ? (
                 <Link
                   href={backHref}
-                  className="mb-6 inline-flex items-center gap-1.5 rounded-full bg-white/85 px-3.5 py-1.5 text-xs font-bold text-ink shadow-sm ring-1 ring-white/60 transition hover:bg-white"
+                  className="mb-6 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3.5 py-1.5 text-xs font-bold text-ink shadow-sm ring-1 ring-white/60 transition hover:bg-white"
                 >
                   <IconArrowLeft className="h-3.5 w-3.5" /> {backLabel ?? "Back"}
                 </Link>
               ) : null}
-              <div>
-                <Eyebrow className="mx-auto lg:mx-0">{eyebrow}</Eyebrow>
-                <h1 className="mt-4 font-display text-4xl font-extrabold text-ink sm:text-5xl">{title}</h1>
-                {tagline ? <p className="mx-auto mt-3 max-w-xl text-lg text-ink-soft lg:mx-0">{tagline}</p> : null}
-              </div>
+              <h1 className="font-display text-4xl font-extrabold text-ink sm:text-5xl">{title}</h1>
+              {tagline ? <p className="mx-auto mt-3 max-w-xl text-lg font-medium text-ink lg:mx-0">{tagline}</p> : null}
             </div>
           </div>
         </div>

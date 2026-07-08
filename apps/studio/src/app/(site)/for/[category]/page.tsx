@@ -28,7 +28,6 @@ export default async function AudienceCategoryPage({
   const art = categoryArt(data.category.id, data.category.name);
   return (
     <CategoryShowcase
-      eyebrow="Gifts they'll never forget"
       title={data.category.name}
       tagline={data.category.tagline}
       heroImageUrl={data.category.heroImageUrl ?? `/categories/${art.photo}.jpg`}

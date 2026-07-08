@@ -485,8 +485,20 @@ function TemplateHero({
           </div>
         ) : null}
 
+        <div className="mt-7 flex max-w-xs flex-col gap-3">
+          <Button size="lg" className="w-full whitespace-nowrap" onClick={onStart}>
+            Make this book
+          </Button>
+          <Button variant="ghost" size="lg" className="w-full whitespace-nowrap" onClick={onOwnMemory}>
+            Use my own memory
+          </Button>
+        </div>
+        <p className="mt-3 text-xs text-ink-soft">
+          Free preview first — you only pay once you love it.
+        </p>
+
         {beats.length > 0 ? (
-          <div className="mt-7">
+          <div className="mt-9">
             <p className="font-display text-sm font-extrabold uppercase tracking-wide text-ink/70">
               How the story goes
             </p>
@@ -505,18 +517,6 @@ function TemplateHero({
             </ol>
           </div>
         ) : null}
-
-        <div className="mt-8 flex max-w-xs flex-col gap-3">
-          <Button size="lg" className="w-full whitespace-nowrap" onClick={onStart}>
-            Make this book
-          </Button>
-          <Button variant="ghost" size="lg" className="w-full whitespace-nowrap" onClick={onOwnMemory}>
-            Use my own memory
-          </Button>
-        </div>
-        <p className="mt-3 text-xs text-ink-soft">
-          Free preview first — you only pay once you love it.
-        </p>
       </div>
     </section>
   );
@@ -585,13 +585,32 @@ function StyleCard({
   onSelect: () => void;
 }) {
   const peeks = style.referenceImageUrls.slice(0, 3);
-  const dur = 4.8; // seconds for a full cycle across the peek images
+  const [hovered, setHovered] = useState(false);
+  const [idx, setIdx] = useState(0);
+
+  // On hover, gently cross-fade through the reference images (JS-driven so the
+  // fades overlap smoothly — no keyframe gaps/wrap jumps).
+  useEffect(() => {
+    if (!hovered || peeks.length < 2) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % peeks.length), 1600);
+    return () => clearInterval(t);
+  }, [hovered, peeks.length]);
+
+  const leave = () => {
+    setHovered(false);
+    setIdx(0);
+  };
+
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
       onClick={onSelect}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={leave}
+      onFocus={() => setHovered(true)}
+      onBlur={leave}
       className={`tile-lift group relative w-56 shrink-0 overflow-hidden rounded-2xl border-2 bg-white text-left ${
         selected ? "border-coral" : "border-transparent hover:border-marigold"
       }`}
@@ -607,12 +626,12 @@ function StyleCard({
         ) : (
           <ArtPlaceholder label={style.name} />
         )}
-        {/* Reference images cross-fade through on hover, over the preview. */}
+        {/* Reference images cross-fade over the preview while hovered. */}
         {peeks.map((url, i) => (
           <div
             key={url}
-            className="absolute inset-0 opacity-0 [animation-play-state:paused] group-hover:[animation-play-state:running]"
-            style={{ animation: `wfsc-peek ${dur}s linear infinite`, animationDelay: `${(i * dur) / peeks.length}s` }}
+            className="absolute inset-0 transition-opacity duration-[900ms] ease-in-out"
+            style={{ opacity: hovered && idx === i ? 1 : 0 }}
             aria-hidden="true"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -660,6 +679,8 @@ function StoryStep({
   targetAge: number | null;
   onAgeChange: (v: number | null) => void;
 }) {
+  const beats = template ? template.storyBeats.slice(0, 10) : [];
+  const hasBeats = beats.length > 0;
   return (
     <section className="flex flex-col gap-6">
       <header>
@@ -673,63 +694,68 @@ function StoryStep({
         </p>
       </header>
 
-      {/* Story-shape preview (template only) */}
-      {template && template.storyBeats.length > 0 ? (
-        <div className="rounded-2xl bg-gradient-to-br from-lavender/60 via-cream to-peach/50 p-5">
-          <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
-            The journey your book will take
-          </p>
-          <ol className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
-            {template.storyBeats.slice(0, 10).map((beat, i) => (
-              <li key={beat} className="flex items-start gap-2.5">
-                <span
-                  className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white font-display text-[10px] font-extrabold text-coral shadow-sm"
-                  aria-hidden="true"
+      <div className={hasBeats ? "grid gap-6 lg:grid-cols-2 lg:items-start" : ""}>
+        {/* Left: the memory input + age — always up top. */}
+        <div className="flex flex-col gap-5">
+          <Field
+            label={template ? "Your real memory" : "Your memory"}
+            htmlFor="memory"
+            hint={
+              template
+                ? "Names, places, the thing that made everyone laugh — the more real, the better."
+                : `Need a nudge? “${MEMORY_PROMPTS[1]}”`
+            }
+          >
+            <TextArea
+              id="memory"
+              className="min-h-44 leading-relaxed"
+              placeholder={template ? templatePlaceholder(template) : MEMORY_PROMPTS[0]}
+              value={memoryText}
+              onChange={(e) => onMemoryChange(e.target.value)}
+            />
+          </Field>
+
+          <div>
+            <p className="mb-1.5 text-sm font-bold text-ink">
+              Who is it for?{" "}
+              <span className="font-normal text-ink-soft">(we&rsquo;ll tune the words to their age)</span>
+            </p>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Reader age">
+              {AGE_BANDS.map((band) => (
+                <Chip
+                  key={band.value}
+                  role="radio"
+                  selected={targetAge === band.value}
+                  onClick={() => onAgeChange(targetAge === band.value ? null : band.value)}
                 >
-                  {i + 1}
-                </span>
-                <span className="text-sm leading-relaxed text-ink">{beat}</span>
-              </li>
-            ))}
-          </ol>
+                  {band.label}
+                </Chip>
+              ))}
+            </div>
+          </div>
         </div>
-      ) : null}
 
-      <Field
-        label={template ? "Your real memory" : "Your memory"}
-        htmlFor="memory"
-        hint={
-          template
-            ? "Names, places, the thing that made everyone laugh — the more real, the better."
-            : `Need a nudge? “${MEMORY_PROMPTS[1]}”`
-        }
-      >
-        <TextArea
-          id="memory"
-          className="min-h-44 leading-relaxed"
-          placeholder={template ? templatePlaceholder(template) : MEMORY_PROMPTS[0]}
-          value={memoryText}
-          onChange={(e) => onMemoryChange(e.target.value)}
-        />
-      </Field>
-
-      <div>
-        <p className="mb-1.5 text-sm font-bold text-ink">
-          Who is it for?{" "}
-          <span className="font-normal text-ink-soft">(we&rsquo;ll tune the words to their age)</span>
-        </p>
-        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Reader age">
-          {AGE_BANDS.map((band) => (
-            <Chip
-              key={band.value}
-              role="radio"
-              selected={targetAge === band.value}
-              onClick={() => onAgeChange(targetAge === band.value ? null : band.value)}
-            >
-              {band.label}
-            </Chip>
-          ))}
-        </div>
+        {/* Right: the story shape (template only). */}
+        {hasBeats ? (
+          <div className="rounded-2xl bg-gradient-to-br from-lavender/60 via-cream to-peach/50 p-5">
+            <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
+              The journey your book will take
+            </p>
+            <ol className="mt-3 flex flex-col gap-2">
+              {beats.map((beat, i) => (
+                <li key={beat} className="flex items-start gap-2.5">
+                  <span
+                    className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white font-display text-[10px] font-extrabold text-coral shadow-sm"
+                    aria-hidden="true"
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="text-sm leading-relaxed text-ink">{beat}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : null}
       </div>
     </section>
   );
