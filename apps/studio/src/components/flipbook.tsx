@@ -14,11 +14,15 @@ import type { BookPayload, SpreadPayload } from "@/lib/book-payload";
 
 export type FlipPage =
   | { kind: "cover" }
+  | { kind: "title"; title: string; styleName?: string | null }
+  | { kind: "dedication"; text: string }
   | { kind: "spread"; spread: SpreadPayload }
   | { kind: "locked"; morePages: number; variant: number };
 
 export function pageLabel(page: FlipPage): string {
   if (page.kind === "cover") return "Cover";
+  if (page.kind === "title") return "Title page";
+  if (page.kind === "dedication") return "Dedication";
   if (page.kind === "locked") return "Waiting to be unlocked";
   if (page.spread.kind === "greeting") return "Dedication";
   return `Spread ${page.spread.position}`;
@@ -95,6 +99,44 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
             {book.title ?? "Your storybook"}
           </h2>
         </div>
+      );
+    }
+    if (p.kind === "title") {
+      return (
+        <PageFrame>
+          <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-cream px-[8%] text-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Warm Fuzzy Story Club" className="h-16 w-auto sm:h-20" />
+            <h2 className="font-display text-[clamp(1.2rem,3vw,2rem)] font-extrabold leading-tight text-ink" style={displayFont}>
+              {p.title}
+            </h2>
+            {p.styleName ? (
+              <p className="text-[clamp(0.7rem,1.6vw,0.9rem)] text-ink-soft">
+                Illustrated in the {p.styleName} style
+              </p>
+            ) : null}
+            <p className="mt-2 text-[clamp(0.6rem,1.4vw,0.8rem)] font-semibold uppercase tracking-[0.15em] text-ink/40">
+              A Warm Fuzzy Story Club book
+            </p>
+          </div>
+        </PageFrame>
+      );
+    }
+    if (p.kind === "dedication") {
+      return (
+        <PageFrame>
+          <div className="flex h-full w-full items-center justify-center bg-cream p-[9%] text-center" style={bodyFont}>
+            <div>
+              <Sparkle className="mx-auto mb-4 text-marigold" size={20} />
+              <p className="whitespace-pre-line text-[clamp(0.95rem,2.6vw,1.4rem)] italic leading-relaxed text-ink">
+                {p.text}
+              </p>
+              <p className="mt-5 font-display text-base text-ink-soft" style={displayFont} aria-hidden="true">
+                ❦
+              </p>
+            </div>
+          </div>
+        </PageFrame>
       );
     }
     if (p.kind === "locked") {

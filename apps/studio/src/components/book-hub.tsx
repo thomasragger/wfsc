@@ -104,10 +104,22 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
     [book, coverImageUrl],
   );
 
+  // Story spreads only — cover is the first page; the greeting becomes a
+  // dedication front-matter page (below), not an inline spread.
   const interiorSpreads = useMemo(
-    () => book.spreads.filter((s) => s.kind !== "cover"),
+    () => book.spreads.filter((s) => s.kind !== "cover" && s.kind !== "greeting"),
     [book.spreads],
   );
+
+  // Cover → title page → dedication (personal note) → the story.
+  const frontMatter: FlipPage[] = useMemo(() => {
+    const greetingSpread = book.spreads.find((s) => s.kind === "greeting");
+    const dedication = book.greeting ?? greetingSpread?.text ?? null;
+    return [
+      { kind: "title", title: book.title ?? "Your storybook", styleName: book.style?.name ?? null },
+      ...(dedication ? [{ kind: "dedication" as const, text: dedication }] : []),
+    ];
+  }, [book.greeting, book.title, book.style, book.spreads]);
 
   const isPreview = book.status === "preview_ready";
 
@@ -115,24 +127,26 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
     if (!isPreview) {
       return [
         { kind: "cover" },
+        ...frontMatter,
         ...interiorSpreads.map((spread) => ({ kind: "spread" as const, spread })),
       ];
     }
-    // Preview gate: cover + the first two illustrated spreads are free;
-    // every remaining spread of the book renders as a locked teaser page.
+    // Preview gate: cover + front matter + the first two illustrated spreads
+    // are free; every remaining spread renders as a locked teaser page.
     const unlocked = interiorSpreads.filter((s) => s.kind === "story" && s.imageUrl !== null).slice(0, 2);
     const morePages = Math.max(book.pageCount - unlocked.length * 2, 2);
     const remainingRows = interiorSpreads.length - unlocked.length;
     const lockedCount = Math.max(remainingRows, Math.ceil(morePages / 2));
     const result: FlipPage[] = [
       { kind: "cover" },
+      ...frontMatter,
       ...unlocked.map((spread) => ({ kind: "spread" as const, spread })),
     ];
     for (let i = 0; i < lockedCount; i++) {
       result.push({ kind: "locked", morePages, variant: i });
     }
     return result;
-  }, [isPreview, interiorSpreads, book.pageCount]);
+  }, [isPreview, interiorSpreads, frontMatter, book.pageCount]);
 
   const currentPage = pages[Math.min(pageIndex, pages.length - 1)];
   const currentSpread = currentPage?.kind === "spread" ? currentPage.spread : null;

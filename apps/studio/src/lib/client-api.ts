@@ -43,6 +43,7 @@ export interface CategorySummary {
 export interface CreateBookInput {
   memoryText: string;
   title?: string;
+  greeting?: string;
   templateId?: string;
   styleId: string;
   email: string;

@@ -19,15 +19,18 @@ export function SampleViewer({
 }) {
   const [pageIndex, setPageIndex] = useState(0);
 
-  const pages: FlipPage[] = useMemo(
-    () => [
-      { kind: "cover" },
+  const pages: FlipPage[] = useMemo(() => {
+    const greetingSpread = book.spreads.find((s) => s.kind === "greeting");
+    const dedication = book.greeting ?? greetingSpread?.text ?? null;
+    return [
+      { kind: "cover" as const },
+      { kind: "title" as const, title: book.title ?? "Your storybook", styleName: book.style?.name ?? null },
+      ...(dedication ? [{ kind: "dedication" as const, text: dedication }] : []),
       ...book.spreads
-        .filter((s) => s.kind !== "cover")
+        .filter((s) => s.kind !== "cover" && s.kind !== "greeting")
         .map((spread) => ({ kind: "spread" as const, spread })),
-    ],
-    [book.spreads],
-  );
+    ];
+  }, [book]);
 
   const createHref = suggestedTemplateId
     ? `/create?template=${encodeURIComponent(suggestedTemplateId)}`

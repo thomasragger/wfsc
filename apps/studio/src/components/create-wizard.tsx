@@ -97,6 +97,7 @@ export function CreateWizard() {
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [memoryText, setMemoryText] = useState("");
   const [title, setTitle] = useState("");
+  const [greeting, setGreeting] = useState("");
   const [targetAge, setTargetAge] = useState<number | null>(null);
   const [template, setTemplate] = useState<TemplateSummary | null>(null);
   const [templateFailed, setTemplateFailed] = useState(false);
@@ -235,6 +236,7 @@ export function CreateWizard() {
       const token = await createBook({
         memoryText: memoryText.trim(),
         title: title.trim() || undefined,
+        greeting: greeting.trim() || undefined,
         templateId: template?.id,
         styleId,
         email: email.trim(),
@@ -383,6 +385,8 @@ export function CreateWizard() {
                 template={template}
                 title={title}
                 onTitleChange={setTitle}
+                greeting={greeting}
+                onGreetingChange={setGreeting}
                 email={email}
                 onEmailChange={setEmail}
               />
@@ -885,12 +889,16 @@ function FinishStep({
   template,
   title,
   onTitleChange,
+  greeting,
+  onGreetingChange,
   email,
   onEmailChange,
 }: {
   template: TemplateSummary | null;
   title: string;
   onTitleChange: (v: string) => void;
+  greeting: string;
+  onGreetingChange: (v: string) => void;
   email: string;
   onEmailChange: (v: string) => void;
 }) {
@@ -899,7 +907,7 @@ function FinishStep({
       <header>
         <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">Almost there</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          Name your book (optional) and tell us where to send your free preview — usually ready in a few minutes.
+          Add the finishing touches, then tell us where to send your free preview — usually ready in a few minutes.
         </p>
       </header>
 
@@ -910,6 +918,22 @@ function FinishStep({
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
           maxLength={120}
+        />
+      </Field>
+
+      <Field
+        label="A personal note"
+        htmlFor="greeting"
+        optional
+        hint="Printed on the dedication page at the front of the book — like a handwritten message inside a gift."
+      >
+        <TextArea
+          id="greeting"
+          className="min-h-24 leading-relaxed"
+          placeholder="For Mia, who makes every ordinary day an adventure. Love, Mum & Dad xx"
+          value={greeting}
+          onChange={(e) => onGreetingChange(e.target.value)}
+          maxLength={600}
         />
       </Field>
 

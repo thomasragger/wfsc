@@ -10,6 +10,7 @@ export const runtime = "nodejs";
 const CreateBookSchema = z.object({
   memoryText: z.string().trim().min(20, "Tell us a little more about your memory").max(5000),
   title: z.string().trim().max(120).nullish(),
+  greeting: z.string().trim().max(600).nullish(),
   targetAge: z.number().int().min(0).max(12).nullish(),
   templateId: z.string().trim().max(100).optional(),
   styleId: z.string().trim().min(1).max(100),
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
       .insert({
         email: input.email,
         title: input.title || null,
+        greeting: input.greeting || null,
         target_age: input.targetAge ?? null,
         memory_text: input.memoryText,
         template_id: input.templateId || null,
