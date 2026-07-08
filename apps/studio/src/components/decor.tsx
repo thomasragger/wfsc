@@ -20,8 +20,69 @@ const BLOB_SHAPES = {
 export type BlobShape = keyof typeof BLOB_SHAPES;
 
 /**
- * SVG defs mounted once (in the layout). Provides the scallop clip-path used
- * by `.scallop` masked images across the app.
+ * Photo-tile masks, built from overlapping circles/ellipses (a clipPath's
+ * children union together) rather than a single hand-drawn path — much
+ * easier to get right than deriving arc strings by hand.
+ *
+ * Two families by design: categories get the "ovals & bubbles" family,
+ * books get the original scallop family (cloud/shell/coil) — so the two
+ * content types read as visually distinct, while PhotoTile still varies
+ * the exact shape per tile for organic variety.
+ */
+const OVALS_V = [
+  { cx: 0.5, cy: 0.14, rx: 0.42, ry: 0.17 },
+  { cx: 0.5, cy: 0.38, rx: 0.42, ry: 0.17 },
+  { cx: 0.5, cy: 0.62, rx: 0.42, ry: 0.17 },
+  { cx: 0.5, cy: 0.86, rx: 0.42, ry: 0.17 },
+];
+const OVALS_H = [
+  { cx: 0.18, cy: 0.5, rx: 0.19, ry: 0.42 },
+  { cx: 0.5, cy: 0.5, rx: 0.19, ry: 0.42 },
+  { cx: 0.82, cy: 0.5, rx: 0.19, ry: 0.42 },
+];
+const BUBBLES = [
+  { cx: 0.5, cy: 0.5, r: 0.3 },
+  { cx: 0.78, cy: 0.5, r: 0.24 },
+  { cx: 0.7, cy: 0.7, r: 0.24 },
+  { cx: 0.5, cy: 0.78, r: 0.24 },
+  { cx: 0.3, cy: 0.7, r: 0.24 },
+  { cx: 0.22, cy: 0.5, r: 0.24 },
+  { cx: 0.3, cy: 0.3, r: 0.24 },
+  { cx: 0.5, cy: 0.22, r: 0.24 },
+  { cx: 0.7, cy: 0.3, r: 0.24 },
+];
+
+const CATEGORY_MASKS = ["ovals-v", "ovals-h", "bubbles"] as const;
+const BOOK_MASKS = ["cloud", "shell", "coil"] as const;
+export type CategoryMaskShape = (typeof CATEGORY_MASKS)[number];
+export type BookMaskShape = (typeof BOOK_MASKS)[number];
+
+/** Deterministic (not Math.random) so server- and client-rendered markup match. */
+function seededPick<T extends readonly string[]>(seed: string, pool: T): T[number] {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (Math.imul(h, 31) + seed.charCodeAt(i)) >>> 0;
+  return pool[h % pool.length];
+}
+
+/** Picks a category-family mask shape, stable per `seed` (e.g. the tile's href). */
+export function pickCategoryMask(seed: string): CategoryMaskShape {
+  return seededPick(seed, CATEGORY_MASKS);
+}
+
+/** Picks a book-family mask shape, stable per `seed` (e.g. the tile's href). */
+export function pickBookMask(seed: string): BookMaskShape {
+  return seededPick(seed, BOOK_MASKS);
+}
+
+/** The clip-path id + CSS class for a given mask shape (any family). */
+export function maskClipId(shape: CategoryMaskShape | BookMaskShape): string {
+  return `wfsc-mask-${shape}`;
+}
+
+/**
+ * SVG defs mounted once (in the layout). Provides every clip-path used by
+ * masked photo tiles across the app: the original `.scallop` default plus
+ * the named category/book mask family, all addressable via maskClipId().
  */
 export function ScallopDefs() {
   return (
@@ -29,6 +90,26 @@ export function ScallopDefs() {
       <defs>
         <clipPath id="wfsc-scallop" clipPathUnits="objectBoundingBox">
           <path transform="scale(0.01)" d={SCALLOP_CLOUD} />
+        </clipPath>
+        {(Object.entries(BLOB_SHAPES) as [BookMaskShape, string][]).map(([key, d]) => (
+          <clipPath key={key} id={maskClipId(key)} clipPathUnits="objectBoundingBox">
+            <path transform="scale(0.01)" d={d} />
+          </clipPath>
+        ))}
+        <clipPath id={maskClipId("ovals-v")} clipPathUnits="objectBoundingBox">
+          {OVALS_V.map((o, i) => (
+            <ellipse key={i} cx={o.cx} cy={o.cy} rx={o.rx} ry={o.ry} />
+          ))}
+        </clipPath>
+        <clipPath id={maskClipId("ovals-h")} clipPathUnits="objectBoundingBox">
+          {OVALS_H.map((o, i) => (
+            <ellipse key={i} cx={o.cx} cy={o.cy} rx={o.rx} ry={o.ry} />
+          ))}
+        </clipPath>
+        <clipPath id={maskClipId("bubbles")} clipPathUnits="objectBoundingBox">
+          {BUBBLES.map((c, i) => (
+            <circle key={i} cx={c.cx} cy={c.cy} r={c.r} />
+          ))}
         </clipPath>
       </defs>
     </svg>

@@ -2,13 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { ArtPlaceholder, Doodle } from "@/components/decor";
-import { BookMockup } from "@/components/ui/book-mockup";
+import { HeroAnimatedBackground } from "@/components/ui/animated-bg";
 import { ButtonLink } from "@/components/ui/button";
 import { Carousel } from "@/components/ui/carousel";
-import { Tag, PillLabel } from "@/components/ui/chip";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { fetchSamples, type SampleSummary } from "@/lib/samples";
+import { PhotoTile } from "@/components/ui/photo-tile";
+import { categoryArt } from "@/lib/category-art";
+import { fetchSamples } from "@/lib/samples";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -57,24 +58,6 @@ async function loadInspiration(): Promise<{
   }
 }
 
-/** Category id -> hero photo + theme card gradient (mirrors the storefront tiles). */
-const CATEGORY_ART: Record<string, { photo: string; from: string; to: string }> = {
-  babies: { photo: "babies", from: "#F9C5D1", to: "#F0913A" },
-  dads: { photo: "dads", from: "#F6B73C", to: "#E8622C" },
-  mums: { photo: "mums", from: "#F9C5D1", to: "#E8622C" },
-  kids: { photo: "kids", from: "#F6B73C", to: "#F0913A" },
-  siblings: { photo: "siblings", from: "#9DB8F0", to: "#2E5FD7" },
-  grandparents: { photo: "grandparents", from: "#D9CBF0", to: "#9D8CE8" },
-};
-
-function categoryArt(id: string, name: string) {
-  if (CATEGORY_ART[id]) return CATEGORY_ART[id];
-  const n = name.toLowerCase();
-  for (const key of Object.keys(CATEGORY_ART)) {
-    if (n.includes(key.slice(0, 3))) return CATEGORY_ART[key];
-  }
-  return CATEGORY_ART.kids;
-}
 
 /**
  * Hero polaroids rising through the gradient like balloons.
@@ -182,6 +165,7 @@ export default async function HomePage() {
     <div className="w-full">
       {/* ---------------------------------------------------------------- Hero */}
       <section className="hero-wash grain relative overflow-hidden">
+        <HeroAnimatedBackground />
         {/* Rising polaroids + doodles */}
         <div className="pointer-events-none absolute inset-0" aria-hidden="true">
           {HERO_DOODLES.map((d, i) => (
@@ -239,7 +223,7 @@ export default async function HomePage() {
         </div>
 
         {/* Centered logo + CTA + tagline, exactly like the storefront hero */}
-        <div className="relative z-10 mx-auto flex min-h-[76vh] w-full max-w-6xl flex-col items-center justify-center px-4 py-24 text-center sm:min-h-[82vh]">
+        <div className="relative z-10 mx-auto flex min-h-[54vh] w-full max-w-6xl flex-col items-center justify-center px-4 py-16 text-center sm:min-h-[60vh]">
           <h1 className="m-0">
             <Image
               src="/logo.png"
@@ -269,29 +253,15 @@ export default async function HomePage() {
             {inspiration.categories.map((cat) => {
               const art = categoryArt(cat.id, cat.name);
               return (
-                <Link
+                <PhotoTile
                   key={cat.id}
                   href={`/create?category=${encodeURIComponent(cat.id)}`}
-                  draggable={false}
-                  className="tile-lift group relative aspect-[4/5] w-52 shrink-0 snap-start rounded-3xl shadow-fuzzy sm:w-60"
-                  style={{ background: `linear-gradient(160deg, ${art.from}, ${art.to})` }}
-                >
-                  {/* Clipping lives on an inner layer so the outer shadow above is never cut off. */}
-                  <div className="absolute inset-0 overflow-hidden rounded-3xl">
-                    <div className="scallop absolute inset-[7%] overflow-hidden">
-                      <Image
-                        src={`/categories/${art.photo}.jpg`}
-                        alt={cat.name}
-                        width={480}
-                        height={600}
-                        loading="lazy"
-                        draggable={false}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    </div>
-                  </div>
-                  <PillLabel className="absolute bottom-4 left-4">{cat.name}</PillLabel>
-                </Link>
+                  image={`/categories/${art.photo}.jpg`}
+                  label={cat.name}
+                  gradientFrom={art.from}
+                  gradientTo={art.to}
+                  variant="category"
+                />
               );
             })}
           </Carousel>
@@ -354,7 +324,7 @@ export default async function HomePage() {
                           key={tpl.id}
                           href={`/create?template=${encodeURIComponent(tpl.id)}`}
                           draggable={false}
-                          className="tile-lift group flex w-56 shrink-0 snap-start flex-col rounded-3xl bg-white/70 p-3 shadow-fuzzy ring-1 ring-white sm:w-64"
+                          className="tile-lift group flex w-56 shrink-0 snap-start flex-col rounded-3xl bg-white/70 p-3 ring-1 ring-white sm:w-64"
                         >
                           <div className="scallop aspect-square overflow-hidden bg-lavender">
                             {image ? (
@@ -416,10 +386,21 @@ export default async function HomePage() {
               </ButtonLink>
             </div>
             {samples.length > 0 ? (
-              <div className="flex flex-wrap items-end justify-center gap-8 pb-2 lg:ml-auto">
-                {samples.slice(0, 3).map((s) => (
-                  <SampleBook key={s.token} sample={s} />
-                ))}
+              <div className="flex flex-wrap items-end justify-center gap-6 pb-2 lg:ml-auto">
+                {samples.slice(0, 3).map((s) => {
+                  const art = categoryArt(s.categoryId ?? "kids", s.categoryName ?? "Kids");
+                  return (
+                    <PhotoTile
+                      key={s.token}
+                      href={`/samples/${encodeURIComponent(s.token)}`}
+                      image={s.coverImageUrl ?? `/categories/${art.photo}.jpg`}
+                      label={s.title ?? "A sample story"}
+                      gradientFrom={art.from}
+                      gradientTo={art.to}
+                      variant="book"
+                    />
+                  );
+                })}
               </div>
             ) : (
               <div className="mx-auto flex flex-col items-center gap-2 text-center lg:ml-auto">
@@ -457,25 +438,3 @@ export default async function HomePage() {
   );
 }
 
-/** A sample book on the landing page — a real hardcover, not a flat card. */
-function SampleBook({ sample }: { sample: SampleSummary }) {
-  return (
-    <Link
-      href={`/samples/${encodeURIComponent(sample.token)}`}
-      className="group flex flex-col items-center gap-3"
-    >
-      <BookMockup
-        coverUrl={sample.coverImageUrl}
-        title={sample.title ?? "A sample story"}
-        size="sm"
-        alt={sample.title ?? "A sample story"}
-      />
-      <span className="text-center">
-        <span className="block font-display text-xs font-bold leading-snug text-ink group-hover:text-coral">
-          {sample.title ?? "A sample story"}
-        </span>
-        {sample.categoryName ? <Tag className="mt-1.5 inline-block">{sample.categoryName}</Tag> : null}
-      </span>
-    </Link>
-  );
-}

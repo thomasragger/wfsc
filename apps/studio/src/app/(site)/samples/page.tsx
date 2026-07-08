@@ -1,11 +1,10 @@
-import Link from "next/link";
-
 import { Doodle } from "@/components/decor";
-import { BookMockup } from "@/components/ui/book-mockup";
 import { ButtonLink } from "@/components/ui/button";
-import { Tag } from "@/components/ui/chip";
+import { Carousel } from "@/components/ui/carousel";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { PhotoTile } from "@/components/ui/photo-tile";
+import { categoryArt } from "@/lib/category-art";
 import { fetchSamples, type SampleSummary } from "@/lib/samples";
 
 export const dynamic = "force-dynamic";
@@ -19,11 +18,11 @@ export default async function SamplesPage() {
   const samples = await fetchSamples();
 
   // Group by category, keeping first-seen order; uncategorized last.
-  const groups = new Map<string, { name: string; items: SampleSummary[] }>();
+  const groups = new Map<string, { id: string; name: string; items: SampleSummary[] }>();
   for (const sample of samples) {
     const key = sample.categoryId ?? "other";
     const name = sample.categoryName ?? "More stories";
-    if (!groups.has(key)) groups.set(key, { name, items: [] });
+    if (!groups.has(key)) groups.set(key, { id: key, name, items: [] });
     groups.get(key)!.items.push(sample);
   }
 
@@ -51,34 +50,28 @@ export default async function SamplesPage() {
         />
       ) : (
         <div className="mt-14 flex flex-col gap-14">
-          {[...groups.values()].map((group) => (
-            <section key={group.name}>
-              <h2 className="font-display text-2xl font-extrabold text-ink">{group.name}</h2>
-              <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
-                {group.items.map((sample) => (
-                  <Link
-                    key={sample.token}
-                    href={`/samples/${encodeURIComponent(sample.token)}`}
-                    className="group flex flex-col items-center gap-3"
-                  >
-                    <BookMockup
-                      coverUrl={sample.coverImageUrl}
-                      title={sample.title ?? "A sample story"}
-                      size="sm"
-                      alt={sample.title ?? "A sample story"}
-                      className="mx-auto"
+          {[...groups.values()].map((group) => {
+            const art = categoryArt(group.id, group.name);
+            return (
+              <section key={group.id}>
+                <h2 className="font-display text-2xl font-extrabold text-ink">{group.name}</h2>
+                {/* Same tile, same size, same carousel as the homepage category row. */}
+                <Carousel className="mt-5" ariaLabel={`${group.name} sample books`}>
+                  {group.items.map((sample) => (
+                    <PhotoTile
+                      key={sample.token}
+                      href={`/samples/${encodeURIComponent(sample.token)}`}
+                      image={sample.coverImageUrl ?? `/categories/${art.photo}.jpg`}
+                      label={sample.title ?? "A sample story"}
+                      gradientFrom={art.from}
+                      gradientTo={art.to}
+                      variant="book"
                     />
-                    <span className="flex flex-col items-center gap-1.5 text-center">
-                      <span className="font-display text-sm font-extrabold leading-snug text-ink group-hover:text-coral">
-                        {sample.title ?? "A sample story"}
-                      </span>
-                      {sample.categoryName ? <Tag>{sample.categoryName}</Tag> : null}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          ))}
+                  ))}
+                </Carousel>
+              </section>
+            );
+          })}
         </div>
       )}
 

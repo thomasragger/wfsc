@@ -265,7 +265,7 @@ export function CreateWizard() {
                   key={tpl.id}
                   type="button"
                   onClick={() => pickTemplate(tpl)}
-                  className="tile-lift group flex flex-col rounded-3xl bg-white/75 p-4 text-left shadow-fuzzy ring-1 ring-white"
+                  className="tile-lift group flex flex-col rounded-3xl bg-white/75 p-4 text-left ring-1 ring-white"
                 >
                   <div className="scallop aspect-[5/4] overflow-hidden bg-lavender">
                     {(tpl.previewImageUrl ?? tpl.exampleImageUrl) ? (

@@ -9,7 +9,7 @@ import { EditorPanel, SpreadEditor } from "@/components/editor";
 import { Flipbook, type FlipPage } from "@/components/flipbook";
 import { MagicHappening, StatusTimeline } from "@/components/status-views";
 import { Alert } from "@/components/ui/alert";
-import { BookMockup } from "@/components/ui/book-mockup";
+import { CoverImage } from "@/components/ui/cover-image";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -278,11 +278,10 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
   return (
     <Shell error={error}>
       <header className="mb-10 flex flex-col items-center text-center">
-        <BookMockup
-          coverUrl={coverImageUrl}
-          title={book.title ?? "Your storybook"}
-          size="md"
+        <CoverImage
+          src={coverImageUrl}
           alt="Your book's cover"
+          size="md"
           priority
           className="mb-7"
         />

@@ -240,17 +240,27 @@ body::after {
 
   /* --- consistent interactive tile hover ---------------------------------
      The ONE hover treatment for every clickable card/tile in the app:
-     lift straight up, deepen the shadow, never rotate or skew. Apply this
-     instead of one-off hover:-translate-y / hover:rotate utilities. */
+     lift straight up, never rotate or skew. Two shadow layers do the work
+     of selling "lifted off the page" — a tight contact shadow that stays
+     close and darkens, plus a soft cast shadow that grows and spreads, the
+     way a real object's shadow behaves as it rises off a surface. This
+     class owns its shadow at rest AND on hover — don't pair it with a
+     separate shadow-* utility, or the two will fight over the cascade.
+     Apply instead of one-off hover:-translate-y / hover:rotate utilities. */
   .tile-lift {
+    box-shadow:
+      0 3px 6px -3px rgb(118 30 11 / 0.16),
+      0 10px 20px -14px rgb(118 30 11 / 0.22);
     transition:
-      transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 200ms ease;
+      transform 0.55s cubic-bezier(0.3, 1.5, 0.5, 1),
+      box-shadow 0.55s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .tile-lift:hover,
   .tile-lift:focus-visible {
-    transform: translateY(-8px);
-    box-shadow: 0 22px 40px -14px rgb(118 30 11 / 0.32);
+    transform: translateY(-6px);
+    box-shadow:
+      0 12px 20px -8px rgb(118 30 11 / 0.26),
+      0 34px 54px -20px rgb(118 30 11 / 0.34);
   }
   @media (prefers-reduced-motion: reduce) {
     .tile-lift {
@@ -461,11 +471,14 @@ body::after {
 /* Balloon rise: hero polaroids & doodles float up through the hero.
    Each rider sets --rise-duration / --rise-delay inline for variety. */
 @keyframes wfsc-rise {
+  /* Cards must clear the hero's bottom/top edges regardless of their own
+     "top" anchor (0-30%) — otherwise they fade in mid-air instead of
+     genuinely entering from off-screen. 95vh clears any hero height we use. */
   0% {
-    transform: translateY(58vh);
+    transform: translateY(95vh);
   }
   100% {
-    transform: translateY(-130vh);
+    transform: translateY(-150vh);
   }
 }
 

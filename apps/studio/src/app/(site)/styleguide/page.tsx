@@ -12,7 +12,7 @@ import Image from "next/image";
 
 import { ArtPlaceholder, BlobFrame, Doodle, Sparkle } from "@/components/decor";
 import { Alert, Toast } from "@/components/ui/alert";
-import { BookMockup } from "@/components/ui/book-mockup";
+import { CoverImage } from "@/components/ui/cover-image";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Card, Polaroid } from "@/components/ui/card";
 import { Carousel } from "@/components/ui/carousel";
@@ -241,16 +241,16 @@ export default function StyleguidePage() {
           </div>
         </Section>
 
-        {/* ---------------------------------------------------------- 3D book */}
+        {/* -------------------------------------------------------- cover tile */}
         <Section
           id="book"
-          title="Book mockup"
-          note="BookMockup from ui/book-mockup — CSS-3D hardcover with page edges, spine hint, ground shadow, and an illustrated stacked title. Hover straightens and lifts it."
+          title="Cover image"
+          note="CoverImage from ui/cover-image — a plain, square, rounded book cover using the shared tile-lift hover. (The earlier 3D BookMockup is parked; its hover read as glitchy and it's simpler to keep every tile consistent.)"
         >
           <Card className="flex flex-wrap items-end justify-center gap-10 p-10">
-            <BookMockup coverUrl="/categories/babies.jpg" title="Luca's First Splash" size="sm" />
-            <BookMockup coverUrl="/categories/kids.jpg" title="The Night We Camped in the Garden" size="md" />
-            <BookMockup coverUrl={null} title="Cover on its way" size="sm" />
+            <CoverImage src="/categories/babies.jpg" alt="Luca's First Splash" size="sm" />
+            <CoverImage src="/categories/kids.jpg" alt="The Night We Camped in the Garden" size="md" />
+            <CoverImage src={null} alt="Cover on its way" size="sm" />
           </Card>
         </Section>
 

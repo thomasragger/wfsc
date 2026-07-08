@@ -6,7 +6,7 @@ import { FONT_PAIRINGS, fontStylesheetUrl } from "@wfsc/book-engine";
 
 import { Sparkle } from "@/components/decor";
 import { ButtonLink } from "@/components/ui/button";
-import { BookMockup } from "@/components/ui/book-mockup";
+import { CoverImage } from "@/components/ui/cover-image";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { BookPayload, SpreadPayload } from "@/lib/book-payload";
 
@@ -87,14 +87,11 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
   function renderPage(p: FlipPage) {
     if (p.kind === "cover") {
       return (
-        <div className="flex h-full items-center justify-center">
-          <BookMockup
-            coverUrl={book.coverImageUrl}
-            title={book.title ?? "Your storybook"}
-            size="lg"
-            alt="Book cover"
-            priority
-          />
+        <div className="flex h-full flex-col items-center justify-center gap-5 text-center">
+          <CoverImage src={book.coverImageUrl} alt="Book cover" size="lg" priority />
+          <h2 className="font-display text-2xl font-extrabold text-ink sm:text-3xl">
+            {book.title ?? "Your storybook"}
+          </h2>
         </div>
       );
     }
