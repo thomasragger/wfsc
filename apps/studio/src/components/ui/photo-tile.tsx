@@ -58,7 +58,9 @@ export function PhotoTile({
       {/* Clipping lives on an inner layer so the tile's own lift-shadow is never cut off. */}
       <div className="absolute inset-0 overflow-hidden rounded-3xl">
         <div
-          className="absolute inset-[7%] overflow-hidden bg-white/40"
+          /* More room at the bottom than the other edges — the pill label
+             sits there and must never touch the masked photo. */
+          className="absolute inset-x-[10%] top-[9%] bottom-[24%] overflow-hidden bg-white/40"
           style={{ clipPath: `url(#${maskClipId(mask)})` }}
         >
           {image ? (
