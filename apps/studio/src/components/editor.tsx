@@ -10,6 +10,10 @@ import {
   type LayoutId,
 } from "@wfsc/book-engine";
 
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Chip } from "@/components/ui/chip";
+import { Field, TextArea } from "@/components/ui/input";
 import type { BookPayload, SpreadPayload } from "@/lib/book-payload";
 
 const ALL_PAIRINGS = Object.values(FONT_PAIRINGS);
@@ -31,7 +35,7 @@ export function EditorPanel({
   const dirty = greeting !== (book.greeting ?? "");
 
   return (
-    <section className="card p-6 sm:p-8">
+    <Card className="p-6 sm:p-8">
       {/* Load every pairing's fonts so each option previews in its own face. */}
       {ALL_PAIRINGS.map((p) => (
         <link key={p.id} rel="stylesheet" href={fontStylesheetUrl(p)} />
@@ -40,25 +44,26 @@ export function EditorPanel({
       <h2 className="font-display text-xl font-bold text-ink">Make it yours</h2>
 
       <div className="mt-5">
-        <label htmlFor="greeting" className="mb-1.5 block text-sm font-bold text-ink">
-          Greeting &amp; dedication
-        </label>
-        <textarea
-          id="greeting"
-          className="input min-h-24 resize-y"
-          placeholder={"For Mia —\nso you never forget the summer of the lighthouse.\nLove, Nana"}
-          value={greeting}
-          onChange={(e) => {
-            setGreeting(e.target.value);
-            setSaved(false);
-          }}
-          maxLength={600}
-        />
+        <Field label="Greeting & dedication" htmlFor="greeting">
+          <TextArea
+            id="greeting"
+            className="min-h-24"
+            placeholder={"For Mia —\nso you never forget the summer of the lighthouse.\nLove, Nana"}
+            value={greeting}
+            onChange={(e) => {
+              setGreeting(e.target.value);
+              setSaved(false);
+            }}
+            maxLength={600}
+          />
+        </Field>
         <div className="mt-2 flex items-center gap-3">
-          <button
-            type="button"
-            className="btn btn-marigold px-4 py-2 text-sm"
-            disabled={!dirty || saving}
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={!dirty}
+            pending={saving}
+            pendingLabel="Saving…"
             onClick={async () => {
               setSaving(true);
               try {
@@ -69,8 +74,8 @@ export function EditorPanel({
               }
             }}
           >
-            {saving ? "Saving…" : "Save dedication"}
-          </button>
+            Save dedication
+          </Button>
           {saved && !dirty ? (
             <span className="text-xs font-semibold text-sage">Saved ✓</span>
           ) : null}
@@ -116,7 +121,7 @@ export function EditorPanel({
           })}
         </div>
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -143,26 +148,28 @@ export function SpreadEditor({
   const isStory = spread.kind === "story";
 
   return (
-    <section className="card p-6 sm:p-8">
+    <Card className="p-6 sm:p-8">
       <h3 className="font-display text-lg font-bold text-ink">
         Edit this {spread.kind === "greeting" ? "dedication" : "page"}
       </h3>
 
       <div className="mt-4">
-        <label htmlFor={`spread-text-${spread.id}`} className="mb-1.5 block text-sm font-bold text-ink">
-          Story text
-        </label>
-        <textarea
-          id={`spread-text-${spread.id}`}
-          className="input min-h-28 resize-y"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          maxLength={1200}
-        />
-        <button
-          type="button"
-          className="btn btn-marigold mt-2 px-4 py-2 text-sm"
-          disabled={!dirty || savingText}
+        <Field label="Story text" htmlFor={`spread-text-${spread.id}`}>
+          <TextArea
+            id={`spread-text-${spread.id}`}
+            className="min-h-28"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            maxLength={1200}
+          />
+        </Field>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="mt-2"
+          disabled={!dirty}
+          pending={savingText}
+          pendingLabel="Saving…"
           onClick={async () => {
             setSavingText(true);
             try {
@@ -172,8 +179,8 @@ export function SpreadEditor({
             }
           }}
         >
-          {savingText ? "Saving…" : "Save text"}
-        </button>
+          Save text
+        </Button>
       </div>
 
       {isStory ? (
@@ -187,11 +194,10 @@ export function SpreadEditor({
               const disabled =
                 layout.id === "full-bleed-overlay" && spread.layout !== "full-bleed-overlay";
               return (
-                <button
+                <Chip
                   key={layout.id}
-                  type="button"
                   role="radio"
-                  aria-checked={selected}
+                  selected={selected}
                   disabled={disabled}
                   title={
                     disabled
@@ -199,14 +205,9 @@ export function SpreadEditor({
                       : layout.description
                   }
                   onClick={() => onChangeLayout(layout.id)}
-                  className={`rounded-full border-2 px-4 py-1.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-                    selected
-                      ? "border-coral bg-coral text-cream"
-                      : "border-ink/15 bg-white text-ink hover:border-marigold"
-                  }`}
                 >
                   {layout.name}
-                </button>
+                </Chip>
               );
             })}
           </div>
@@ -227,22 +228,22 @@ export function SpreadEditor({
             </div>
           ) : noteOpen ? (
             <div>
-              <label htmlFor={`regen-${spread.id}`} className="mb-1.5 block text-sm font-bold text-ink">
-                What should our illustrators change?
-              </label>
-              <textarea
-                id={`regen-${spread.id}`}
-                className="input min-h-20 resize-y"
-                placeholder="e.g. Mia should be wearing her yellow raincoat, and it should be evening"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                maxLength={600}
-              />
+              <Field label="What should our illustrators change?" htmlFor={`regen-${spread.id}`}>
+                <TextArea
+                  id={`regen-${spread.id}`}
+                  className="min-h-20"
+                  placeholder="e.g. Mia should be wearing her yellow raincoat, and it should be evening"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  maxLength={600}
+                />
+              </Field>
               <div className="mt-2 flex items-center gap-2">
-                <button
-                  type="button"
-                  className="btn btn-coral px-4 py-2 text-sm"
-                  disabled={note.trim().length < 3 || regenState === "sending"}
+                <Button
+                  size="sm"
+                  disabled={note.trim().length < 3}
+                  pending={regenState === "sending"}
+                  pendingLabel="Sending…"
                   onClick={async () => {
                     setRegenState("sending");
                     try {
@@ -253,28 +254,20 @@ export function SpreadEditor({
                     }
                   }}
                 >
-                  {regenState === "sending" ? "Sending…" : "Redraw this illustration"}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-ghost px-4 py-2 text-sm"
-                  onClick={() => setNoteOpen(false)}
-                >
+                  Redraw this illustration
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setNoteOpen(false)}>
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
-            <button
-              type="button"
-              className="btn btn-ghost px-4 py-2 text-sm"
-              onClick={() => setNoteOpen(true)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setNoteOpen(true)}>
               ✏️ Ask for a different illustration
-            </button>
+            </Button>
           )}
         </div>
       ) : null}
-    </section>
+    </Card>
   );
 }

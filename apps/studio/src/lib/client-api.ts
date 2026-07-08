@@ -21,6 +21,12 @@ export interface TemplateSummary {
   suggestedStyleId: string | null;
   storyBeats: string[];
   exampleImageUrl: string | null;
+  /**
+   * TODO(orchestrator): /api/templates selects `preview_image_url` from the DB
+   * but doesn't serialize it yet — until it does, this stays undefined and the
+   * UI falls back to exampleImageUrl / the placeholder.
+   */
+  previewImageUrl?: string | null;
 }
 
 export interface CategorySummary {
@@ -35,6 +41,8 @@ export interface CreateBookInput {
   templateId?: string;
   styleId: string;
   email: string;
+  /** Reader age (midpoint of the chosen band, e.g. 0-2 -> 1). */
+  targetAge?: number;
   people: { name: string; role: PersonRole; photoUrls: string[] }[];
 }
 

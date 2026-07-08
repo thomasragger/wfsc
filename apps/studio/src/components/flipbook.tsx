@@ -1,8 +1,13 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 import { FONT_PAIRINGS, fontStylesheetUrl } from "@wfsc/book-engine";
 
-import { ArtPlaceholder, Sparkle } from "@/components/decor";
+import { Sparkle } from "@/components/decor";
+import { ButtonLink } from "@/components/ui/button";
+import { BookMockup } from "@/components/ui/book-mockup";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { BookPayload, SpreadPayload } from "@/lib/book-payload";
 
 export type FlipPage =
@@ -25,15 +30,79 @@ interface FlipbookProps {
 }
 
 /**
- * Spread-by-spread pager. Pages are square (the printed book is 8.5×8.5 in),
- * so a spread renders as a 2:1 canvas with a soft center gutter.
+ * Premium spread viewer: left text page + right illustration page (both
+ * square, like the printed 8.5×8.5 in book), with a simple crossfade/slide
+ * between spreads. 'text-right' renders mirrored; legacy layouts fall back
+ * to text-left. Illustrations are contain-fit on cream — a face is never
+ * cropped. Keyboard arrows, swipe, and the dot rail all navigate.
  */
 export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
   const pairing = FONT_PAIRINGS[book.fontPairing];
-  const displayFont = { fontFamily: `'${pairing.display.family}', sans-serif`, fontWeight: pairing.display.weight };
-  const bodyFont = { fontFamily: `'${pairing.body.family}', sans-serif`, fontWeight: pairing.body.weight };
-  const page = pages[Math.min(index, pages.length - 1)];
+  const displayFont = {
+    fontFamily: `'${pairing.display.family}', sans-serif`,
+    fontWeight: pairing.display.weight,
+  };
+  const bodyFont = {
+    fontFamily: `'${pairing.body.family}', sans-serif`,
+    fontWeight: pairing.body.weight,
+  };
+
+  const clamped = Math.min(index, pages.length - 1);
+
+  // Crossfade/slide: keep the outgoing spread mounted briefly while the
+  // incoming one slides in.
+  const [displayed, setDisplayed] = useState(clamped);
+  const [leaving, setLeaving] = useState<{ pageIndex: number; forward: boolean } | null>(null);
+  // Adjust-state-during-render (the React-sanctioned derived-state pattern):
+  // when the requested index changes, remember the outgoing spread.
+  if (clamped !== displayed) {
+    setLeaving({ pageIndex: displayed, forward: clamped > displayed });
+    setDisplayed(clamped);
+  }
+  useEffect(() => {
+    if (!leaving) return;
+    const t = setTimeout(() => setLeaving(null), 280);
+    return () => clearTimeout(t);
+  }, [leaving]);
+
+  // Swipe navigation (pointer-based, works for touch and mouse).
+  const swipe = useRef<{ x: number; y: number } | null>(null);
+  function onPointerDown(e: React.PointerEvent) {
+    swipe.current = { x: e.clientX, y: e.clientY };
+  }
+  function onPointerUp(e: React.PointerEvent) {
+    if (!swipe.current) return;
+    const dx = e.clientX - swipe.current.x;
+    const dy = e.clientY - swipe.current.y;
+    swipe.current = null;
+    if (Math.abs(dx) < 44 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+    if (dx < 0 && clamped < pages.length - 1) onIndexChange(clamped + 1);
+    if (dx > 0 && clamped > 0) onIndexChange(clamped - 1);
+  }
+
+  const page = pages[displayed];
   if (!page) return null;
+  const leavingPage = leaving ? pages[leaving.pageIndex] : null;
+
+  function renderPage(p: FlipPage) {
+    if (p.kind === "cover") {
+      return (
+        <div className="flex h-full items-center justify-center">
+          <BookMockup
+            coverUrl={book.coverImageUrl}
+            title={book.title ?? "Your storybook"}
+            size="lg"
+            alt="Book cover"
+            priority
+          />
+        </div>
+      );
+    }
+    if (p.kind === "locked") {
+      return <LockedSpread morePages={p.morePages} variant={p.variant} />;
+    }
+    return <SpreadCanvas spread={p.spread} bodyFont={bodyFont} displayFont={displayFont} />;
+  }
 
   return (
     <div
@@ -41,44 +110,46 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
       tabIndex={0}
       role="group"
       aria-label="Book preview"
-      aria-roledescription="flipbook"
+      aria-roledescription="book viewer"
       onKeyDown={(e) => {
-        if (e.key === "ArrowLeft" && index > 0) onIndexChange(index - 1);
-        if (e.key === "ArrowRight" && index < pages.length - 1) onIndexChange(index + 1);
+        if (e.key === "ArrowLeft" && clamped > 0) onIndexChange(clamped - 1);
+        if (e.key === "ArrowRight" && clamped < pages.length - 1) onIndexChange(clamped + 1);
       }}
     >
       {/* React hoists this to <head>; loads the pairing's Google fonts. */}
       <link rel="stylesheet" href={fontStylesheetUrl(pairing)} />
 
       <div className="relative w-full max-w-3xl">
-        {page.kind === "cover" ? (
-          <div className="mx-auto w-full max-w-sm">
-            <div className="relative aspect-square overflow-hidden rounded-lg shadow-polaroid ring-8 ring-white">
-              {book.coverImageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={book.coverImageUrl} alt="Book cover" className="h-full w-full object-cover" />
-              ) : (
-                <ArtPlaceholder label="Cover illustration on its way" />
-              )}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/60 to-transparent px-6 pb-6 pt-14 text-center">
-                <p className="text-2xl leading-snug text-cream drop-shadow" style={displayFont}>
-                  {book.title ?? "Your storybook"}
-                </p>
-              </div>
+        <div
+          className="relative aspect-2/1 touch-pan-y select-none"
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerUp}
+        >
+          {leavingPage ? (
+            <div className="animate-fade-out pointer-events-none absolute inset-0" aria-hidden="true">
+              {renderPage(leavingPage)}
             </div>
+          ) : null}
+          <div
+            key={displayed}
+            className={`absolute inset-0 ${
+              leaving
+                ? leaving.forward
+                  ? "animate-slide-in-right"
+                  : "animate-slide-in-left"
+                : ""
+            }`}
+          >
+            {renderPage(page)}
           </div>
-        ) : page.kind === "locked" ? (
-          <LockedSpread morePages={page.morePages} variant={page.variant} />
-        ) : (
-          <SpreadCanvas spread={page.spread} bodyFont={bodyFont} />
-        )}
+        </div>
 
         {/* Page turn buttons */}
         <button
           type="button"
           aria-label="Previous page"
-          disabled={index === 0}
-          onClick={() => onIndexChange(index - 1)}
+          disabled={clamped === 0}
+          onClick={() => onIndexChange(clamped - 1)}
           className="absolute -left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white font-display text-lg text-ink shadow-fuzzy transition hover:bg-marigold disabled:opacity-30 sm:-left-5"
         >
           ‹
@@ -86,8 +157,8 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
         <button
           type="button"
           aria-label="Next page"
-          disabled={index === pages.length - 1}
-          onClick={() => onIndexChange(index + 1)}
+          disabled={clamped === pages.length - 1}
+          onClick={() => onIndexChange(clamped + 1)}
           className="absolute -right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white font-display text-lg text-ink shadow-fuzzy transition hover:bg-marigold disabled:opacity-30 sm:-right-5"
         >
           ›
@@ -96,18 +167,18 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
 
       {/* Dot nav */}
       <div className="flex items-center gap-3">
-        <p className="text-xs font-semibold text-ink-soft">{pageLabel(page)}</p>
+        <p className="text-xs font-semibold text-ink-soft">{pageLabel(pages[clamped])}</p>
         <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label="Pages">
           {pages.map((p, i) => (
             <button
               key={i}
               type="button"
               role="tab"
-              aria-selected={i === index}
+              aria-selected={i === clamped}
               aria-label={pageLabel(p)}
               onClick={() => onIndexChange(i)}
               className={`h-2.5 rounded-full transition-all ${
-                i === index ? "w-6 bg-coral" : "w-2.5 bg-ink/15 hover:bg-ink/30"
+                i === clamped ? "w-6 bg-coral" : "w-2.5 bg-ink/15 hover:bg-ink/30"
               }`}
             />
           ))}
@@ -117,37 +188,25 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
   );
 }
 
+/**
+ * One spread = two square pages. The illustration page letterboxes its art
+ * (object-contain on cream) so nothing — especially a face — is ever cropped.
+ */
 function SpreadCanvas({
   spread,
   bodyFont,
+  displayFont,
 }: {
   spread: SpreadPayload;
   bodyFont: React.CSSProperties;
+  displayFont: React.CSSProperties;
 }) {
   const text = spread.text?.trim() ?? "";
+  const mirrored = spread.layout === "text-right"; // every other layout reads text-left
 
-  const textBlock = (
-    <div
-      className="flex h-full w-full items-center justify-center bg-cream p-[7%] text-center"
-      style={bodyFont}
-    >
-      <p className="whitespace-pre-line text-[clamp(0.8rem,2.2vw,1.15rem)] leading-relaxed text-ink">
-        {text || "…"}
-      </p>
-    </div>
-  );
-
-  const imageBlock = (label?: string) =>
-    spread.imageUrl ? (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={spread.imageUrl} alt="" className="h-full w-full object-cover" />
-    ) : (
-      <ArtPlaceholder label={label ?? "Illustration on its way"} />
-    );
-
-  return (
-    <div className="relative aspect-2/1 overflow-hidden rounded-lg shadow-polaroid ring-8 ring-white">
-      {spread.kind === "greeting" ? (
+  if (spread.kind === "greeting") {
+    return (
+      <PageFrame>
         <div
           className="flex h-full w-full items-center justify-center bg-cream p-[8%] text-center"
           style={bodyFont}
@@ -157,45 +216,67 @@ function SpreadCanvas({
             <p className="whitespace-pre-line text-[clamp(0.85rem,2.4vw,1.25rem)] italic leading-relaxed text-ink">
               {text || "Your dedication will live here."}
             </p>
-          </div>
-        </div>
-      ) : spread.layout === "full-bleed-overlay" ? (
-        <>
-          <div className="absolute inset-0">{imageBlock()}</div>
-          {text ? (
-            <div className="absolute inset-x-[10%] bottom-[8%] rounded-2xl bg-cream/85 px-6 py-4 text-center backdrop-blur-sm" style={bodyFont}>
-              <p className="whitespace-pre-line text-[clamp(0.8rem,2vw,1.05rem)] leading-relaxed text-ink">
-                {text}
-              </p>
-            </div>
-          ) : null}
-        </>
-      ) : spread.layout === "text-bottom" ? (
-        <div className="flex h-full flex-col">
-          <div className="h-2/3 w-full overflow-hidden">{imageBlock()}</div>
-          <div className="flex h-1/3 items-center justify-center bg-cream px-[8%] text-center" style={bodyFont}>
-            <p className="whitespace-pre-line text-[clamp(0.75rem,1.9vw,1rem)] leading-relaxed text-ink">
-              {text || "…"}
+            <p className="mt-4 font-display text-sm text-ink-soft" style={displayFont} aria-hidden="true">
+              ❦
             </p>
           </div>
         </div>
+      </PageFrame>
+    );
+  }
+
+  const textPage = (
+    <div
+      className="flex aspect-square h-full items-center justify-center bg-cream p-[7%] text-center"
+      style={bodyFont}
+    >
+      <p className="whitespace-pre-line text-[clamp(0.8rem,2.2vw,1.15rem)] leading-relaxed text-ink">
+        {text || "…"}
+      </p>
+    </div>
+  );
+
+  const imagePage = (
+    <div className="flex aspect-square h-full items-center justify-center bg-cream p-[3%]">
+      {spread.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={spread.imageUrl}
+          alt=""
+          className="max-h-full max-w-full object-contain drop-shadow-sm"
+        />
       ) : (
-        <div className="grid h-full grid-cols-2">
-          {spread.layout === "text-left" ? (
-            <>
-              {textBlock}
-              <div className="overflow-hidden">{imageBlock()}</div>
-            </>
-          ) : (
-            <>
-              <div className="overflow-hidden">{imageBlock()}</div>
-              {textBlock}
-            </>
-          )}
+        <div className="h-full w-full">
+          <Skeleton className="h-full w-full" rounded="rounded-none" />
         </div>
       )}
+    </div>
+  );
 
-      {/* Center gutter */}
+  return (
+    <PageFrame>
+      <div className="grid h-full grid-cols-2">
+        {mirrored ? (
+          <>
+            {imagePage}
+            {textPage}
+          </>
+        ) : (
+          <>
+            {textPage}
+            {imagePage}
+          </>
+        )}
+      </div>
+    </PageFrame>
+  );
+}
+
+/** Shared spread chrome: white book edge, soft shadow, center gutter. */
+function PageFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative h-full w-full overflow-hidden rounded-lg shadow-polaroid ring-8 ring-white">
+      {children}
       <div
         className="pointer-events-none absolute inset-y-0 left-1/2 w-10 -translate-x-1/2 bg-gradient-to-r from-transparent via-ink/15 to-transparent"
         aria-hidden="true"
@@ -245,7 +326,7 @@ function LockedSpread({ morePages, variant }: { morePages: number; variant: numb
   );
 
   return (
-    <div className="relative aspect-2/1 overflow-hidden rounded-lg shadow-polaroid ring-8 ring-white">
+    <PageFrame>
       {/* Fake layout, blurred so nothing reads as content */}
       <div className="absolute inset-0 grid grid-cols-2 blur-[5px]" aria-hidden="true">
         {imageLeft ? (
@@ -260,10 +341,6 @@ function LockedSpread({ morePages, variant }: { morePages: number; variant: numb
           </>
         )}
       </div>
-      <div
-        className="pointer-events-none absolute inset-y-0 left-1/2 w-10 -translate-x-1/2 bg-gradient-to-r from-transparent via-ink/10 to-transparent"
-        aria-hidden="true"
-      />
 
       {/* Warm veil + message */}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/35 px-6 text-center backdrop-blur-[2px]">
@@ -279,11 +356,11 @@ function LockedSpread({ morePages, variant }: { morePages: number; variant: numb
         <p className="max-w-sm text-sm font-medium text-ink-soft">
           Unlock your full book and we&rsquo;ll illustrate every page of your story.
         </p>
-        <a href="#unlock" className="btn btn-coral mt-1 px-5 py-2.5 text-sm">
+        <ButtonLink href="#unlock" size="sm" className="mt-1">
           Unlock your full book
-        </a>
+        </ButtonLink>
       </div>
-    </div>
+    </PageFrame>
   );
 }
 

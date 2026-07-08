@@ -238,6 +238,68 @@ body::after {
     box-shadow: 0 4px 12px rgb(118 30 11 / 0.14);
   }
 
+  /* --- consistent interactive tile hover ---------------------------------
+     The ONE hover treatment for every clickable card/tile in the app:
+     lift straight up, deepen the shadow, never rotate or skew. Apply this
+     instead of one-off hover:-translate-y / hover:rotate utilities. */
+  .tile-lift {
+    transition:
+      transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 200ms ease;
+  }
+  .tile-lift:hover,
+  .tile-lift:focus-visible {
+    transform: translateY(-8px);
+    box-shadow: 0 22px 40px -14px rgb(118 30 11 / 0.32);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tile-lift {
+      transition: none;
+    }
+    .tile-lift:hover,
+    .tile-lift:focus-visible {
+      transform: none;
+    }
+  }
+
+  /* --- hide scrollbars on draggable carousels ---------------------------- */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* --- hardcover book mockup (ui/book-mockup) ---------------------------
+     Flat, straight-on cover (no 3D skew — reads clean, never gimmicky).
+     Hover/focus: lift straight up, never rotate; ground shadow tightens
+     underneath as if the book left the surface. */
+  .book-mockup .book-mockup-inner {
+    position: relative;
+    transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .book-mockup:hover .book-mockup-inner,
+  .book-mockup:focus-visible .book-mockup-inner {
+    transform: translateY(-10px);
+  }
+  .book-mockup .book-mockup-ground {
+    transition:
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 220ms ease;
+  }
+  .book-mockup:hover .book-mockup-ground,
+  .book-mockup:focus-visible .book-mockup-ground {
+    transform: translateX(-50%) scaleX(0.82);
+    opacity: 0.55;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .book-mockup .book-mockup-inner,
+    .book-mockup .book-mockup-ground {
+      transition: none;
+    }
+  }
+
   /* --- how-it-works blob frame ----------------------------------------- */
   .blob-frame {
     position: relative;
@@ -320,6 +382,82 @@ body::after {
   }
 }
 
+/* Page / wizard-step entrances: soft slide + fade. */
+@keyframes wfsc-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes wfsc-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(26px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes wfsc-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-26px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes wfsc-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Character sheets landing on the wait screen flip into place. */
+@keyframes wfsc-flip-in {
+  0% {
+    opacity: 0;
+    transform: perspective(700px) rotateY(80deg) scale(0.9);
+  }
+  60% {
+    opacity: 1;
+    transform: perspective(700px) rotateY(-10deg) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(700px) rotateY(0deg) scale(1);
+  }
+}
+
+/* The mascot's happy waiting bounce. */
+@keyframes wfsc-bounce-soft {
+  0%,
+  100% {
+    transform: translateY(0) scaleX(1) scaleY(1);
+  }
+  42% {
+    transform: translateY(-12px) scaleX(0.98) scaleY(1.03);
+  }
+  58% {
+    transform: translateY(0) scaleX(1.04) scaleY(0.96);
+  }
+  70% {
+    transform: translateY(-3px) scaleX(1) scaleY(1);
+  }
+}
+
 /* Balloon rise: hero polaroids & doodles float up through the hero.
    Each rider sets --rise-duration / --rise-delay inline for variety. */
 @keyframes wfsc-rise {
@@ -369,6 +507,25 @@ body::after {
 .animate-sway {
   animation: wfsc-sway var(--sway-duration, 6s) ease-in-out infinite;
 }
+.animate-page-in {
+  animation: wfsc-page-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-slide-in-right {
+  animation: wfsc-slide-in-right 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-slide-in-left {
+  animation: wfsc-slide-in-left 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-fade-out {
+  animation: wfsc-fade-out 260ms ease both;
+}
+.animate-flip-in {
+  animation: wfsc-flip-in 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-bounce-soft {
+  animation: wfsc-bounce-soft 1.9s ease-in-out infinite;
+  transform-origin: 50% 100%;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .animate-float,
@@ -378,6 +535,12 @@ body::after {
   .animate-spin-slow,
   .animate-rise,
   .animate-sway,
+  .animate-page-in,
+  .animate-slide-in-right,
+  .animate-slide-in-left,
+  .animate-fade-out,
+  .animate-flip-in,
+  .animate-bounce-soft,
   .hover-wobble:hover {
     animation: none;
   }

@@ -1,7 +1,9 @@
 import Link from "next/link";
 
-import { Sparkle } from "@/components/decor";
 import { SampleViewer } from "@/components/sample-viewer";
+import { ButtonLink } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTransition } from "@/components/ui/page-transition";
 import { fetchSampleBundle } from "@/lib/samples";
 
 export const dynamic = "force-dynamic";
@@ -21,24 +23,18 @@ export default async function SampleBookPage({
   if (!bundle) {
     return (
       <div className="mx-auto w-full max-w-xl px-4 py-20 sm:px-6">
-        <div className="card flex flex-col items-center gap-4 p-12 text-center">
-          <Sparkle className="text-marigold" size={28} />
-          <h1 className="font-display text-2xl font-bold text-ink">
-            We couldn&rsquo;t find this sample book
-          </h1>
-          <p className="text-sm leading-relaxed text-ink-soft">
-            It may have gone back on the shelf. Browse the rest of the library,
-            or start a story of your own.
-          </p>
-          <div className="mt-2 flex flex-wrap justify-center gap-3">
-            <Link href="/samples" className="btn btn-ghost">
-              Browse sample books
-            </Link>
-            <Link href="/create" className="btn btn-coral">
-              Write your story
-            </Link>
-          </div>
-        </div>
+        <EmptyState
+          title="We couldn't find this sample book"
+          body="It may have gone back on the shelf. Browse the rest of the library, or start a story of your own."
+          action={
+            <>
+              <ButtonLink href="/samples" variant="ghost">
+                Browse sample books
+              </ButtonLink>
+              <ButtonLink href="/create">Write your story</ButtonLink>
+            </>
+          }
+        />
       </div>
     );
   }
@@ -46,7 +42,7 @@ export default async function SampleBookPage({
   const { book, payload } = bundle;
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+    <PageTransition className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       <header className="mb-10 text-center">
         <Link href="/samples" className="text-sm font-semibold text-coral hover:underline">
           ← All sample books
@@ -62,6 +58,6 @@ export default async function SampleBookPage({
       </header>
 
       <SampleViewer book={payload} suggestedTemplateId={book.template_id} />
-    </div>
+    </PageTransition>
   );
 }

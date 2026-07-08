@@ -4,6 +4,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ArtPlaceholder, Doodle, Sparkle } from "@/components/decor";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Chip, PillLabel } from "@/components/ui/chip";
+import { Eyebrow } from "@/components/ui/eyebrow";
+import { Field, Select, TextArea, TextInput } from "@/components/ui/input";
+import { PageTransition, StepTransition } from "@/components/ui/page-transition";
+import { Skeleton, SkeletonGrid } from "@/components/ui/skeleton";
+import { StepProgress } from "@/components/ui/steps";
 import { PERSON_ROLES, type PersonRole } from "@/lib/book-payload";
 import {
   createBook,
@@ -28,6 +37,13 @@ const ROLE_LABELS: Record<PersonRole, string> = {
   friend: "Friend",
   other: "Someone else",
 };
+
+/** "Who is it for?" bands; value is the midpoint sent as targetAge. */
+const AGE_BANDS = [
+  { label: "0–2 years", value: 1 },
+  { label: "3–5 years", value: 4 },
+  { label: "6–8 years", value: 7 },
+] as const;
 
 const MEMORY_PROMPTS = [
   "The summer we built a den in grandpa's garden and refused to come inside, even for dinner…",
@@ -66,8 +82,10 @@ export function CreateWizard() {
   const categoryId = searchParams.get("category");
 
   const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [memoryText, setMemoryText] = useState("");
   const [title, setTitle] = useState("");
+  const [targetAge, setTargetAge] = useState<number | null>(null);
   const [template, setTemplate] = useState<TemplateSummary | null>(null);
   const [people, setPeople] = useState<PersonDraft[]>([newPerson()]);
   const [styles, setStyles] = useState<StyleSummary[] | null>(null);
@@ -155,6 +173,7 @@ export function CreateWizard() {
 
   function goTo(next: number) {
     setError(null);
+    setDirection(next > step ? "forward" : "back");
     setStep(next);
     topRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
   }
@@ -200,6 +219,7 @@ export function CreateWizard() {
         templateId: template?.id,
         styleId,
         email: email.trim(),
+        targetAge: targetAge ?? undefined,
         people: people.map((p) => ({
           name: p.name.trim(),
           role: p.role,
@@ -218,459 +238,415 @@ export function CreateWizard() {
 
   if (showPicker) {
     return (
-      <div ref={topRef} className="scroll-mt-24">
-        <header className="text-center">
-          <span className="eyebrow mx-auto">
-            <Sparkle size={13} className="text-marigold" />
-            {category ? `Stories for ${category.name}` : "Pick a story idea"}
-          </span>
-          <h1 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
-            {category ? `A story they'll ask for every night.` : `Start from a story idea`}
-          </h1>
-          <p className="mx-auto mt-2 max-w-md text-ink-soft">
-            {category?.tagline ?? "Pick an idea to begin, then make it entirely yours."}
-          </p>
-        </header>
+      <PageTransition>
+        <div ref={topRef} className="scroll-mt-24">
+          <header className="text-center">
+            <Eyebrow className="mx-auto">
+              {category ? `Stories for ${category.name}` : "Pick a story idea"}
+            </Eyebrow>
+            <h1 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
+              {category ? `A story they'll ask for every night.` : `Start from a story idea`}
+            </h1>
+            <p className="mx-auto mt-2 max-w-md text-ink-soft">
+              {category?.tagline ?? "Pick an idea to begin, then make it entirely yours."}
+            </p>
+          </header>
 
-        {categoryTemplates === null ? (
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
-            {[0, 1].map((i) => (
-              <div
-                key={i}
-                className="h-64 animate-shimmer rounded-3xl bg-gradient-to-r from-lavender via-white to-lavender"
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
-            {categoryTemplates.map((tpl) => (
-              <button
-                key={tpl.id}
-                type="button"
-                onClick={() => pickTemplate(tpl)}
-                className="group flex flex-col rounded-3xl bg-white/75 p-4 text-left shadow-fuzzy ring-1 ring-white transition-all duration-200 hover:-translate-y-1.5 hover:rotate-[-0.6deg] hover:shadow-polaroid"
-              >
-                <div className="scallop aspect-[5/4] overflow-hidden bg-lavender">
-                  {tpl.exampleImageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={tpl.exampleImageUrl}
-                      alt=""
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <ArtPlaceholder />
-                  )}
-                </div>
-                <div className="flex flex-1 flex-col px-1 pb-1 pt-4">
-                  <p className="font-display text-lg font-extrabold leading-snug text-ink group-hover:text-coral">
-                    {tpl.title}
-                  </p>
-                  {tpl.tagline ? (
-                    <p className="mt-1 text-sm text-ink-soft">{tpl.tagline}</p>
-                  ) : null}
-                  <span className="mt-4 inline-flex items-center gap-1.5 font-display text-sm font-bold text-coral">
-                    Start from this story <span aria-hidden="true">→</span>
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+          {categoryTemplates === null ? (
+            <SkeletonGrid
+              count={2}
+              className="mt-10 grid gap-5 sm:grid-cols-2"
+              itemClassName="h-64 rounded-3xl"
+            />
+          ) : (
+            <div className="mt-10 grid gap-5 sm:grid-cols-2">
+              {categoryTemplates.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  type="button"
+                  onClick={() => pickTemplate(tpl)}
+                  className="tile-lift group flex flex-col rounded-3xl bg-white/75 p-4 text-left shadow-fuzzy ring-1 ring-white"
+                >
+                  <div className="scallop aspect-[5/4] overflow-hidden bg-lavender">
+                    {(tpl.previewImageUrl ?? tpl.exampleImageUrl) ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={tpl.previewImageUrl ?? tpl.exampleImageUrl ?? undefined}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <ArtPlaceholder />
+                    )}
+                  </div>
+                  <div className="flex flex-1 flex-col px-1 pb-1 pt-4">
+                    <p className="font-display text-lg font-extrabold leading-snug text-ink group-hover:text-coral">
+                      {tpl.title}
+                    </p>
+                    {tpl.tagline ? (
+                      <p className="mt-1 text-sm text-ink-soft">{tpl.tagline}</p>
+                    ) : null}
+                    <span className="mt-4 inline-flex items-center gap-1.5 font-display text-sm font-bold text-coral">
+                      Start from this story <span aria-hidden="true">→</span>
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
 
-        <div className="mt-8 text-center">
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => setPickerDismissed(true)}
-          >
-            Start from your own memory instead
-          </button>
+          <div className="mt-8 text-center">
+            <Button variant="ghost" onClick={() => setPickerDismissed(true)}>
+              Start from your own memory instead
+            </Button>
+          </div>
         </div>
-      </div>
+      </PageTransition>
     );
   }
 
   return (
-    <div ref={topRef} className="scroll-mt-24">
-      {template && step === 0 ? <TemplateIntroCard template={template} /> : null}
+    <PageTransition>
+      <div ref={topRef} className="scroll-mt-24">
+        {template && step === 0 ? <TemplateIntroCard template={template} /> : null}
 
-      {/* Progress */}
-      <ol className="mb-8 flex items-center justify-between gap-1 sm:gap-2" aria-label="Steps">
-        {STEPS.map((label, i) => {
-          const done = i < step;
-          const active = i === step;
-          return (
-            <li key={label} className="flex flex-1 items-center gap-1 last:flex-none sm:gap-2">
-              <span className="flex flex-col items-center gap-1.5">
-                <span
-                  className={`flex h-9 w-9 items-center justify-center rounded-full font-display text-sm font-bold transition-colors ${
-                    active
-                      ? "bg-coral text-cream"
-                      : done
-                        ? "bg-sage text-cream"
-                        : "bg-white text-ink-soft ring-2 ring-ink/10"
-                  }`}
-                  aria-current={active ? "step" : undefined}
+        <StepProgress steps={STEPS} current={step} className="mb-8" />
+
+        <Card className="overflow-hidden p-6 sm:p-10">
+          <StepTransition stepKey={step} direction={direction}>
+            {step === 0 && (
+              <section className="flex flex-col gap-5">
+                <header>
+                  <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">
+                    Tell us your story
+                  </h1>
+                  <p className="mt-1 text-sm text-ink-soft">
+                    Write it like you&rsquo;d tell it at bedtime — the little details are what
+                    make the magic.
+                  </p>
+                </header>
+
+                <Field
+                  label="Your memory"
+                  htmlFor="memory"
+                  hint={
+                    template
+                      ? "Your real details make the story yours — names, places, the thing that made everyone laugh."
+                      : `Need a nudge? “${MEMORY_PROMPTS[1]}”`
+                  }
                 >
-                  {done ? "✓" : i + 1}
-                </span>
-                <span
-                  className={`hidden text-xs font-semibold sm:block ${active ? "text-ink" : "text-ink-soft"}`}
-                >
-                  {label}
-                </span>
-              </span>
-              {i < STEPS.length - 1 ? (
-                <span
-                  className={`mb-0 h-0.5 flex-1 rounded-full sm:-mt-5 ${done ? "bg-sage" : "bg-ink/10"}`}
-                  aria-hidden="true"
-                />
-              ) : null}
-            </li>
-          );
-        })}
-      </ol>
+                  <TextArea
+                    id="memory"
+                    className="min-h-44 leading-relaxed"
+                    placeholder={template ? templatePlaceholder(template) : MEMORY_PROMPTS[0]}
+                    value={memoryText}
+                    onChange={(e) => setMemoryText(e.target.value)}
+                  />
+                </Field>
 
-      <div className="card p-6 sm:p-10">
-        {step === 0 && (
-          <section className="flex flex-col gap-5">
-            <header>
-              <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">
-                Tell us your story
-              </h1>
-              <p className="mt-1 text-sm text-ink-soft">
-                Write it like you&rsquo;d tell it at bedtime — the little details are what make
-                the magic.
-              </p>
-            </header>
-
-            <div>
-              <label htmlFor="memory" className="mb-1.5 block text-sm font-bold text-ink">
-                Your memory
-              </label>
-              <textarea
-                id="memory"
-                className="input min-h-44 resize-y leading-relaxed"
-                placeholder={template ? templatePlaceholder(template) : MEMORY_PROMPTS[0]}
-                value={memoryText}
-                onChange={(e) => setMemoryText(e.target.value)}
-              />
-              <p className="mt-1.5 text-xs text-ink-soft">
-                {template
-                  ? "Your real details make the story yours — names, places, the thing that made everyone laugh."
-                  : `Need a nudge? “${MEMORY_PROMPTS[1]}”`}
-              </p>
-            </div>
-
-            <div>
-              <label htmlFor="title" className="mb-1.5 block text-sm font-bold text-ink">
-                Book title <span className="font-normal text-ink-soft">(optional)</span>
-              </label>
-              <input
-                id="title"
-                className="input"
-                placeholder="We'll suggest one if you leave this empty"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                maxLength={120}
-              />
-            </div>
-          </section>
-        )}
-
-        {step === 1 && (
-          <section className="flex flex-col gap-5">
-            <header>
-              <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">
-                Who&rsquo;s in it?
-              </h1>
-              <p className="mt-1 text-sm text-ink-soft">
-                Add up to four people, with 1&ndash;3 photos each. Clear, well-lit photos of
-                their face work best.
-              </p>
-            </header>
-
-            <div className="flex flex-col gap-4">
-              {people.map((person, idx) => (
-                <div key={person.key} className="rounded-2xl border-2 border-ink/10 bg-white p-4 sm:p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="font-display text-sm font-bold text-ink-soft">
-                      Person {idx + 1}
-                    </p>
-                    {people.length > 1 ? (
-                      <button
-                        type="button"
-                        className="text-xs font-semibold text-coral hover:underline"
+                <div>
+                  <p className="mb-1.5 text-sm font-bold text-ink">
+                    Who is it for?{" "}
+                    <span className="font-normal text-ink-soft">
+                      (we&rsquo;ll tune the words to their age)
+                    </span>
+                  </p>
+                  <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Reader age">
+                    {AGE_BANDS.map((band) => (
+                      <Chip
+                        key={band.value}
+                        role="radio"
+                        selected={targetAge === band.value}
                         onClick={() =>
-                          setPeople((prev) => prev.filter((p) => p.key !== person.key))
+                          setTargetAge((current) => (current === band.value ? null : band.value))
                         }
                       >
-                        Remove
-                      </button>
-                    ) : null}
-                  </div>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <label
-                        htmlFor={`name-${person.key}`}
-                        className="mb-1.5 block text-sm font-bold text-ink"
-                      >
-                        Name
-                      </label>
-                      <input
-                        id={`name-${person.key}`}
-                        className="input"
-                        placeholder="Mia"
-                        value={person.name}
-                        maxLength={80}
-                        onChange={(e) => updatePerson(person.key, { name: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor={`role-${person.key}`}
-                        className="mb-1.5 block text-sm font-bold text-ink"
-                      >
-                        Role in the story
-                      </label>
-                      <select
-                        id={`role-${person.key}`}
-                        className="input appearance-none"
-                        value={person.role}
-                        onChange={(e) =>
-                          updatePerson(person.key, { role: e.target.value as PersonRole })
-                        }
-                      >
-                        {PERSON_ROLES.map((role) => (
-                          <option key={role} value={role}>
-                            {ROLE_LABELS[role]}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap items-center gap-3">
-                    {person.photoUrls.map((url) => (
-                      <div key={url} className="group relative">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={url}
-                          alt={`Photo of ${person.name || "person"}`}
-                          className="h-20 w-20 rounded-xl object-cover shadow-fuzzy"
-                        />
-                        <button
-                          type="button"
-                          aria-label="Remove photo"
-                          className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-ink text-xs text-cream opacity-90 hover:bg-coral"
-                          onClick={() =>
-                            updatePerson(person.key, {
-                              photoUrls: person.photoUrls.filter((u) => u !== url),
-                            })
-                          }
-                        >
-                          ×
-                        </button>
-                      </div>
+                        {band.label}
+                      </Chip>
                     ))}
-                    {Array.from({ length: person.uploading }).map((_, i) => (
-                      <div
-                        key={`up-${i}`}
-                        className="h-20 w-20 animate-shimmer rounded-xl bg-gradient-to-r from-lavender via-white to-lavender"
-                        aria-label="Uploading photo"
-                      />
-                    ))}
-                    {person.photoUrls.length + person.uploading < 3 ? (
-                      <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-ink/20 text-ink-soft transition-colors hover:border-marigold hover:text-ink">
-                        <span className="text-xl leading-none">+</span>
-                        <span className="text-[10px] font-semibold">Add photo</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          className="sr-only"
-                          onChange={(e) => {
-                            void addPhotos(person, e.target.files);
-                            e.target.value = "";
-                          }}
-                        />
-                      </label>
-                    ) : null}
                   </div>
                 </div>
-              ))}
-            </div>
 
-            {people.length < 4 ? (
-              <button
-                type="button"
-                className="btn btn-ghost self-start text-sm"
-                onClick={() => setPeople((prev) => [...prev, newPerson("other")])}
-              >
-                + Add another person
-              </button>
-            ) : null}
-          </section>
-        )}
-
-        {step === 2 && (
-          <section className="flex flex-col gap-5">
-            <header>
-              <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">
-                Pick a style
-              </h1>
-              <p className="mt-1 text-sm text-ink-soft">
-                Every page of your book will be illustrated in the style you choose.
-              </p>
-            </header>
-
-            {styles === null && !stylesError ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {[0, 1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-40 animate-shimmer rounded-2xl bg-gradient-to-r from-lavender via-white to-lavender"
+                <Field label="Book title" htmlFor="title" optional>
+                  <TextInput
+                    id="title"
+                    placeholder="We'll suggest one if you leave this empty"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    maxLength={120}
                   />
-                ))}
-              </div>
-            ) : null}
+                </Field>
+              </section>
+            )}
 
-            {stylesError ? (
-              <div className="rounded-2xl bg-peach/60 p-5 text-sm text-ink">
-                We couldn&rsquo;t load the illustration styles right now. Please refresh the
-                page to try again.
-              </div>
-            ) : null}
+            {step === 1 && (
+              <section className="flex flex-col gap-5">
+                <header>
+                  <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">
+                    Who&rsquo;s in it?
+                  </h1>
+                  <p className="mt-1 text-sm text-ink-soft">
+                    Add up to four people, with 1&ndash;3 photos each. Clear, well-lit photos of
+                    their face work best.
+                  </p>
+                </header>
 
-            {styles ? (
-              <div className="grid gap-4 sm:grid-cols-2" role="radiogroup" aria-label="Illustration style">
-                {styles.map((style) => {
-                  const selected = styleId === style.id;
-                  return (
-                    <button
-                      key={style.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected}
-                      onClick={() => setStyleId(style.id)}
-                      className={`overflow-hidden rounded-2xl border-2 bg-white text-left transition-all ${
-                        selected
-                          ? "border-coral shadow-fuzzy"
-                          : "border-ink/10 hover:border-marigold"
-                      }`}
-                    >
-                      <div className="aspect-[2/1] w-full overflow-hidden bg-lavender">
-                        {style.previewImageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={style.previewImageUrl}
-                            alt={`${style.name} example`}
-                            className="h-full w-full object-cover"
+                <div className="flex flex-col gap-4">
+                  {people.map((person, idx) => (
+                    <div key={person.key} className="rounded-2xl border-2 border-ink/10 bg-white p-4 sm:p-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-display text-sm font-bold text-ink-soft">
+                          Person {idx + 1}
+                        </p>
+                        {people.length > 1 ? (
+                          <button
+                            type="button"
+                            className="text-xs font-semibold text-coral hover:underline"
+                            onClick={() =>
+                              setPeople((prev) => prev.filter((p) => p.key !== person.key))
+                            }
+                          >
+                            Remove
+                          </button>
+                        ) : null}
+                      </div>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        <Field label="Name" htmlFor={`name-${person.key}`}>
+                          <TextInput
+                            id={`name-${person.key}`}
+                            placeholder="Mia"
+                            value={person.name}
+                            maxLength={80}
+                            onChange={(e) => updatePerson(person.key, { name: e.target.value })}
                           />
-                        ) : (
-                          <ArtPlaceholder label={style.name} />
-                        )}
+                        </Field>
+                        <Field label="Role in the story" htmlFor={`role-${person.key}`}>
+                          <Select
+                            id={`role-${person.key}`}
+                            value={person.role}
+                            onChange={(e) =>
+                              updatePerson(person.key, { role: e.target.value as PersonRole })
+                            }
+                          >
+                            {PERSON_ROLES.map((role) => (
+                              <option key={role} value={role}>
+                                {ROLE_LABELS[role]}
+                              </option>
+                            ))}
+                          </Select>
+                        </Field>
                       </div>
-                      <div className="flex items-start justify-between gap-2 p-4">
-                        <div>
-                          <p className="font-display font-bold text-ink">{style.name}</p>
-                          {style.description ? (
-                            <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">
-                              {style.description}
-                            </p>
-                          ) : null}
-                        </div>
-                        <span
-                          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-                            selected ? "bg-coral text-cream" : "bg-ink/10 text-transparent"
+
+                      <div className="mt-4 flex flex-wrap items-center gap-3">
+                        {person.photoUrls.map((url) => (
+                          <div key={url} className="group relative">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={url}
+                              alt={`Photo of ${person.name || "person"}`}
+                              className="h-20 w-20 rounded-xl object-cover shadow-fuzzy"
+                            />
+                            <button
+                              type="button"
+                              aria-label="Remove photo"
+                              className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-ink text-xs text-cream opacity-90 hover:bg-coral"
+                              onClick={() =>
+                                updatePerson(person.key, {
+                                  photoUrls: person.photoUrls.filter((u) => u !== url),
+                                })
+                              }
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                        {Array.from({ length: person.uploading }).map((_, i) => (
+                          <Skeleton key={`up-${i}`} className="h-20 w-20" rounded="rounded-xl" />
+                        ))}
+                        {person.photoUrls.length + person.uploading < 3 ? (
+                          <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-ink/20 text-ink-soft transition-colors hover:border-marigold hover:text-ink">
+                            <span className="text-xl leading-none">+</span>
+                            <span className="text-[10px] font-semibold">Add photo</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="sr-only"
+                              onChange={(e) => {
+                                void addPhotos(person, e.target.files);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {people.length < 4 ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="self-start"
+                    onClick={() => setPeople((prev) => [...prev, newPerson("other")])}
+                  >
+                    + Add another person
+                  </Button>
+                ) : null}
+              </section>
+            )}
+
+            {step === 2 && (
+              <section className="flex flex-col gap-5">
+                <header>
+                  <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">
+                    Pick a style
+                  </h1>
+                  <p className="mt-1 text-sm text-ink-soft">
+                    Every page of your book will be illustrated in the style you choose.
+                  </p>
+                </header>
+
+                {styles === null && !stylesError ? (
+                  <SkeletonGrid
+                    count={4}
+                    className="grid gap-4 sm:grid-cols-2"
+                    itemClassName="h-64"
+                  />
+                ) : null}
+
+                {stylesError ? (
+                  <Alert>
+                    We couldn&rsquo;t load the illustration styles right now. Please refresh
+                    the page to try again.
+                  </Alert>
+                ) : null}
+
+                {styles ? (
+                  <div className="grid gap-4 sm:grid-cols-2" role="radiogroup" aria-label="Illustration style">
+                    {styles.map((style) => {
+                      const selected = styleId === style.id;
+                      return (
+                        <button
+                          key={style.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={selected}
+                          onClick={() => setStyleId(style.id)}
+                          className={`overflow-hidden rounded-2xl border-2 bg-white text-left transition-all ${
+                            selected
+                              ? "border-coral shadow-fuzzy"
+                              : "border-ink/10 hover:border-marigold"
                           }`}
-                          aria-hidden="true"
                         >
-                          ✓
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : null}
-          </section>
-        )}
+                          <div className="aspect-[4/3] w-full overflow-hidden bg-lavender">
+                            {style.previewImageUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={style.previewImageUrl}
+                                alt={`${style.name} example`}
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <ArtPlaceholder label={style.name} />
+                            )}
+                          </div>
+                          <div className="flex items-start justify-between gap-2 p-4">
+                            <div>
+                              <p className="font-display font-bold text-ink">{style.name}</p>
+                              {style.description ? (
+                                <p className="mt-0.5 text-xs leading-relaxed text-ink-soft">
+                                  {style.description}
+                                </p>
+                              ) : null}
+                            </div>
+                            <span
+                              className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+                                selected ? "bg-coral text-white" : "bg-ink/10 text-transparent"
+                              }`}
+                              aria-hidden="true"
+                            >
+                              ✓
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </section>
+            )}
 
-        {step === 3 && (
-          <section className="flex flex-col gap-5">
-            <header>
-              <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">
-                Where should the magic arrive?
-              </h1>
-              <p className="mt-1 text-sm text-ink-soft">
-                We&rsquo;ll email you as soon as your free preview is ready — usually within a
-                few minutes.
-              </p>
-            </header>
+            {step === 3 && (
+              <section className="flex flex-col gap-5">
+                <header>
+                  <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">
+                    Where should the magic arrive?
+                  </h1>
+                  <p className="mt-1 text-sm text-ink-soft">
+                    We&rsquo;ll email you as soon as your free preview is ready — usually within
+                    a few minutes.
+                  </p>
+                </header>
 
-            <div>
-              <label htmlFor="email" className="mb-1.5 block text-sm font-bold text-ink">
-                Your email
-              </label>
-              <input
-                id="email"
-                type="email"
-                className="input"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-              />
-            </div>
+                <Field label="Your email" htmlFor="email">
+                  <TextInput
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                  />
+                </Field>
 
-            <p className="rounded-2xl bg-lavender/60 p-4 text-xs leading-relaxed text-ink-soft">
-              By continuing you agree that we may use the story and photos you provided to
-              create your book preview. We only use your email for your preview link and order
-              updates — no newsletters, no sharing with anyone else.
-            </p>
-          </section>
-        )}
+                <p className="rounded-2xl bg-lavender/60 p-4 text-xs leading-relaxed text-ink-soft">
+                  By continuing you agree that we may use the story and photos you provided to
+                  create your book preview. We only use your email for your preview link and
+                  order updates — no newsletters, no sharing with anyone else.
+                </p>
+              </section>
+            )}
+          </StepTransition>
 
-        {error ? (
-          <p className="mt-5 rounded-xl bg-coral/10 p-3 text-sm font-semibold text-coral-deep" role="alert">
-            {error}
-          </p>
-        ) : null}
+          {error ? <Alert className="mt-5">{error}</Alert> : null}
 
-        {/* Nav */}
-        <div className="mt-8 flex items-center justify-between gap-3" id="wizard-nav">
-          {step > 0 ? (
-            <button type="button" className="btn btn-ghost" onClick={() => goTo(step - 1)}>
-              Back
-            </button>
-          ) : (
-            <span />
-          )}
-          {step < STEPS.length - 1 ? (
-            <button
-              type="button"
-              className="btn btn-marigold"
-              disabled={!canContinue}
-              onClick={() => goTo(step + 1)}
-            >
-              {step === 1 && uploadsInFlight ? "Uploading photos…" : "Continue"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="btn btn-coral"
-              disabled={!canContinue || submitting}
-              onClick={() => void submit()}
-            >
-              {submitting ? "Creating your preview…" : "Create my free preview"}
-            </button>
-          )}
-        </div>
+          {/* Nav */}
+          <div className="mt-8 flex items-center justify-between gap-3" id="wizard-nav">
+            {step > 0 ? (
+              <Button variant="ghost" onClick={() => goTo(step - 1)}>
+                Back
+              </Button>
+            ) : (
+              <span />
+            )}
+            {step < STEPS.length - 1 ? (
+              <Button
+                variant="secondary"
+                disabled={!canContinue}
+                pending={step === 1 && uploadsInFlight}
+                pendingLabel="Uploading photos…"
+                onClick={() => goTo(step + 1)}
+              >
+                Continue
+              </Button>
+            ) : (
+              <Button
+                disabled={!canContinue}
+                pending={submitting}
+                pendingLabel="Creating your preview…"
+                onClick={() => void submit()}
+              >
+                Create my free preview
+              </Button>
+            )}
+          </div>
+        </Card>
       </div>
-    </div>
+    </PageTransition>
   );
 }
 
@@ -694,9 +670,7 @@ function TemplateIntroCard({ template }: { template: TemplateSummary }) {
       <Doodle src="heart-small.png" size={22} className="animate-twinkle absolute bottom-6 right-[22%]" />
       <div className="relative p-6 sm:p-8">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="pill-label !text-xs">
-            {template.categoryName ?? "Story idea"}
-          </span>
+          <PillLabel className="!text-xs">{template.categoryName ?? "Story idea"}</PillLabel>
           <span className="inline-flex items-center gap-1 rounded-full bg-white/60 px-3 py-1.5 font-display text-xs font-bold text-ink-soft">
             <Sparkle size={11} className="text-marigold" />
             Illustration style pre-picked — change it anytime

@@ -1,14 +1,19 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import type { FontPairingId, LayoutId } from "@wfsc/book-engine";
 
-import { ArtPlaceholder, Sparkle } from "@/components/decor";
+import { ArtPlaceholder } from "@/components/decor";
 import { EditorPanel, SpreadEditor } from "@/components/editor";
 import { Flipbook, type FlipPage } from "@/components/flipbook";
 import { MagicHappening, StatusTimeline } from "@/components/status-views";
+import { Alert } from "@/components/ui/alert";
+import { BookMockup } from "@/components/ui/book-mockup";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageTransition } from "@/components/ui/page-transition";
 import type { BookFormat, BookPayload, BookStatus } from "@/lib/book-payload";
 import {
   approveBook,
@@ -199,19 +204,12 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
   if (book.status === "draft") {
     return (
       <Shell error={error}>
-        <div className="card mx-auto flex max-w-xl flex-col items-center gap-4 p-12 text-center">
-          <Sparkle className="text-marigold" size={28} />
-          <h1 className="font-display text-2xl font-bold text-ink">
-            This book is still a twinkle in our eye
-          </h1>
-          <p className="text-sm text-ink-soft">
-            It looks like the story intake wasn&rsquo;t finished. Start again and it only
-            takes about five minutes.
-          </p>
-          <Link href="/create" className="btn btn-coral mt-2">
-            Start your book
-          </Link>
-        </div>
+        <EmptyState
+          doodle="sun.png"
+          title="This book is still a twinkle in our eye"
+          body="It looks like the story intake wasn't finished. Start again and it only takes about five minutes."
+          action={<ButtonLink href="/create">Start your book</ButtonLink>}
+        />
       </Shell>
     );
   }
@@ -220,6 +218,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
     return (
       <Shell error={error}>
         <MagicHappening
+          book={book}
           title="The magic is happening…"
           body="Our illustrators are sketching your characters and painting the first pages of your story. This usually takes a few minutes."
         />
@@ -231,6 +230,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
     return (
       <Shell error={error}>
         <MagicHappening
+          book={book}
           title="Your whole book is being illustrated"
           body="Thank you for your order! Every page of your story is now being written and painted. We'll email you the moment it's ready for your review."
         />
@@ -241,16 +241,15 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
   if (book.status === "cancelled") {
     return (
       <Shell error={error}>
-        <div className="card mx-auto flex max-w-xl flex-col items-center gap-4 p-12 text-center">
-          <h1 className="font-display text-2xl font-bold text-ink">This order was cancelled</h1>
-          <p className="text-sm text-ink-soft">
-            Your story is safe with us. If this was a mistake or you&rsquo;d like to pick up
-            where you left off, just reply to any of our emails.
-          </p>
-          <Link href="/create" className="btn btn-marigold mt-2">
-            Start a new book
-          </Link>
-        </div>
+        <EmptyState
+          title="This order was cancelled"
+          body="Your story is safe with us. If this was a mistake or you'd like to pick up where you left off, just reply to any of our emails."
+          action={
+            <ButtonLink href="/create" variant="secondary">
+              Start a new book
+            </ButtonLink>
+          }
+        />
       </Shell>
     );
   }
@@ -278,7 +277,15 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
 
   return (
     <Shell error={error}>
-      <header className="mb-10 text-center">
+      <header className="mb-10 flex flex-col items-center text-center">
+        <BookMockup
+          coverUrl={coverImageUrl}
+          title={book.title ?? "Your storybook"}
+          size="md"
+          alt="Your book's cover"
+          priority
+          className="mb-7"
+        />
         <p className="text-sm font-semibold text-coral">
           {isPreview ? "Your preview is ready!" : "Your book is ready for review"}
         </p>
@@ -323,7 +330,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                     {person.role ? <p className="text-[11px] text-ink-soft">{person.role}</p> : null}
                     <button
                       type="button"
-                      className={`mt-2 w-full rounded-full px-2 py-1.5 text-xs font-bold transition-colors ${
+                      className={`mt-2 w-full rounded-full px-2 py-1.5 font-display text-xs font-bold transition-colors ${
                         confirmed
                           ? "bg-sage text-cream"
                           : "bg-marigold text-ink hover:bg-marigold-deep"
@@ -400,14 +407,15 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
             })}
           </div>
           <div className="mt-6 flex flex-col items-center gap-2">
-            <button
-              type="button"
-              className="btn btn-coral text-lg"
-              disabled={!allConfirmed || checkingOut}
+            <Button
+              size="lg"
+              disabled={!allConfirmed}
+              pending={checkingOut}
+              pendingLabel="Taking you to checkout…"
               onClick={() => void checkout()}
             >
-              {checkingOut ? "Taking you to checkout…" : "Create my book"}
-            </button>
+              Create my book
+            </Button>
             {!allConfirmed ? (
               <p className="text-xs font-semibold text-ink-soft">
                 First confirm your characters above so we illustrate the right people.
@@ -421,7 +429,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
         </section>
       ) : (
         <section className="mx-auto mt-12 max-w-3xl">
-          <div className="card flex flex-col items-center gap-4 p-8 text-center">
+          <Card className="flex flex-col items-center gap-4 p-8 text-center">
             <h2 className="font-display text-xl font-bold text-ink">Happy with every page?</h2>
             {confirmApprove ? (
               <>
@@ -430,22 +438,16 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                   no more changes after this point.
                 </p>
                 <div className="flex gap-3">
-                  <button
-                    type="button"
-                    className="btn btn-coral"
-                    disabled={approving}
+                  <Button
+                    pending={approving}
+                    pendingLabel="Approving…"
                     onClick={() => void approve()}
                   >
-                    {approving ? "Approving…" : "Yes, print my book!"}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    disabled={approving}
-                    onClick={() => setConfirmApprove(false)}
-                  >
+                    Yes, print my book!
+                  </Button>
+                  <Button variant="ghost" disabled={approving} onClick={() => setConfirmApprove(false)}>
                     Keep editing
-                  </button>
+                  </Button>
                 </div>
               </>
             ) : (
@@ -453,12 +455,10 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                 <p className="max-w-md text-sm text-ink-soft">
                   Flip through every page, tweak anything you like, then send it to print.
                 </p>
-                <button type="button" className="btn btn-coral" onClick={() => setConfirmApprove(true)}>
-                  Approve for printing
-                </button>
+                <Button onClick={() => setConfirmApprove(true)}>Approve for printing</Button>
               </>
             )}
-          </div>
+          </Card>
         </section>
       )}
     </Shell>
@@ -467,16 +467,9 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
 
 function Shell({ children, error }: { children: React.ReactNode; error: string | null }) {
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
-      {error ? (
-        <p
-          className="mx-auto mb-6 max-w-2xl rounded-xl bg-coral/10 p-3 text-center text-sm font-semibold text-coral-deep"
-          role="alert"
-        >
-          {error}
-        </p>
-      ) : null}
+    <PageTransition className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+      {error ? <Alert className="mx-auto mb-6 max-w-2xl text-center">{error}</Alert> : null}
       {children}
-    </div>
+    </PageTransition>
   );
 }

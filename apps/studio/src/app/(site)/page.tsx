@@ -1,7 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { ArtPlaceholder, Doodle, Sparkle } from "@/components/decor";
+import { ArtPlaceholder, Doodle } from "@/components/decor";
+import { BookMockup } from "@/components/ui/book-mockup";
+import { ButtonLink } from "@/components/ui/button";
+import { Carousel } from "@/components/ui/carousel";
+import { Tag, PillLabel } from "@/components/ui/chip";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Eyebrow } from "@/components/ui/eyebrow";
 import { fetchSamples, type SampleSummary } from "@/lib/samples";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -20,6 +26,7 @@ interface TemplateRow {
   title: string;
   tagline: string | null;
   example_image_url: string | null;
+  preview_image_url: string | null;
   sort_order: number;
 }
 
@@ -36,7 +43,7 @@ async function loadInspiration(): Promise<{
         .order("sort_order", { ascending: true }),
       db
         .from("story_templates")
-        .select("id, category_id, title, tagline, example_image_url, sort_order")
+        .select("id, category_id, title, tagline, example_image_url, preview_image_url, sort_order")
         .eq("is_active", true)
         .order("sort_order", { ascending: true }),
     ]);
@@ -243,9 +250,9 @@ export default async function HomePage() {
               className="h-auto w-56 drop-shadow-sm sm:w-72"
             />
           </h1>
-          <Link href="/create" className="btn btn-coral mt-10 px-8 py-3.5 text-lg">
+          <ButtonLink href="/create" size="lg" className="mt-10">
             Write your story
-          </Link>
+          </ButtonLink>
           <p className="mt-6 font-display text-lg font-bold text-ink sm:text-xl">
             Turn your favorite memory into art for a lifetime
           </p>
@@ -257,46 +264,52 @@ export default async function HomePage() {
         <h2 className="font-display text-[1.7rem] font-bold text-ink sm:text-3xl">
           Gifts for all your favorite people
         </h2>
-        <div className="-mx-4 mt-6 flex gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6">
-          {(inspiration?.categories ?? []).map((cat) => {
-            const art = categoryArt(cat.id, cat.name);
-            return (
-              <Link
-                key={cat.id}
-                href={`/create?category=${encodeURIComponent(cat.id)}`}
-                className="group relative aspect-[4/5] w-52 shrink-0 overflow-hidden rounded-3xl shadow-fuzzy transition-transform duration-200 hover:-translate-y-1.5 sm:w-60"
-                style={{ background: `linear-gradient(160deg, ${art.from}, ${art.to})` }}
-              >
-                <div className="scallop absolute inset-[7%] overflow-hidden">
-                  <Image
-                    src={`/categories/${art.photo}.jpg`}
-                    alt={cat.name}
-                    width={480}
-                    height={600}
-                    loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-                <span className="pill-label absolute bottom-4 left-4">{cat.name}</span>
-              </Link>
-            );
-          })}
-          {!inspiration ? (
-            <div className="card flex w-full items-center justify-center p-10 text-sm text-ink-soft">
-              Our gift categories are still being unpacked — come back in a moment.
-            </div>
-          ) : null}
-        </div>
+        {inspiration ? (
+          <Carousel className="mt-6" ariaLabel="Gift categories">
+            {inspiration.categories.map((cat) => {
+              const art = categoryArt(cat.id, cat.name);
+              return (
+                <Link
+                  key={cat.id}
+                  href={`/create?category=${encodeURIComponent(cat.id)}`}
+                  draggable={false}
+                  className="tile-lift group relative aspect-[4/5] w-52 shrink-0 snap-start rounded-3xl shadow-fuzzy sm:w-60"
+                  style={{ background: `linear-gradient(160deg, ${art.from}, ${art.to})` }}
+                >
+                  {/* Clipping lives on an inner layer so the outer shadow above is never cut off. */}
+                  <div className="absolute inset-0 overflow-hidden rounded-3xl">
+                    <div className="scallop absolute inset-[7%] overflow-hidden">
+                      <Image
+                        src={`/categories/${art.photo}.jpg`}
+                        alt={cat.name}
+                        width={480}
+                        height={600}
+                        loading="lazy"
+                        draggable={false}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    </div>
+                  </div>
+                  <PillLabel className="absolute bottom-4 left-4">{cat.name}</PillLabel>
+                </Link>
+              );
+            })}
+          </Carousel>
+        ) : (
+          <EmptyState
+            className="mt-6"
+            title="Our gift categories are still being unpacked."
+            body="Come back in a moment — or start straight from your own memory."
+            action={<ButtonLink href="/create">Start from your own memory</ButtonLink>}
+          />
+        )}
       </section>
 
       {/* --------------------------------------------------- Inspiration gallery */}
       <section id="ideas" className="mx-auto w-full max-w-6xl scroll-mt-24 px-4 py-12 sm:px-6 sm:py-16">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <span className="eyebrow">
-              <Sparkle size={13} className="text-marigold" />
-              Need a spark?
-            </span>
+            <Eyebrow>Need a spark?</Eyebrow>
             <h2 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
               Start from a story other families love.
             </h2>
@@ -308,7 +321,7 @@ export default async function HomePage() {
         </div>
 
         {inspiration && inspiration.templates.length > 0 ? (
-          <div className="mt-10 flex flex-col gap-14">
+          <div className="mt-10 flex flex-col gap-12">
             {inspiration.categories.map((cat) => {
               const templates = inspiration.templates.filter((t) => t.category_id === cat.id);
               if (templates.length === 0) return null;
@@ -333,56 +346,54 @@ export default async function HomePage() {
                       ) : null}
                     </div>
                   </div>
-                  <div className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-                    {templates.map((tpl) => (
-                      <Link
-                        key={tpl.id}
-                        href={`/create?template=${encodeURIComponent(tpl.id)}`}
-                        className="group flex flex-col rounded-3xl bg-white/70 p-3 shadow-fuzzy ring-1 ring-white transition-all duration-200 hover:-translate-y-1.5 hover:rotate-[-1.2deg] hover:shadow-polaroid"
-                      >
-                        <div className="scallop aspect-square overflow-hidden bg-lavender">
-                          {tpl.example_image_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={tpl.example_image_url}
-                              alt=""
-                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <ArtPlaceholder />
-                          )}
-                        </div>
-                        <div className="px-1 pb-1 pt-3 text-center">
-                          <p className="font-display text-sm font-extrabold leading-snug text-ink group-hover:text-coral">
-                            {tpl.title}
-                          </p>
-                          {tpl.tagline ? (
-                            <p className="mt-0.5 line-clamp-2 text-xs text-ink-soft">{tpl.tagline}</p>
-                          ) : null}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
+                  <Carousel className="mt-5" ariaLabel={`${cat.name} story ideas`} itemGap="gap-5">
+                    {templates.map((tpl) => {
+                      const image = tpl.preview_image_url ?? tpl.example_image_url;
+                      return (
+                        <Link
+                          key={tpl.id}
+                          href={`/create?template=${encodeURIComponent(tpl.id)}`}
+                          draggable={false}
+                          className="tile-lift group flex w-56 shrink-0 snap-start flex-col rounded-3xl bg-white/70 p-3 shadow-fuzzy ring-1 ring-white sm:w-64"
+                        >
+                          <div className="scallop aspect-square overflow-hidden bg-lavender">
+                            {image ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={image}
+                                alt=""
+                                draggable={false}
+                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <ArtPlaceholder />
+                            )}
+                          </div>
+                          <div className="px-1 pb-1 pt-3 text-center">
+                            <p className="font-display text-sm font-extrabold leading-snug text-ink group-hover:text-coral">
+                              {tpl.title}
+                            </p>
+                            {tpl.tagline ? (
+                              <p className="mt-0.5 line-clamp-2 text-xs text-ink-soft">{tpl.tagline}</p>
+                            ) : null}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </Carousel>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="card mt-10 flex flex-col items-center gap-4 p-10 text-center">
-            <Doodle src="sun.png" size={56} className="animate-drift" />
-            <p className="max-w-md font-display text-lg font-extrabold text-ink">
-              Our story ideas are still being tucked in.
-            </p>
-            <p className="max-w-md text-sm text-ink-soft">
-              Every book here starts with your own memory anyway &mdash; days at the beach with
-              grandma, dad&rsquo;s legendary pancakes, a little sister&rsquo;s first snow. Bring
-              yours and we&rsquo;ll take it from there.
-            </p>
-            <Link href="/create" className="btn btn-coral mt-2">
-              Start from your own memory
-            </Link>
-          </div>
+          <EmptyState
+            className="mt-10"
+            doodle="sun.png"
+            title="Our story ideas are still being tucked in."
+            body="Every book here starts with your own memory anyway — days at the beach with grandma, dad's legendary pancakes, a little sister's first snow. Bring yours and we'll take it from there."
+            action={<ButtonLink href="/create">Start from your own memory</ButtonLink>}
+          />
         )}
       </section>
 
@@ -390,12 +401,9 @@ export default async function HomePage() {
       <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
         <div className="relative overflow-hidden rounded-[2.5rem] bg-white/60 p-8 shadow-fuzzy ring-1 ring-white sm:p-12">
           <Doodle src="spark-blue.png" size={24} className="animate-twinkle absolute right-[12%] top-8" />
-          <div className="flex flex-col items-start gap-8 lg:flex-row lg:items-center">
+          <div className="flex flex-col items-start gap-10 lg:flex-row lg:items-center">
             <div className="max-w-md">
-              <span className="eyebrow">
-                <Sparkle size={13} className="text-marigold" />
-                See the real thing
-              </span>
+              <Eyebrow>See the real thing</Eyebrow>
               <h2 className="mt-4 font-display text-3xl font-extrabold text-ink">
                 Flip through a finished book.
               </h2>
@@ -403,14 +411,14 @@ export default async function HomePage() {
                 These are complete sample books, page by page — the same kind of book
                 you&rsquo;ll hold in your hands.
               </p>
-              <Link href="/samples" className="btn btn-coral mt-6">
+              <ButtonLink href="/samples" className="mt-6">
                 Browse sample books
-              </Link>
+              </ButtonLink>
             </div>
             {samples.length > 0 ? (
-              <div className="flex flex-wrap justify-center gap-5 lg:ml-auto">
-                {samples.slice(0, 3).map((s, i) => (
-                  <SamplePolaroid key={s.token} sample={s} tilt={i === 1 ? "2deg" : i === 2 ? "-1.5deg" : "-3deg"} />
+              <div className="flex flex-wrap items-end justify-center gap-8 pb-2 lg:ml-auto">
+                {samples.slice(0, 3).map((s) => (
+                  <SampleBook key={s.token} sample={s} />
                 ))}
               </div>
             ) : (
@@ -439,9 +447,9 @@ export default async function HomePage() {
             <p className="mx-auto mt-3 max-w-md text-white/90">
               It takes about five minutes to tell us yours. The book lasts a lifetime.
             </p>
-            <Link href="/create" className="btn btn-marigold mt-8 text-lg">
+            <ButtonLink href="/create" variant="secondary" size="lg" className="mt-8">
               Write your story
-            </Link>
+            </ButtonLink>
           </div>
         </div>
       </section>
@@ -449,32 +457,25 @@ export default async function HomePage() {
   );
 }
 
-function SamplePolaroid({ sample, tilt }: { sample: SampleSummary; tilt: string }) {
+/** A sample book on the landing page — a real hardcover, not a flat card. */
+function SampleBook({ sample }: { sample: SampleSummary }) {
   return (
     <Link
       href={`/samples/${encodeURIComponent(sample.token)}`}
-      className="group w-36 rounded-2xl bg-white p-2 pb-1 shadow-polaroid transition-all duration-200 hover:-translate-y-1.5 hover:!rotate-0 sm:w-44"
-      style={{ rotate: tilt }}
+      className="group flex flex-col items-center gap-3"
     >
-      <div className="aspect-square overflow-hidden rounded-xl bg-lavender">
-        {sample.coverImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={sample.coverImageUrl}
-            alt=""
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
-          />
-        ) : (
-          <ArtPlaceholder />
-        )}
-      </div>
-      <p className="px-1 pb-1 pt-2 text-center font-display text-xs font-bold leading-snug text-ink">
-        {sample.title ?? "A sample story"}
-      </p>
-      {sample.categoryName ? (
-        <p className="pb-1 text-center text-[10px] font-semibold text-ink-soft">{sample.categoryName}</p>
-      ) : null}
+      <BookMockup
+        coverUrl={sample.coverImageUrl}
+        title={sample.title ?? "A sample story"}
+        size="sm"
+        alt={sample.title ?? "A sample story"}
+      />
+      <span className="text-center">
+        <span className="block font-display text-xs font-bold leading-snug text-ink group-hover:text-coral">
+          {sample.title ?? "A sample story"}
+        </span>
+        {sample.categoryName ? <Tag className="mt-1.5 inline-block">{sample.categoryName}</Tag> : null}
+      </span>
     </Link>
   );
 }

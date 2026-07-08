@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { Flipbook, type FlipPage } from "@/components/flipbook";
+import { ButtonLink } from "@/components/ui/button";
 import type { BookPayload } from "@/lib/book-payload";
 
 /**
@@ -46,9 +46,9 @@ export function SampleViewer({
             ? "Start from this very story idea and make it entirely yours."
             : "It takes about five minutes to tell us your memory."}
         </p>
-        <Link href={createHref} className="btn btn-coral mt-5 text-lg">
+        <ButtonLink href={createHref} size="lg" className="mt-5">
           Make your own
-        </Link>
+        </ButtonLink>
       </div>
     </div>
   );
