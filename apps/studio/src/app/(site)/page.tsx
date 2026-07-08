@@ -300,7 +300,7 @@ export default async function HomePage() {
               return (
                 <div key={cat.id}>
                   <div className="flex items-center gap-4">
-                    <div className="scallop h-14 w-14 shrink-0 overflow-hidden sm:h-16 sm:w-16">
+                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full ring-2 ring-white shadow-fuzzy sm:h-16 sm:w-16">
                       <Image
                         src={`/categories/${art.photo}.jpg`}
                         alt=""

@@ -10,6 +10,7 @@ import type { FontPairingId, LayoutId, SpreadKind } from "@wfsc/book-engine";
 export type BookStatus =
   | "draft"
   | "preview_generating"
+  | "preview_failed"
   | "preview_ready"
   | "purchased"
   | "generating"

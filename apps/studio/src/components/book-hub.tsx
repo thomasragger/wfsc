@@ -21,8 +21,13 @@ import {
   patchBook,
   patchSpread,
   regenerateSpread,
+  retryBook,
   startCheckout,
 } from "@/lib/client-api";
+
+// If generation runs past this without finishing, surface a reassuring
+// "taking longer" message + a manual retry so the page never dead-ends.
+const SLOW_PREVIEW_MS = 4 * 60 * 1000;
 
 const POLLING_STATUSES: BookStatus[] = ["preview_generating", "purchased", "generating"];
 
@@ -52,6 +57,8 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
   const [checkingOut, setCheckingOut] = useState(false);
   const [approving, setApproving] = useState(false);
   const [confirmApprove, setConfirmApprove] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [slow, setSlow] = useState(false);
 
   // Poll while the pipeline is working so the page moves forward on its own.
   useEffect(() => {
@@ -63,6 +70,30 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
     }, 5000);
     return () => clearInterval(id);
   }, [book.status, token]);
+
+  // If preview generation drags on, offer reassurance + a retry rather than
+  // spinning forever (the pipeline can stall if a job never gets picked up).
+  // The retry handler resets `slow`; a stale true after a status change is
+  // harmless since only the generating view reads it.
+  useEffect(() => {
+    if (book.status !== "preview_generating") return;
+    const id = setTimeout(() => setSlow(true), SLOW_PREVIEW_MS);
+    return () => clearTimeout(id);
+  }, [book.status]);
+
+  async function handleRetry() {
+    setRetrying(true);
+    setError(null);
+    try {
+      await retryBook(token);
+      setSlow(false);
+      setBook((b) => ({ ...b, status: "preview_generating" }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't restart — please try again");
+    } finally {
+      setRetrying(false);
+    }
+  }
 
   // The cover may live either on the book or as the position-0 spread.
   const coverImageUrl =
@@ -221,6 +252,34 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
           book={book}
           title="The magic is happening…"
           body="Our illustrators are sketching your characters and painting the first pages of your story. This usually takes a few minutes."
+        />
+        {slow ? (
+          <div className="mx-auto mt-8 max-w-md text-center">
+            <p className="text-sm text-ink-soft">
+              This is taking longer than usual. It&rsquo;s often still working
+              away — but you can nudge it to start over if it seems stuck.
+            </p>
+            <Button className="mt-4" variant="secondary" onClick={handleRetry} disabled={retrying}>
+              {retrying ? "Restarting…" : "Restart the magic"}
+            </Button>
+          </div>
+        ) : null}
+      </Shell>
+    );
+  }
+
+  if (book.status === "preview_failed") {
+    return (
+      <Shell error={error}>
+        <EmptyState
+          doodle="cloud.png"
+          title="Our illustrators hit a snag"
+          body="Something went wrong while painting your preview. Your story and photos are safe — give it another try and we'll pick up where we left off."
+          action={
+            <Button onClick={handleRetry} disabled={retrying}>
+              {retrying ? "Trying again…" : "Try again"}
+            </Button>
+          }
         />
       </Shell>
     );

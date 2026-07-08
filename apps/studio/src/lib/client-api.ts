@@ -146,3 +146,7 @@ export async function startCheckout(token: string, format: BookFormat): Promise<
 export async function approveBook(token: string): Promise<void> {
   await request(`/api/books/${encodeURIComponent(token)}/approve`, { method: "POST" });
 }
+
+export async function retryBook(token: string): Promise<void> {
+  await request(`/api/books/${encodeURIComponent(token)}/retry`, { method: "POST" });
+}

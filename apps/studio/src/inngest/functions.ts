@@ -77,7 +77,18 @@ async function generateAndJudgeSpread(opts: {
  * Triggered when the customer finishes intake.
  */
 export const generatePreview = inngest.createFunction(
-  { id: 'generate-preview', concurrency: 5, retries: 2 },
+  {
+    id: 'generate-preview',
+    concurrency: 5,
+    retries: 2,
+    // When all retries are exhausted, flip the book to a terminal failed
+    // state so the UI can show an error + retry instead of spinning forever.
+    onFailure: async ({ event }) => {
+      const bookId = event?.data?.event?.data?.bookId;
+      if (!bookId) return;
+      await supabaseAdmin().from('books').update({ status: 'preview_failed' }).eq('id', bookId);
+    },
+  },
   { event: 'book/preview.requested' },
   async ({ event, step }) => {
     const db = supabaseAdmin();
