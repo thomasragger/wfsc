@@ -235,14 +235,17 @@ function SpreadCanvas({
     </div>
   );
 
+  // Full-bleed: the illustration fills the whole page edge-to-edge (square
+  // art in a square page → object-cover crops nothing), matching the printed
+  // book's full-page illustrations.
   const imagePage = (
-    <div className="aspect-square h-full bg-cream p-[3%]">
+    <div className="aspect-square h-full bg-cream">
       {spread.imageUrl ? (
         <ProgressiveImage
           src={spread.imageUrl}
           alt=""
           className="h-full w-full"
-          imgClassName="h-full w-full object-contain"
+          imgClassName="h-full w-full object-cover"
         />
       ) : (
         <Skeleton className="h-full w-full" rounded="rounded-none" />

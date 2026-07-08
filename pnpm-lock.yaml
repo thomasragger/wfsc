@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.60.0
+        version: 0.60.0
     devDependencies:
       '@shopify/cli':
         specifier: ^4.4.0

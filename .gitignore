@@ -14,3 +14,6 @@ generated*/
 *.log
 .vercel
 .env*
+
+# restyle progress journal (generated)
+scripts/.restyle-progress.json

@@ -11,7 +11,7 @@ import { createClient } from '@supabase/supabase-js';
 import Replicate from 'replicate';
 import Anthropic from '@anthropic-ai/sdk';
 
-const TARGET_PER_CATEGORY = 13;
+const TARGET_PER_CATEGORY = 8;
 const db = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const anthropic = new Anthropic();
 const replicate = new Replicate();
@@ -31,7 +31,7 @@ if (!previewsOnly) {
 
     const response = await anthropic.messages.create({
       model: process.env.WFSC_STORY_MODEL ?? 'claude-sonnet-5',
-      max_tokens: 16000,
+      max_tokens: 32000,
       messages: [{
         role: 'user',
         content: `You are the content lead of Warm Fuzzy Story Club: personalized illustrated children's books made from a family's real memory. Write ${needed} NEW story templates for the category "${cat.name}" (${cat.tagline}).
@@ -70,8 +70,20 @@ Return via the emit_templates tool. Rules per template:
       tool_choice: { type: 'tool', name: 'emit_templates' },
     });
     const toolUse = response.content.find((c) => c.type === 'tool_use');
-    let templates = toolUse.input.templates;
+    if (!toolUse) {
+      console.log(`  ✗ ${cat.id}: no tool_use in response (stop=${response.stop_reason}), skipping`);
+      continue;
+    }
+    // The tool input can arrive as an object, or (with some models) as a
+    // JSON string; and `templates` itself may be a JSON string. Normalize.
+    let input = toolUse.input;
+    if (typeof input === 'string') input = JSON.parse(input);
+    let templates = input.templates ?? input;
     if (typeof templates === 'string') templates = JSON.parse(templates);
+    if (!Array.isArray(templates)) {
+      console.log(`  ✗ ${cat.id}: unexpected shape (stop=${response.stop_reason}): ${JSON.stringify(toolUse.input).slice(0, 200)}`);
+      continue;
+    }
 
     let sort = (existing?.length ?? 0) + 1;
     for (const t of templates) {
@@ -81,6 +93,7 @@ Return via the emit_templates tool. Rules per template:
         suggested_style_id: styleId, story_beats: t.story_beats, prompt_scaffold: t.prompt_scaffold,
         cover_concept: t.cover_concept, age_min: t.age_min, age_max: t.age_max,
         occasions: t.occasions.filter((o) => occasionList.includes(o)), sort_order: sort++,
+        is_active: true,
       });
       console.log(error ? `  ✗ ${t.id}: ${error.message}` : `  ✓ ${t.id}`);
     }

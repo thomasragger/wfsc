@@ -17,5 +17,8 @@
     "@shopify/cli": "^4.4.0",
     "@supabase/supabase-js": "^2.110.1",
     "replicate": "^1.4.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0"
   }
 }
