@@ -246,7 +246,11 @@ body::after {
      way a real object's shadow behaves as it rises off a surface. This
      class owns its shadow at rest AND on hover — don't pair it with a
      separate shadow-* utility, or the two will fight over the cascade.
-     Apply instead of one-off hover:-translate-y / hover:rotate utilities. */
+     Apply instead of one-off hover:-translate-y / hover:rotate utilities.
+     Always pair with a rounded-* class matching the element's visible
+     content radius — box-shadow follows ITS OWN element's border-radius,
+     so a square .tile-lift wrapping rounded content leaves an uncovered
+     square notch at each corner (reads as a stray white/sharp corner). */
   .tile-lift {
     box-shadow:
       0 3px 6px -3px rgb(118 30 11 / 0.16),

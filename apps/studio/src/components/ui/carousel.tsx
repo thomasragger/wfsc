@@ -3,19 +3,17 @@
 /**
  * WFSC design system — Carousel.
  * A physics-driven drag rail: pointer input sets a velocity, an animation
- * loop eases the track toward its target with inertia. Bounded carousels
- * spring back at both ends; `infinite` carousels render the content three
- * times and silently re-center the track by one set-width whenever it
- * drifts near either edge of that buffer — the drag never hits a hard
- * stop, so there's no "last card" to visually crop.
+ * loop eases the track toward its target with inertia, and springs back at
+ * both ends. Shadow-safe edge padding (see className below) keeps the last
+ * card's hover-lift shadow from ever getting clipped by the scroll edge.
  * All new UI must come from src/components/ui/* — /styleguide is the living contract.
  */
-import { Children, cloneElement, isValidElement, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { IconChevronLeft, IconChevronRight } from "@/components/ui/icons";
 
 const FRICTION = 0.9; // velocity decay per frame once released
-const SPRING = 0.3; // pull-back strength past the bounds (bounded mode only)
+const SPRING = 0.3; // pull-back strength past the bounds
 const FOLLOW_DRAGGING = 0.6; // how tightly the track tracks the pointer while held
 const FOLLOW_SETTLING = 0.24; // how tightly the track eases toward its target otherwise
 const SETTLE_EPSILON = 0.4;
@@ -30,14 +28,11 @@ export function Carousel({
   className = "",
   itemGap = "gap-4",
   ariaLabel,
-  infinite = false,
 }: {
   children: React.ReactNode;
   className?: string;
   itemGap?: string;
   ariaLabel?: string;
-  /** Loop seamlessly instead of stopping at the first/last item. */
-  infinite?: boolean;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -46,9 +41,7 @@ export function Carousel({
 
   // Physics state lives in refs — the rAF loop never triggers a re-render.
   const p = useRef({ x: 0, tx: 0, vx: 0, down: false, px: 0, moved: 0, rafId: 0, running: false });
-  // One "set" = the width of the real content once (infinite mode renders
-  // it 3x back to back so there's always a full buffer on either side).
-  const setWidthRef = useRef(0);
+  const trackWidthRef = useRef(0);
 
   const visibleWidth = useCallback(() => {
     const wrap = wrapRef.current;
@@ -59,13 +52,12 @@ export function Carousel({
   const measure = useCallback(() => {
     const track = trackRef.current;
     if (!track) return;
-    setWidthRef.current = infinite ? track.scrollWidth / 3 : track.scrollWidth;
-  }, [infinite]);
+    trackWidthRef.current = track.scrollWidth;
+  }, []);
 
   const minX = useCallback(() => {
-    if (infinite) return -Infinity;
-    return Math.min(0, visibleWidth() - setWidthRef.current);
-  }, [infinite, visibleWidth]);
+    return Math.min(0, visibleWidth() - trackWidthRef.current);
+  }, [visibleWidth]);
 
   const wake = useCallback(() => {
     if (p.current.running) return;
@@ -83,59 +75,32 @@ export function Carousel({
         s.vx *= FRICTION;
       }
 
-      if (infinite) {
-        const setW = setWidthRef.current;
-        if (setW > 0) {
-          // Re-center by exactly one set-width whenever we near the edge of
-          // the 3x buffer — identical content at that offset, so the jump
-          // is invisible, and there's always a full set on both sides.
-          if (s.tx <= -setW * 1.5) {
-            s.tx += setW;
-            s.x += setW;
-          } else if (s.tx >= -setW * 0.5) {
-            s.tx -= setW;
-            s.x -= setW;
-          }
-        }
-      } else {
-        const lo = minX();
-        if (s.tx > 0) s.tx += (0 - s.tx) * SPRING;
-        if (s.tx < lo) s.tx += (lo - s.tx) * SPRING;
-      }
+      const lo = minX();
+      if (s.tx > 0) s.tx += (0 - s.tx) * SPRING;
+      if (s.tx < lo) s.tx += (lo - s.tx) * SPRING;
 
       s.x += (s.tx - s.x) * (s.down ? FOLLOW_DRAGGING : FOLLOW_SETTLING);
       track.style.transform = `translate3d(${s.x}px,0,0)`;
 
-      if (infinite) {
-        setCanLeft(true);
-        setCanRight(true);
-      } else {
-        const lo = minX();
-        setCanLeft(s.tx < -4);
-        setCanRight(s.tx > lo + 4);
-      }
+      setCanLeft(s.tx < -4);
+      setCanRight(s.tx > lo + 4);
 
       const settled = !s.down && Math.abs(s.tx - s.x) < SETTLE_EPSILON && Math.abs(s.vx) < 0.05;
-      if (settled && !infinite) {
+      if (settled) {
         s.running = false;
         return;
       }
       s.rafId = requestAnimationFrame(glide);
     }
-  }, [infinite, minX]);
+  }, [minX]);
 
   const updateBoundsNow = useCallback(() => {
     measure();
-    if (infinite) {
-      setCanLeft(true);
-      setCanRight(true);
-      return;
-    }
     const lo = minX();
     p.current.tx = Math.max(lo, Math.min(0, p.current.tx));
     setCanLeft(p.current.tx < -4);
     setCanRight(p.current.tx > lo + 4);
-  }, [infinite, measure, minX]);
+  }, [measure, minX]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -215,25 +180,9 @@ export function Carousel({
   }, [wake]);
 
   function nudge(direction: 1 | -1) {
-    p.current.tx = infinite
-      ? p.current.tx + direction * visibleWidth() * 0.72
-      : Math.max(minX(), Math.min(0, p.current.tx + direction * visibleWidth() * 0.72));
+    p.current.tx = Math.max(minX(), Math.min(0, p.current.tx + direction * visibleWidth() * 0.72));
     wake();
   }
-
-  // Infinite mode: triple the content (re-keyed) so there's always a full
-  // buffer to scroll into on either side before a re-center is needed.
-  const items = infinite
-    ? Array.from({ length: 3 }, (_, setIndex) =>
-        Children.toArray(children).map((child, i) =>
-          isValidElement(child)
-            ? cloneElement(child as React.ReactElement<{ key?: React.Key }>, {
-                key: `set${setIndex}-${child.key ?? i}`,
-              })
-            : child,
-        ),
-      ).flat()
-    : children;
 
   return (
     <div className={`group/carousel relative ${className}`.trim()}>
@@ -247,7 +196,7 @@ export function Carousel({
         className="-mx-6 cursor-grab touch-pan-y select-none overflow-hidden px-6 pb-10 pt-6"
       >
         <div ref={trackRef} className={`flex w-max ${itemGap}`} style={{ willChange: "transform" }}>
-          {items}
+          {children}
         </div>
       </div>
 

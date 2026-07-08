@@ -98,7 +98,7 @@ export function PhotoTile({
     <Link
       href={href}
       draggable={false}
-      className={`tile-lift group ${PHOTO_TILE_SIZES[size]} shrink-0 ${className}`.trim()}
+      className={`tile-lift group rounded-3xl ${PHOTO_TILE_SIZES[size]} shrink-0 ${className}`.trim()}
     >
       <PhotoTileVisual
         seed={href}

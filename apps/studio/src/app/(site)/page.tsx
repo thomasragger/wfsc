@@ -243,7 +243,7 @@ export default async function HomePage() {
           Gifts for all your favorite people
         </h2>
         {inspiration ? (
-          <Carousel className="mt-6" ariaLabel="Gift categories" infinite>
+          <Carousel className="mt-6" ariaLabel="Gift categories">
             {inspiration.categories.map((cat) => {
               const art = categoryArt(cat.id, cat.name);
               return (

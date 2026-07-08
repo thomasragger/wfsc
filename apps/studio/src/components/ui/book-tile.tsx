@@ -71,7 +71,7 @@ export function BookTile({
     <Link
       href={href}
       draggable={false}
-      className={`tile-lift group flex ${BOOK_TILE_SIZES[size]} shrink-0 flex-col ${className}`.trim()}
+      className={`tile-lift group flex ${BOOK_TILE_SIZES[size]} shrink-0 flex-col rounded-2xl ${className}`.trim()}
     >
       <BookTileVisual image={image} alt={title} />
       <div className="pt-3 text-center">
