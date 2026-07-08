@@ -1,0 +1,12 @@
+{
+  "memoryText": "Baby Luna spent months conquering the living room by rolling and crawling. Then one Tuesday she pulled herself up on the sofa, let go, wobbled like a little penguin, and took her first three steps straight into Mama's arms while Papa cheered so loudly the neighbor's dog barked. Nothing in the house was safe after that.",
+  "people": [
+    { "name": "Luna", "role": "child", "appearance": "a chubby-cheeked 1-year-old baby girl with wispy dark hair and one tiny curl on top, big dark eyes, wearing a mint-green onesie with a duck on the front" },
+    { "name": "Mama", "role": "mama", "appearance": "a woman in her early 30s with a messy honey-blonde bun and warm smile, wearing a soft grey sweater and jeans" }
+  ],
+  "styleId": "watercolor",
+  "styleReferencePaths": ["../style-refs/watercolor/cozy.png", "../style-refs/watercolor/park.png"],
+  "spreadCount": 12,
+  "greeting": "For Luna — ten tiny steps, one giant adventure. We will catch you always.",
+  "fontPairing": "elegant"
+}

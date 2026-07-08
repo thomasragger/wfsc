@@ -1,0 +1,12 @@
+{
+  "memoryText": "When the rain cancelled everything, Ella (6) and her little brother Max (4) built the greatest blanket fort the living room had ever seen. Every cushion in the house was used, a sock on a broom became their flag, and Papa was defeated twice as the terrible tickle monster. They ate smuggled cookies inside and told flashlight stories until the fort glowed golden.",
+  "people": [
+    { "name": "Ella", "role": "sibling", "appearance": "a 6-year-old girl with shoulder-length wavy black hair and a red hairclip, wearing a teal sweater and rainbow-striped socks" },
+    { "name": "Max", "role": "sibling", "appearance": "a 4-year-old boy with messy brown curls and a gap-toothed grin, wearing dinosaur pajamas" }
+  ],
+  "styleId": "crayon",
+  "styleReferencePaths": ["../style-refs/crayon/cozy.png", "../style-refs/crayon/park.png"],
+  "spreadCount": 12,
+  "greeting": "For Ella & Max — rulers of the Cushion Kingdom, together always.",
+  "fontPairing": "handwritten"
+}

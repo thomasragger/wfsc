@@ -1,0 +1,12 @@
+{
+  "memoryText": "Malia (4) and her Mama spent a whole summer day at the beach. They hunted for seashells like pirates looking for treasure, built a sandcastle with a moat, ate dripping ice cream cones, and a cheeky wave soaked Mama's dress which made Malia laugh until her tummy hurt. They stayed until the sun painted the water orange.",
+  "people": [
+    { "name": "Malia", "role": "child", "appearance": "a 4-year-old girl with curly dark brown hair in two puffs, big brown eyes, rosy cheeks, wearing a yellow sundress with white polka dots and red sandals" },
+    { "name": "Mama", "role": "mama", "appearance": "a warm woman in her mid-30s with long wavy dark hair, brown skin, gold hoop earrings, wearing a flowing coral-red summer dress and a straw hat" }
+  ],
+  "styleId": "flat-vector",
+  "styleReferencePaths": ["../style-refs/flat-vector/sea.png", "../style-refs/flat-vector/park.png"],
+  "spreadCount": 12,
+  "greeting": "For Malia — may every wave bring you a new treasure. Love, Mama.",
+  "fontPairing": "storybook"
+}

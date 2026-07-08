@@ -1,0 +1,11 @@
+{
+  "memoryText": "Phoebe (6) found a plain old notebook in a drawer and decided it was magic: whatever she drew inside came true the next day. She drew sunshine and the rain stopped. She drew pancakes and Papa made a mountain of them. When she drew a dragon, the neighbor's cat showed up wearing a very suspicious grumpy face. On the last page she drew her whole family holding hands, forever.",
+  "people": [
+    { "name": "Phoebe", "role": "child", "appearance": "a 6-year-old girl with blonde hair in a high ponytail, bright blue eyes, wearing pink dungarees over a white shirt with a flower pocket" }
+  ],
+  "styleId": "riso-print",
+  "styleReferencePaths": ["../style-refs/riso-print/cozy.png", "../style-refs/riso-print/park.png"],
+  "spreadCount": 12,
+  "greeting": "For Phoebe — whose drawings make the world more magical.",
+  "fontPairing": "storybook"
+}

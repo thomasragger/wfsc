@@ -86,7 +86,7 @@ async function download(url: string, dest: string): Promise<void> {
 
 interface CliConfig {
   memoryText: string;
-  people: { name: string; role?: string; photoPaths: string[] }[];
+  people: { name: string; role?: string; photoPaths?: string[]; appearance?: string }[];
   styleId: string;
   styleReferencePaths?: string[];
   spreadCount?: number;
@@ -137,10 +137,10 @@ async function main() {
   for (const person of config.people) {
     console.log(`▸ Character sheet: ${person.name}…`);
     const photoUrls = await Promise.all(
-      person.photoPaths.map((p) => fileToDataUri(resolve(configDir, p))),
+      (person.photoPaths ?? []).map((p) => fileToDataUri(resolve(configDir, p))),
     );
     const { sheetUrl } = await generateCharacterSheet(
-      { name: person.name, role: person.role, photoUrls },
+      { name: person.name, role: person.role, photoUrls, appearance: person.appearance },
       style,
     );
     const localSheet = join(outDir, 'sheets', `${person.name.toLowerCase()}.png`);

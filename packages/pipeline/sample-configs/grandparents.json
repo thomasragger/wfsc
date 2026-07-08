@@ -1,0 +1,12 @@
+{
+  "memoryText": "Sabine (5) baked apple strudel with her Grandma Rosa in the old kitchen, just like Grandma learned from HER grandma. Flour clouds went everywhere, the dough tore and they patched it like a blanket, and Sabine was in charge of the secret ingredient: a whole lot of cinnamon. The whole house smelled like autumn and they ate the first piece while it was still too hot.",
+  "people": [
+    { "name": "Sabine", "role": "child", "appearance": "a 5-year-old girl with two red braids, green eyes, freckles, wearing a striped apron over a mustard-yellow dress" },
+    { "name": "Grandma Rosa", "role": "grandma", "appearance": "a kind grandmother in her 70s with silver hair in a loose bun, round rosy cheeks, small gold glasses, wearing a lavender cardigan and a flowered apron" }
+  ],
+  "styleId": "watercolor",
+  "styleReferencePaths": ["../style-refs/watercolor/cozy.png", "../style-refs/watercolor/park.png"],
+  "spreadCount": 12,
+  "greeting": "For Sabine — keeper of the secret ingredient. With love, Grandma Rosa.",
+  "fontPairing": "classic"
+}

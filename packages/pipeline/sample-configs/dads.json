@@ -1,0 +1,12 @@
+{
+  "memoryText": "Theo (5) and Papa went camping for the very first time. The tent fell down twice before it finally stood, Papa forgot the spoons so they ate beans with sticks, and they toasted marshmallows until they were black. At night they counted shooting stars and invented their own constellation called The Flying Marshmallow.",
+  "people": [
+    { "name": "Theo", "role": "child", "appearance": "a 5-year-old boy with straight sandy-blond hair, freckles across his nose, wearing a green hoodie, navy shorts and red rain boots" },
+    { "name": "Papa", "role": "papa", "appearance": "a tall man in his late 30s with short dark hair, round glasses and light stubble, wearing a red plaid flannel shirt, jeans and hiking boots" }
+  ],
+  "styleId": "mid-century",
+  "styleReferencePaths": ["../style-refs/mid-century/cozy.png", "../style-refs/mid-century/park.png"],
+  "spreadCount": 12,
+  "greeting": "For Theo — the bravest marshmallow toaster in the wild. Love, Papa.",
+  "fontPairing": "playful"
+}

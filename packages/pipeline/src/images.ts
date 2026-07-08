@@ -63,14 +63,19 @@ export async function generateCharacterSheet(
   style: StyleDef,
   replicate: Replicate = client(),
 ): Promise<{ sheetUrl: string }> {
-  const prompt = `Turn the person in the reference photo(s) into a children's picture-book character.
+  const hasPhotos = person.photoUrls.length > 0;
+  const subject = hasPhotos
+    ? `Turn the person in the reference photo(s) into a children's picture-book character.
+Keep the person's recognizable features (hair, face shape, build, typical clothing) while fully translating them into this illustration style.`
+    : `Create a children's picture-book character: ${person.appearance ?? 'a friendly person'}.`;
+  const prompt = `${subject}
 Character turnaround sheet on a plain white background: full-body front view, 3/4 view, side view, and four facial expressions (happy, surprised, laughing, sleepy).
-Keep the person's recognizable features (hair, face shape, build, typical clothing) while fully translating them into this illustration style.
 Style: ${style.stylePrompt}. No text, no labels, no watermark.`;
 
+  const imageInput = [...person.photoUrls, ...style.referenceImageUrls.slice(0, 2)];
   const output = await runWithRetry(replicate, MODELS.characterSheet, {
       prompt,
-      image_input: [...person.photoUrls, ...style.referenceImageUrls.slice(0, 2)],
+      ...(imageInput.length > 0 ? { image_input: imageInput } : {}),
       aspect_ratio: '1:1',
       output_format: 'png',
   });

@@ -26,6 +26,8 @@ export interface PersonInput {
   role?: string;
   /** Public URLs or data URIs of the uploaded photos. */
   photoUrls: string[];
+  /** For fictional/sample characters without photos: appearance description. */
+  appearance?: string;
 }
 
 export interface CharacterSheet {
