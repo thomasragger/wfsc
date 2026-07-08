@@ -6,9 +6,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const TEMPLATE_COLUMNS =
-  "id, category_id, title, tagline, description, suggested_style_id, story_beats, example_image_url, sort_order";
+  "id, category_id, title, tagline, description, suggested_style_id, story_beats, example_image_url, preview_image_url, age_min, age_max, occasions, sort_order";
 
 interface TemplateRow {
+  preview_image_url?: string | null;
+  age_min?: number | null;
+  age_max?: number | null;
+  occasions?: string[] | null;
   id: string;
   category_id: string;
   title: string;
@@ -41,6 +45,10 @@ function serialize(t: TemplateRow) {
     suggestedStyleId: t.suggested_style_id,
     storyBeats: beats(t.story_beats),
     exampleImageUrl: t.example_image_url,
+    previewImageUrl: t.preview_image_url ?? null,
+    ageMin: t.age_min ?? null,
+    ageMax: t.age_max ?? null,
+    occasions: t.occasions ?? [],
   };
 }
 
