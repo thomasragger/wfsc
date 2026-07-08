@@ -1,0 +1,375 @@
+{% comment %}
+  WFSC Book viewer — in-theme page-turning reader for wfsc_sample_book
+  metaobjects. Liquid emits every sample book as a JSON <script> tag;
+  vanilla JS reads ?book=<handle> from the URL (falling back to the
+  default_book setting, then the first book) and drives the viewer:
+  cover → dedication → spreads → "The End" CTA into the Studio.
+{% endcomment %}
+
+{%- assign uid = section.id | replace: '_', '' | downcase -%}
+
+<style>
+  .wfsc-viewer-{{ uid }} { background: #fffaf7; padding: {{ section.settings.padding_y }}px 1.5rem; }
+  .wfsc-viewer-{{ uid }} [hidden] { display: none !important; }
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__inner { max-width: 940px; margin: 0 auto; }
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__heading { color: #761e0b; text-align: center; font-size: clamp(1.6rem, 3.4vw, 2.3rem); margin: 0 0 6px; }
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__booktitle { color: #5b4f49; text-align: center; font-size: 1.05rem; margin: 0 0 24px; min-height: 1.4em; }
+
+  /* Stage */
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__stage {
+    position: relative; aspect-ratio: 2 / 1; border-radius: 14px; overflow: hidden;
+    background: #fffdf8; box-shadow: 0 14px 44px rgba(90, 60, 30, 0.18);
+    perspective: 1800px;
+  }
+  .wfsc-viewer-{{ uid }} .wfsc-page {
+    position: relative; width: 100%; height: 100%;
+    transform-origin: left center; backface-visibility: hidden;
+  }
+  .wfsc-viewer-{{ uid }} .wfsc-page--turn-next { animation: wfsc-turn-next-{{ uid }} 0.45s ease both; }
+  .wfsc-viewer-{{ uid }} .wfsc-page--turn-prev { animation: wfsc-turn-prev-{{ uid }} 0.45s ease both; transform-origin: right center; }
+  @keyframes wfsc-turn-next-{{ uid }} {
+    from { transform: rotateY(-16deg) translateX(4%); opacity: 0.25; }
+    to { transform: none; opacity: 1; }
+  }
+  @keyframes wfsc-turn-prev-{{ uid }} {
+    from { transform: rotateY(16deg) translateX(-4%); opacity: 0.25; }
+    to { transform: none; opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wfsc-viewer-{{ uid }} .wfsc-page--turn-next,
+    .wfsc-viewer-{{ uid }} .wfsc-page--turn-prev { animation: none; }
+  }
+
+  /* Spread layouts */
+  .wfsc-viewer-{{ uid }} .wfsc-spread { display: grid; grid-template-columns: 1fr 1fr; width: 100%; height: 100%; }
+  .wfsc-viewer-{{ uid }} .wfsc-spread__text {
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    background: #fffdf8; padding: 7%;
+    box-shadow: inset -14px 0 24px -18px rgba(90, 60, 30, 0.25);
+  }
+  .wfsc-viewer-{{ uid }} .wfsc-spread__text p {
+    margin: 0; font-family: Georgia, 'Times New Roman', serif;
+    color: #58423a; font-size: clamp(0.95rem, 1.9vw, 1.3rem); line-height: 1.65;
+  }
+  .wfsc-viewer-{{ uid }} .wfsc-spread__img { position: relative; overflow: hidden; }
+  .wfsc-viewer-{{ uid }} .wfsc-spread__img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+  .wfsc-viewer-{{ uid }} .wfsc-spread--text-right .wfsc-spread__text { order: 2; box-shadow: inset 14px 0 24px -18px rgba(90, 60, 30, 0.25); }
+  .wfsc-viewer-{{ uid }} .wfsc-spread--text-right .wfsc-spread__img { order: 1; }
+
+  .wfsc-viewer-{{ uid }} .wfsc-spread--text-bottom { grid-template-columns: 1fr; grid-template-rows: 62% 38%; }
+  .wfsc-viewer-{{ uid }} .wfsc-spread--text-bottom .wfsc-spread__text { order: 2; box-shadow: none; padding: 3% 8%; }
+  .wfsc-viewer-{{ uid }} .wfsc-spread--text-bottom .wfsc-spread__img { order: 1; }
+
+  .wfsc-viewer-{{ uid }} .wfsc-spread--full-bleed-overlay { display: block; position: relative; }
+  .wfsc-viewer-{{ uid }} .wfsc-spread--full-bleed-overlay .wfsc-spread__img { position: absolute; inset: 0; }
+  .wfsc-viewer-{{ uid }} .wfsc-spread--full-bleed-overlay .wfsc-spread__text {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 1;
+    background: linear-gradient(to bottom, rgba(255, 253, 248, 0.94) 30%, rgba(255, 253, 248, 0));
+    box-shadow: none; padding: 4% 10% 8%;
+  }
+
+  /* Cover */
+  .wfsc-viewer-{{ uid }} .wfsc-page--cover { background: #F6B73C; }
+  .wfsc-viewer-{{ uid }} .wfsc-page--cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .wfsc-viewer-{{ uid }} .wfsc-page--cover .wfsc-cover__title {
+    position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%);
+    max-width: 80%; text-align: center; background: #fffdf8; color: #761e0b;
+    font-size: clamp(1.1rem, 2.6vw, 1.8rem); font-weight: 700; line-height: 1.25;
+    padding: 14px 30px; border-radius: 14px; box-shadow: 0 8px 24px rgba(90, 60, 30, 0.3); margin: 0;
+  }
+
+  /* Dedication */
+  .wfsc-viewer-{{ uid }} .wfsc-page--dedication {
+    display: flex; align-items: center; justify-content: center; background: #fffdf8; padding: 8%;
+  }
+  .wfsc-viewer-{{ uid }} .wfsc-page--dedication p {
+    margin: 0; transform: rotate(-4deg); max-width: 26em; text-align: center;
+    font-family: 'Snell Roundhand', 'Savoye LET', 'Segoe Script', 'Brush Script MT', cursive;
+    color: #761e0b; font-size: clamp(1.2rem, 2.6vw, 1.9rem); line-height: 1.55;
+  }
+
+  /* End page */
+  .wfsc-viewer-{{ uid }} .wfsc-page--end {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 22px; background: #fffdf8; padding: 8%; text-align: center;
+  }
+  .wfsc-viewer-{{ uid }} .wfsc-page--end .wfsc-end__title {
+    margin: 0; transform: rotate(-3deg);
+    font-family: 'Snell Roundhand', 'Savoye LET', 'Segoe Script', 'Brush Script MT', cursive;
+    color: #761e0b; font-size: clamp(1.8rem, 4.4vw, 3rem);
+  }
+  .wfsc-viewer-{{ uid }} .wfsc-end__cta {
+    display: inline-block; background: #ff4315; color: #ffffff; text-decoration: none;
+    font-weight: 700; font-size: 1.05rem; padding: 14px 32px; border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(255, 67, 21, 0.35); transition: background 0.2s ease;
+  }
+  .wfsc-viewer-{{ uid }} .wfsc-end__cta:hover { background: #761e0b; }
+
+  /* Controls */
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__controls {
+    display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 20px;
+  }
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__arrow {
+    width: 46px; height: 46px; border-radius: 50%; border: 2px solid #761e0b;
+    background: #ffffff; color: #761e0b; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+  }
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__arrow svg { width: 18px; height: 18px; }
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__arrow:hover:not(:disabled) { background: #ff4315; border-color: #ff4315; color: #ffffff; }
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__arrow:disabled { opacity: 0.3; cursor: default; }
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__dots { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__dot {
+    width: 10px; height: 10px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+    background: rgba(118, 30, 11, 0.22); transition: background 0.2s ease, transform 0.2s ease;
+  }
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__dot[aria-current="true"] { background: #ff4315; transform: scale(1.3); }
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__counter { color: #5b4f49; font-size: 0.85rem; min-width: 52px; text-align: center; }
+
+  /* Empty state */
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__empty {
+    text-align: center; background: #fffdf8; border-radius: 14px; padding: 64px 24px;
+    color: #761e0b; box-shadow: 0 10px 32px rgba(90, 60, 30, 0.12);
+  }
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__empty p { margin: 0; font-size: 1.1rem; color: #5b4f49; }
+  .wfsc-viewer-{{ uid }} .wfsc-viewer__empty h3 { margin: 0 0 10px; }
+
+  /* Mobile: single-page / stacked mode */
+  @media (max-width: 700px) {
+    .wfsc-viewer-{{ uid }} .wfsc-viewer__stage { aspect-ratio: auto; }
+    .wfsc-viewer-{{ uid }} .wfsc-page { height: auto; }
+    .wfsc-viewer-{{ uid }} .wfsc-spread,
+    .wfsc-viewer-{{ uid }} .wfsc-spread--text-bottom { display: flex; flex-direction: column; height: auto; }
+    .wfsc-viewer-{{ uid }} .wfsc-spread__img { order: 1; aspect-ratio: 1; }
+    .wfsc-viewer-{{ uid }} .wfsc-spread__text { order: 2; box-shadow: none; padding: 24px 20px; min-height: 120px; }
+    .wfsc-viewer-{{ uid }} .wfsc-spread--full-bleed-overlay { display: flex; flex-direction: column; }
+    .wfsc-viewer-{{ uid }} .wfsc-spread--full-bleed-overlay .wfsc-spread__img { position: static; }
+    .wfsc-viewer-{{ uid }} .wfsc-spread--full-bleed-overlay .wfsc-spread__text { position: static; background: #fffdf8; }
+    .wfsc-viewer-{{ uid }} .wfsc-page--cover { aspect-ratio: 1; }
+    .wfsc-viewer-{{ uid }} .wfsc-page--dedication,
+    .wfsc-viewer-{{ uid }} .wfsc-page--end { aspect-ratio: 1; }
+  }
+</style>
+
+<section class="wfsc-viewer-{{ uid }}" id="wfsc-viewer-{{ uid }}"
+         data-default-book="{{ section.settings.default_book | escape }}"
+         data-studio-url="{{ section.settings.studio_url | escape }}">
+  <div class="wfsc-viewer__inner">
+    {%- if section.settings.heading != blank -%}
+      <h2 class="wfsc-viewer__heading">{{ section.settings.heading }}</h2>
+    {%- endif -%}
+    <p class="wfsc-viewer__booktitle" data-book-title></p>
+
+    <div class="wfsc-viewer__stage" data-stage aria-live="polite" tabindex="0" role="group" aria-label="Sample book pages"></div>
+
+    <div class="wfsc-viewer__controls" data-controls hidden>
+      <button type="button" class="wfsc-viewer__arrow" data-prev aria-label="Previous page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="wfsc-viewer__dots" data-dots role="tablist" aria-label="Pages"></div>
+      <span class="wfsc-viewer__counter" data-counter></span>
+      <button type="button" class="wfsc-viewer__arrow" data-next aria-label="Next page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+
+    <div class="wfsc-viewer__empty" data-empty hidden>
+      <h3>Our sample books are still at the printers</h3>
+      <p>Check back very soon — we're stitching the last pages together.</p>
+    </div>
+  </div>
+</section>
+
+{%- if shop.metaobjects['wfsc_sample_book'].values.size > 0 -%}
+  {%- for book in shop.metaobjects['wfsc_sample_book'].values -%}
+    <script type="application/json" data-wfsc-book="{{ book.system.handle }}" data-wfsc-viewer="{{ uid }}">
+      {
+        "handle": {{ book.system.handle | json }},
+        "title": {{ book.title.value | json }},
+        "cover": {{ book.cover_url.value | json }},
+        "greeting": {{ book.greeting.value | json }},
+        "templateId": {{ book.template_id.value | json }},
+        "styleName": {{ book.style_name.value | json }},
+        "spreads": {{ book.spreads.value | json }}
+      }
+    </script>
+  {%- endfor -%}
+{%- endif -%}
+
+<script>
+  (function () {
+    var root = document.getElementById('wfsc-viewer-{{ uid }}');
+    if (!root) return;
+
+    var stage = root.querySelector('[data-stage]');
+    var controls = root.querySelector('[data-controls]');
+    var dotsEl = root.querySelector('[data-dots]');
+    var prevBtn = root.querySelector('[data-prev]');
+    var nextBtn = root.querySelector('[data-next]');
+    var counterEl = root.querySelector('[data-counter]');
+    var emptyEl = root.querySelector('[data-empty]');
+    var titleEl = root.querySelector('[data-book-title]');
+    var studioUrl = root.getAttribute('data-studio-url') || 'https://wfsc-studio.vercel.app/create';
+    var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* ---- Collect books emitted by Liquid ---- */
+    var books = Object.create(null);
+    var order = [];
+    var tags = document.querySelectorAll('script[type="application/json"][data-wfsc-viewer="{{ uid }}"]');
+    Array.prototype.forEach.call(tags, function (tag) {
+      try {
+        var data = JSON.parse(tag.textContent);
+        if (data && data.handle && !books[data.handle]) {
+          books[data.handle] = data;
+          order.push(data.handle);
+        }
+      } catch (e) { /* skip malformed entry */ }
+    });
+
+    /* ---- Pick the requested book ---- */
+    var params = new URLSearchParams(window.location.search);
+    var requested = params.get('book');
+    var fallback = root.getAttribute('data-default-book') || '';
+    var book = (requested && books[requested]) || (fallback && books[fallback]) || (order.length ? books[order[0]] : null);
+
+    if (!book) {
+      emptyEl.hidden = false;
+      stage.hidden = true;
+      titleEl.hidden = true;
+      return;
+    }
+
+    /* ---- Build the page model: cover → dedication → spreads → end ---- */
+    var pages = [{ type: 'cover' }];
+    if (book.greeting) pages.push({ type: 'dedication' });
+    var spreads = Array.isArray(book.spreads) ? book.spreads.slice() : [];
+    spreads.sort(function (a, b) { return (a.position || 0) - (b.position || 0); });
+    spreads.forEach(function (s) { pages.push({ type: 'spread', spread: s }); });
+    pages.push({ type: 'end' });
+
+    titleEl.textContent = book.title + (book.styleName ? ' · ' + book.styleName + ' style' : '');
+    controls.hidden = false;
+
+    function el(tagName, className, text) {
+      var node = document.createElement(tagName);
+      if (className) node.className = className;
+      if (text != null) node.textContent = text;
+      return node;
+    }
+
+    function img(src, alt) {
+      var node = document.createElement('img');
+      node.src = src;
+      node.alt = alt || '';
+      node.loading = 'lazy';
+      return node;
+    }
+
+    function buildPage(page) {
+      var node;
+      if (page.type === 'cover') {
+        node = el('div', 'wfsc-page wfsc-page--cover');
+        if (book.cover) node.appendChild(img(book.cover, book.title));
+        node.appendChild(el('h3', 'wfsc-cover__title', book.title || ''));
+      } else if (page.type === 'dedication') {
+        node = el('div', 'wfsc-page wfsc-page--dedication');
+        node.appendChild(el('p', null, book.greeting));
+      } else if (page.type === 'end') {
+        node = el('div', 'wfsc-page wfsc-page--end');
+        node.appendChild(el('p', 'wfsc-end__title', 'The End'));
+        var cta = el('a', 'wfsc-end__cta', 'Make your own storybook');
+        cta.href = studioUrl + (studioUrl.indexOf('?') > -1 ? '&' : '?') + 'template=' + encodeURIComponent(book.templateId || '');
+        node.appendChild(cta);
+      } else {
+        var s = page.spread || {};
+        var layout = s.layout || 'text-left';
+        node = el('div', 'wfsc-page');
+        var spread = el('div', 'wfsc-spread wfsc-spread--' + layout);
+        var textPane = el('div', 'wfsc-spread__text');
+        textPane.appendChild(el('p', null, s.text || ''));
+        var imgPane = el('div', 'wfsc-spread__img');
+        if (s.image) imgPane.appendChild(img(s.image, ''));
+        spread.appendChild(textPane);
+        spread.appendChild(imgPane);
+        node.appendChild(spread);
+      }
+      return node;
+    }
+
+    /* ---- Navigation ---- */
+    var current = 0;
+
+    function renderDots() {
+      dotsEl.textContent = '';
+      pages.forEach(function (_, i) {
+        var dot = el('button', 'wfsc-viewer__dot');
+        dot.type = 'button';
+        dot.setAttribute('aria-label', 'Go to page ' + (i + 1));
+        dot.setAttribute('aria-current', i === current ? 'true' : 'false');
+        dot.addEventListener('click', function () { goTo(i); });
+        dotsEl.appendChild(dot);
+      });
+    }
+
+    function update(direction) {
+      stage.textContent = '';
+      var node = buildPage(pages[current]);
+      if (!reducedMotion && direction) {
+        node.classList.add(direction > 0 ? 'wfsc-page--turn-next' : 'wfsc-page--turn-prev');
+      }
+      stage.appendChild(node);
+      prevBtn.disabled = current === 0;
+      nextBtn.disabled = current === pages.length - 1;
+      counterEl.textContent = (current + 1) + ' / ' + pages.length;
+      Array.prototype.forEach.call(dotsEl.children, function (dot, i) {
+        dot.setAttribute('aria-current', i === current ? 'true' : 'false');
+      });
+    }
+
+    function goTo(i) {
+      var clamped = Math.max(0, Math.min(pages.length - 1, i));
+      if (clamped === current) return;
+      var direction = clamped > current ? 1 : -1;
+      current = clamped;
+      update(direction);
+    }
+
+    prevBtn.addEventListener('click', function () { goTo(current - 1); });
+    nextBtn.addEventListener('click', function () { goTo(current + 1); });
+
+    document.addEventListener('keydown', function (e) {
+      var target = e.target;
+      if (target && /^(input|textarea|select)$/i.test(target.tagName)) return;
+      if (e.key === 'ArrowRight') { goTo(current + 1); }
+      else if (e.key === 'ArrowLeft') { goTo(current - 1); }
+    });
+
+    var touchX = null;
+    stage.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 1) touchX = e.touches[0].clientX;
+    }, { passive: true });
+    stage.addEventListener('touchend', function (e) {
+      if (touchX === null) return;
+      var dx = e.changedTouches[0].clientX - touchX;
+      touchX = null;
+      if (Math.abs(dx) > 40) goTo(current + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+
+    renderDots();
+    update(0);
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "WFSC Book viewer",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Read a sample book" },
+    { "type": "text", "id": "default_book", "label": "Default book handle", "info": "Shown when the URL has no ?book= parameter (e.g. mums). Leave blank to show the first book." },
+    { "type": "text", "id": "studio_url", "label": "Studio create URL", "info": "The end-page CTA links here with ?template=<template_id>", "default": "https://wfsc-studio.vercel.app/create" },
+    { "type": "range", "id": "padding_y", "label": "Vertical padding", "min": 0, "max": 120, "step": 8, "default": 56 }
+  ],
+  "presets": [{ "name": "WFSC Book viewer" }]
+}
+{% endschema %}

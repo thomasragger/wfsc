@@ -1,0 +1,27 @@
+{
+  "sections": {
+    "viewer": {
+      "type": "wfsc-book-viewer",
+      "settings": {
+        "heading": "Read a sample book",
+        "default_book": "",
+        "studio_url": "https://wfsc-studio.vercel.app/create",
+        "padding_y": 56
+      }
+    },
+    "gallery": {
+      "type": "wfsc-sample-gallery",
+      "settings": {
+        "heading": "Peek inside our books",
+        "subheading": "Real sample stories, spread by spread — see what your own book could look like.",
+        "viewer_url": "/pages/sample-books",
+        "background": "#fffaf7",
+        "padding_y": 56
+      }
+    }
+  },
+  "order": [
+    "viewer",
+    "gallery"
+  ]
+}

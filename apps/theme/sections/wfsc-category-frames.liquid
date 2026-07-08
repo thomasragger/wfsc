@@ -60,16 +60,58 @@
     <h2 class="wfsc-cats__title">{{ section.settings.title }}</h2>
   {%- endif -%}
   <div class="wfsc-cats__row">
-    {%- for block in section.blocks -%}
-      <a class="wfsc-cat" {{ block.shopify_attributes }}
-         href="{{ block.settings.link | default: '#' }}"
-         style="background: linear-gradient({{ block.settings.angle }}deg, {{ block.settings.color_a }}, {{ block.settings.color_b }});">
-        {%- if block.settings.image -%}
-          {{ block.settings.image | image_url: width: 480 | image_tag: class: 'wfsc-cat__img', loading: 'lazy', alt: block.settings.label }}
-        {%- endif -%}
-        <span class="wfsc-cat__label">{{ block.settings.label }}</span>
-      </a>
-    {%- endfor -%}
+    {%- if section.settings.data_source == 'metaobjects' -%}
+      {%- if shop.metaobjects['wfsc_category'].values.size > 0 -%}
+        {%- assign cats = shop.metaobjects['wfsc_category'].values -%}
+
+        {%- comment -%} Sort entries by the numeric `sort` field (small n, Liquid-safe). {%- endcomment -%}
+        {%- assign sorted_handles = '' -%}
+        {%- for i in (0..30) -%}
+          {%- for c in cats -%}
+            {%- if c.sort.value == i -%}
+              {%- assign sorted_handles = sorted_handles | append: c.system.handle | append: ',' -%}
+            {%- endif -%}
+          {%- endfor -%}
+        {%- endfor -%}
+        {%- for c in cats -%}
+          {%- assign padded = ',' | append: sorted_handles -%}
+          {%- assign probe = ',' | append: c.system.handle | append: ',' -%}
+          {%- unless padded contains probe -%}
+            {%- assign sorted_handles = sorted_handles | append: c.system.handle | append: ',' -%}
+          {%- endunless -%}
+        {%- endfor -%}
+        {%- assign handle_list = sorted_handles | split: ',' -%}
+
+        {%- assign palette_a = '#F9C5D1,#F6B73C,#FBE6C4,#9DB8F0,#F9E0C8,#BFE3C0' | split: ',' -%}
+        {%- assign palette_b = '#E8622C,#E8622C,#F6B73C,#2E5FD7,#F0A45C,#6FA872' | split: ',' -%}
+
+        {%- for h in handle_list -%}
+          {%- assign cat = shop.metaobjects['wfsc_category'][h] -%}
+          {%- if cat -%}
+            {%- assign p = forloop.index0 | modulo: palette_a.size -%}
+            <a class="wfsc-cat"
+               href="{{ section.settings.link_base }}?book={{ h | url_param_escape }}"
+               style="background: linear-gradient(120deg, {{ palette_a[p] }}, {{ palette_b[p] }});">
+              {%- if cat.image_url.value != blank -%}
+                <img class="wfsc-cat__img" src="{{ cat.image_url.value }}" alt="{{ cat.name.value | escape }}" loading="lazy" width="480" height="480">
+              {%- endif -%}
+              <span class="wfsc-cat__label">{{ cat.name.value }}</span>
+            </a>
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endif -%}
+    {%- else -%}
+      {%- for block in section.blocks -%}
+        <a class="wfsc-cat" {{ block.shopify_attributes }}
+           href="{{ block.settings.link | default: '#' }}"
+           style="background: linear-gradient({{ block.settings.angle }}deg, {{ block.settings.color_a }}, {{ block.settings.color_b }});">
+          {%- if block.settings.image -%}
+            {{ block.settings.image | image_url: width: 480 | image_tag: class: 'wfsc-cat__img', loading: 'lazy', alt: block.settings.label }}
+          {%- endif -%}
+          <span class="wfsc-cat__label">{{ block.settings.label }}</span>
+        </a>
+      {%- endfor -%}
+    {%- endif -%}
   </div>
 </div>
 
@@ -77,6 +119,11 @@
 {
   "name": "WFSC Category frames",
   "settings": [
+    { "type": "select", "id": "data_source", "label": "Data source", "default": "manual",
+      "info": "Metaobjects mode renders WFSC categories synced from the app (ignores blocks).",
+      "options": [ { "value": "manual", "label": "Manual blocks" }, { "value": "metaobjects", "label": "WFSC metaobjects" } ] },
+    { "type": "text", "id": "link_base", "label": "Viewer page URL", "default": "/pages/sample-books",
+      "info": "Metaobjects mode links each card to this page with ?book=<category>." },
     { "type": "text", "id": "title", "label": "Heading", "default": "Gifts for all your favorite people" },
     { "type": "select", "id": "title_align", "label": "Heading alignment", "default": "left",
       "options": [ { "value": "left", "label": "Left" }, { "value": "center", "label": "Center" } ] },

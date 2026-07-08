@@ -7,7 +7,7 @@ embedded = false
 client_id = "0e70455bb7d3770df91558a4f3896dc1"
 
 [access_scopes]
-scopes = "read_orders,write_fulfillments,read_merchant_managed_fulfillment_orders,write_merchant_managed_fulfillment_orders,read_products,write_products,read_metaobjects,write_metaobjects,unauthenticated_read_product_listings,unauthenticated_write_checkouts,unauthenticated_read_checkouts"
+scopes = "read_orders,write_fulfillments,read_merchant_managed_fulfillment_orders,write_merchant_managed_fulfillment_orders,read_products,write_products,read_metaobjects,write_metaobjects,read_metaobject_definitions,write_metaobject_definitions,unauthenticated_read_product_listings,unauthenticated_write_checkouts,unauthenticated_read_checkouts"
 optional_scopes = [ ]
 use_legacy_install_flow = false
 

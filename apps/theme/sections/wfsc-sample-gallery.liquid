@@ -1,0 +1,144 @@
+{% comment %}
+  WFSC Sample gallery — "Peek inside our books".
+  Polaroid cards rendered from wfsc_sample_book metaobjects (synced by
+  scripts/sync-shopify-metaobjects.mjs). Each card links to the in-theme
+  book viewer page with ?book=<handle>. Renders nothing when no entries exist.
+{% endcomment %}
+
+{%- assign uid = section.id | replace: '_', '' | downcase -%}
+
+{% if shop.metaobjects['wfsc_sample_book'].values.size > 0 %}
+{%- assign books = shop.metaobjects['wfsc_sample_book'].values -%}
+
+<style>
+  .wfsc-gal-{{ uid }} { background: {{ section.settings.background }}; padding: {{ section.settings.padding_y }}px 1.5rem; }
+  .wfsc-gal-{{ uid }} .wfsc-gal__inner { max-width: 1200px; margin: 0 auto; }
+  .wfsc-gal-{{ uid }} .wfsc-gal__heading { color: #761e0b; font-size: clamp(1.6rem, 3.4vw, 2.3rem); margin: 0 0 8px; text-align: center; }
+  .wfsc-gal-{{ uid }} .wfsc-gal__subheading { color: #5b4f49; font-size: 1.05rem; margin: 0 auto 2.2rem; max-width: 560px; text-align: center; }
+  .wfsc-gal-{{ uid }} .wfsc-gal__grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 28px 22px; align-items: start;
+  }
+  @media (max-width: 640px) {
+    .wfsc-gal-{{ uid }} .wfsc-gal__grid {
+      display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+      gap: 16px; padding-bottom: 20px; margin: 0 -1.5rem; padding-left: 1.5rem; padding-right: 1.5rem;
+      scrollbar-width: none;
+    }
+    .wfsc-gal-{{ uid }} .wfsc-gal__grid::-webkit-scrollbar { display: none; }
+    .wfsc-gal-{{ uid }} .wfsc-polaroid { flex: 0 0 72vw; max-width: 260px; scroll-snap-align: start; }
+  }
+  .wfsc-gal-{{ uid }} .wfsc-polaroid {
+    position: relative; display: block; text-decoration: none;
+    background: #ffffff; border-radius: 15px; padding: 12px 12px 16px;
+    box-shadow: 0 6px 22px rgba(90, 60, 30, 0.14);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .wfsc-gal-{{ uid }} .wfsc-polaroid:nth-child(odd) { transform: rotate(-1.4deg); }
+  .wfsc-gal-{{ uid }} .wfsc-polaroid:nth-child(even) { transform: rotate(1.2deg); }
+  .wfsc-gal-{{ uid }} .wfsc-polaroid:hover,
+  .wfsc-gal-{{ uid }} .wfsc-polaroid:focus-visible {
+    transform: translateY(-8px) rotate(0deg) scale(1.02);
+    box-shadow: 0 18px 40px rgba(90, 60, 30, 0.24);
+  }
+  .wfsc-gal-{{ uid }} .wfsc-polaroid__frame { position: relative; background: #fffdf8; border-radius: 10px; }
+  .wfsc-gal-{{ uid }} .wfsc-polaroid__img {
+    display: block; width: 100%; aspect-ratio: 1; object-fit: cover;
+    clip-path: url(#wfsc-scallop-gal-{{ uid }});
+  }
+  .wfsc-gal-{{ uid }} .wfsc-polaroid__pill {
+    position: absolute; top: 8px; left: 8px; z-index: 1;
+    background: #ff4315; color: #ffffff; font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.02em; text-transform: uppercase;
+    padding: 4px 11px; border-radius: 999px; box-shadow: 0 3px 8px rgba(118, 30, 11, 0.25);
+  }
+  .wfsc-gal-{{ uid }} .wfsc-polaroid__caption {
+    display: block; margin: 12px 2px 4px; color: #761e0b;
+    font-weight: 700; font-size: 1.02rem; line-height: 1.3;
+  }
+  .wfsc-gal-{{ uid }} .wfsc-polaroid__chip {
+    display: inline-block; margin: 2px; background: rgba(246, 183, 60, 0.28);
+    color: #761e0b; font-size: 0.76rem; font-weight: 600;
+    padding: 3px 10px; border-radius: 999px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wfsc-gal-{{ uid }} .wfsc-polaroid { transition: none; }
+  }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <clipPath id="wfsc-scallop-gal-{{ uid }}" clipPathUnits="objectBoundingBox">
+      <path d="M0.5,0.02 C0.58,-0.01,0.68,0,0.73,0.06 C0.82,0.03,0.92,0.09,0.93,0.19 C1,0.23,1.02,0.34,0.97,0.42 C1.02,0.5,1.02,0.6,0.97,0.67 C1.01,0.76,0.97,0.87,0.88,0.9 C0.85,0.98,0.74,1.02,0.66,0.98 C0.58,1.03,0.45,1.03,0.37,0.98 C0.28,1.02,0.17,0.98,0.13,0.9 C0.04,0.86,0,0.76,0.04,0.67 C-0.01,0.6,-0.01,0.49,0.04,0.42 C-0.01,0.34,0.02,0.23,0.09,0.19 C0.1,0.09,0.2,0.03,0.28,0.06 C0.34,0,0.43,-0.01,0.5,0.02 Z"/>
+    </clipPath>
+  </defs>
+</svg>
+
+<section class="wfsc-gal-{{ uid }}">
+  <div class="wfsc-gal__inner">
+    {%- if section.settings.heading != blank -%}
+      <h2 class="wfsc-gal__heading">{{ section.settings.heading }}</h2>
+    {%- endif -%}
+    {%- if section.settings.subheading != blank -%}
+      <p class="wfsc-gal__subheading">{{ section.settings.subheading }}</p>
+    {%- endif -%}
+
+    {%- comment -%} Sort entries by the numeric `sort` field (small n, Liquid-safe). {%- endcomment -%}
+    {%- assign sorted_handles = '' -%}
+    {%- for i in (0..30) -%}
+      {%- for b in books -%}
+        {%- if b.sort.value == i -%}
+          {%- assign sorted_handles = sorted_handles | append: b.system.handle | append: ',' -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endfor -%}
+    {%- for b in books -%}
+      {%- assign padded = ',' | append: sorted_handles -%}
+      {%- assign probe = ',' | append: b.system.handle | append: ',' -%}
+      {%- unless padded contains probe -%}
+        {%- assign sorted_handles = sorted_handles | append: b.system.handle | append: ',' -%}
+      {%- endunless -%}
+    {%- endfor -%}
+    {%- assign handle_list = sorted_handles | split: ',' -%}
+
+    <div class="wfsc-gal__grid">
+      {%- for h in handle_list -%}
+        {%- assign b = shop.metaobjects['wfsc_sample_book'][h] -%}
+        {%- if b -%}
+          {%- assign cat = shop.metaobjects['wfsc_category'][b.category.value] -%}
+          {%- assign cat_label = cat.name.value | default: b.category.value | capitalize -%}
+          <a class="wfsc-polaroid" href="{{ section.settings.viewer_url }}?book={{ h | url_param_escape }}"
+             aria-label="Read the sample book: {{ b.title.value | escape }}">
+            <span class="wfsc-polaroid__frame">
+              {%- if b.category.value != blank -%}
+                <span class="wfsc-polaroid__pill">{{ cat_label }}</span>
+              {%- endif -%}
+              {%- if b.cover_url.value != blank -%}
+                <img class="wfsc-polaroid__img" src="{{ b.cover_url.value }}" alt="{{ b.title.value | escape }}" loading="lazy" width="480" height="480">
+              {%- endif -%}
+            </span>
+            <span class="wfsc-polaroid__caption">{{ b.title.value }}</span>
+            {%- if b.style_name.value != blank -%}
+              <span class="wfsc-polaroid__chip">{{ b.style_name.value }}</span>
+            {%- endif -%}
+          </a>
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% schema %}
+{
+  "name": "WFSC Sample gallery",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Peek inside our books" },
+    { "type": "text", "id": "subheading", "label": "Subheading", "default": "Real sample stories, spread by spread — see what your own book could look like." },
+    { "type": "text", "id": "viewer_url", "label": "Viewer page URL", "info": "Page using the sample-books template; cards link there with ?book=<handle>", "default": "/pages/sample-books" },
+    { "type": "color", "id": "background", "label": "Background", "default": "#fffaf7" },
+    { "type": "range", "id": "padding_y", "label": "Vertical padding", "min": 0, "max": 120, "step": 8, "default": 56 }
+  ],
+  "presets": [{ "name": "WFSC Sample gallery" }]
+}
+{% endschema %}
