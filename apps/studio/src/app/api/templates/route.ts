@@ -6,10 +6,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const TEMPLATE_COLUMNS =
-  "id, category_id, title, tagline, description, suggested_style_id, story_beats, example_image_url, preview_image_url, age_min, age_max, occasions, sort_order";
+  "id, category_id, title, tagline, description, suggested_style_id, story_beats, cover_concept, prompt_scaffold, example_image_url, preview_image_url, mockup_image_url, age_min, age_max, occasions, sort_order";
 
 interface TemplateRow {
   preview_image_url?: string | null;
+  mockup_image_url?: string | null;
+  cover_concept?: string | null;
+  prompt_scaffold?: string | null;
   age_min?: number | null;
   age_max?: number | null;
   occasions?: string[] | null;
@@ -44,8 +47,11 @@ function serialize(t: TemplateRow) {
     description: t.description,
     suggestedStyleId: t.suggested_style_id,
     storyBeats: beats(t.story_beats),
+    coverConcept: t.cover_concept ?? null,
+    promptScaffold: t.prompt_scaffold ?? null,
     exampleImageUrl: t.example_image_url,
     previewImageUrl: t.preview_image_url ?? null,
+    mockupImageUrl: t.mockup_image_url ?? null,
     ageMin: t.age_min ?? null,
     ageMax: t.age_max ?? null,
     occasions: t.occasions ?? [],

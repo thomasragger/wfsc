@@ -30,12 +30,16 @@ export type BookTileSize = keyof typeof BOOK_TILE_SIZES;
 
 export function BookTileVisual({
   image,
+  hoverImage = null,
   alt = "",
   priority = false,
   aspectClassName = "aspect-[4/5]",
   className = "",
 }: {
   image: string | null;
+  /** Cross-faded in on hover of an ancestor `.group` (e.g. the flat preview at
+   *  rest, the photographed 3D mockup on hover). Ignored if absent. */
+  hoverImage?: string | null;
   alt?: string;
   priority?: boolean;
   /** Override the frame's aspect ratio (default 4:5). */
@@ -44,19 +48,24 @@ export function BookTileVisual({
 }) {
   return (
     <div
-      className={`${aspectClassName} w-full overflow-hidden rounded-2xl bg-cream ${className}`.trim()}
+      className={`relative ${aspectClassName} w-full overflow-hidden rounded-2xl bg-cream ${className}`.trim()}
     >
       {image ? (
         <ProgressiveImage
           src={image}
           alt={alt}
           priority={priority}
-          className="h-full w-full"
+          className={`h-full w-full transition-opacity duration-300 ${hoverImage ? "group-hover:opacity-0" : ""}`}
           imgClassName="h-full w-full object-cover"
         />
       ) : (
         <ArtPlaceholder />
       )}
+      {hoverImage ? (
+        <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <ProgressiveImage src={hoverImage} alt="" className="h-full w-full" imgClassName="h-full w-full object-cover" />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -64,6 +73,7 @@ export function BookTileVisual({
 export function BookTile({
   href,
   image,
+  hoverImage = null,
   title,
   category,
   tagline,
@@ -74,6 +84,8 @@ export function BookTile({
 }: {
   href: string;
   image: string | null;
+  /** Cross-faded in on hover (e.g. the 3D mockup over the flat preview). */
+  hoverImage?: string | null;
   title: string;
   /** Small-caps byline (e.g. the category). Ignored when `tagline` is set. */
   category?: string | null;
@@ -90,7 +102,7 @@ export function BookTile({
       draggable={false}
       className={`tile-lift group flex ${BOOK_TILE_SIZES[size]} shrink-0 flex-col rounded-2xl ${className}`.trim()}
     >
-      <BookTileVisual image={image} alt={title} aspectClassName={aspectClassName} priority={priority} />
+      <BookTileVisual image={image} hoverImage={hoverImage} alt={title} aspectClassName={aspectClassName} priority={priority} />
       {/* Generous breathing room around the caption — a book jacket, not a
           cramped thumbnail label. */}
       <div className="px-3 pb-2 pt-5 text-center">

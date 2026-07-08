@@ -11,7 +11,7 @@ export async function GET() {
     const db = supabaseAdmin();
     const { data, error } = await db
       .from("styles")
-      .select("id, name, description, preview_image_url, sort_order")
+      .select("id, name, description, preview_image_url, reference_image_urls, sort_order")
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
@@ -22,6 +22,7 @@ export async function GET() {
         name: s.name as string,
         description: (s.description ?? null) as string | null,
         previewImageUrl: (s.preview_image_url ?? null) as string | null,
+        referenceImageUrls: (s.reference_image_urls ?? []) as string[],
       })),
     });
   } catch (err) {

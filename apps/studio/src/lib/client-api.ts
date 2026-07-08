@@ -9,6 +9,8 @@ export interface StyleSummary {
   name: string;
   description: string | null;
   previewImageUrl: string | null;
+  /** Curated in-style reference illustrations for a richer style preview. */
+  referenceImageUrls: string[];
 }
 
 export interface TemplateSummary {
@@ -20,13 +22,15 @@ export interface TemplateSummary {
   description: string | null;
   suggestedStyleId: string | null;
   storyBeats: string[];
+  coverConcept: string | null;
+  promptScaffold: string | null;
   exampleImageUrl: string | null;
-  /**
-   * TODO(orchestrator): /api/templates selects `preview_image_url` from the DB
-   * but doesn't serialize it yet — until it does, this stays undefined and the
-   * UI falls back to exampleImageUrl / the placeholder.
-   */
-  previewImageUrl?: string | null;
+  previewImageUrl: string | null;
+  /** Photographed 3D book mockup of the preview (hover / hero). */
+  mockupImageUrl: string | null;
+  ageMin: number | null;
+  ageMax: number | null;
+  occasions: string[];
 }
 
 export interface CategorySummary {

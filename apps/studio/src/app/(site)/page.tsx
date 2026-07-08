@@ -29,6 +29,7 @@ interface TemplateRow {
   tagline: string | null;
   example_image_url: string | null;
   preview_image_url: string | null;
+  mockup_image_url: string | null;
   sort_order: number;
 }
 
@@ -45,7 +46,7 @@ async function loadInspiration(): Promise<{
         .order("sort_order", { ascending: true }),
       db
         .from("story_templates")
-        .select("id, category_id, title, tagline, example_image_url, preview_image_url, sort_order")
+        .select("id, category_id, title, tagline, example_image_url, preview_image_url, mockup_image_url, sort_order")
         .eq("is_active", true)
         .order("sort_order", { ascending: true }),
     ]);
@@ -323,6 +324,7 @@ export default async function HomePage() {
                         key={tpl.id}
                         href={`/create?template=${encodeURIComponent(tpl.id)}`}
                         image={tpl.preview_image_url ?? tpl.example_image_url}
+                        hoverImage={tpl.mockup_image_url}
                         title={tpl.title}
                         tagline={tpl.tagline}
                         size="lg"
@@ -359,11 +361,11 @@ export default async function HomePage() {
         </div>
 
         {samples.length > 0 ? (
-          // Real book mockups drifting through. overflow-y stays visible so the
-          // books' drop shadow is never clipped; the mask only fades the left
-          // & right edges. Pauses on hover so a book can be grabbed; the second
-          // copy is a seamless loop tail, hidden from AT / tab order.
-          <div className="marquee-fade mt-12 overflow-x-clip overflow-y-visible">
+          // Real book mockups drifting through. py-8 gives the edge-fade mask
+          // room above/below so a hover-lifted tile + shadow isn't clipped at
+          // the top. Pauses on hover; the second copy is a seamless loop tail,
+          // hidden from AT / tab order.
+          <div className="marquee-fade mt-8 overflow-x-clip py-8">
             <div className="animate-marquee flex w-max items-start hover:[animation-play-state:paused]">
               {[...samples, ...samples].map((s, i) => {
                 const art = categoryArt(s.categoryId ?? "kids", s.categoryName ?? "Kids");
