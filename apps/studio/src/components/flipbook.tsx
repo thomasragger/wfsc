@@ -8,6 +8,7 @@ import { Sparkle } from "@/components/decor";
 import { ButtonLink } from "@/components/ui/button";
 import { CoverImage } from "@/components/ui/cover-image";
 import { IconChevronLeft, IconChevronRight } from "@/components/ui/icons";
+import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { BookPayload, SpreadPayload } from "@/lib/book-payload";
 
@@ -62,7 +63,7 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
   }
   useEffect(() => {
     if (!leaving) return;
-    const t = setTimeout(() => setLeaving(null), 280);
+    const t = setTimeout(() => setLeaving(null), 400);
     return () => clearTimeout(t);
   }, [leaving]);
 
@@ -235,18 +236,16 @@ function SpreadCanvas({
   );
 
   const imagePage = (
-    <div className="flex aspect-square h-full items-center justify-center bg-cream p-[3%]">
+    <div className="aspect-square h-full bg-cream p-[3%]">
       {spread.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <ProgressiveImage
           src={spread.imageUrl}
           alt=""
-          className="max-h-full max-w-full object-contain drop-shadow-sm"
+          className="h-full w-full"
+          imgClassName="h-full w-full object-contain"
         />
       ) : (
-        <div className="h-full w-full">
-          <Skeleton className="h-full w-full" rounded="rounded-none" />
-        </div>
+        <Skeleton className="h-full w-full" rounded="rounded-none" />
       )}
     </div>
   );

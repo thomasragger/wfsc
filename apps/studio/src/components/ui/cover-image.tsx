@@ -5,6 +5,7 @@
  * All new UI must come from src/components/ui/* — /styleguide is the living contract.
  */
 import { ArtPlaceholder } from "@/components/decor";
+import { ProgressiveImage } from "@/components/ui/progressive-image";
 
 const SIZES = {
   sm: "clamp(7rem, 30vw, 9.5rem)",
@@ -33,12 +34,12 @@ export function CoverImage({
       style={{ width: SIZES[size] }}
     >
       {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <ProgressiveImage
           src={src}
           alt={alt}
-          className="h-full w-full object-cover"
-          loading={priority ? "eager" : "lazy"}
+          priority={priority}
+          className="h-full w-full"
+          imgClassName="h-full w-full object-cover"
         />
       ) : (
         <ArtPlaceholder />

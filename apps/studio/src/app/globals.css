@@ -64,6 +64,21 @@ body::before {
     linear-gradient(118deg, #e5d7f5 0%, #f6ecf6 26%, #fdf3e4 52%, #fbe0bb 76%, #f6b477 100%);
 }
 
+/* Soft warm band behind the "flip through a finished book" marquee — a
+   gentle continuation of the hero wash so the two feel connected. */
+.flip-wash {
+  background:
+    radial-gradient(120% 90% at 50% -10%, rgb(217 203 240 / 0.5) 0%, rgb(217 203 240 / 0) 60%),
+    radial-gradient(90% 80% at 100% 110%, rgb(246 180 120 / 0.4) 0%, rgb(246 180 120 / 0) 55%),
+    linear-gradient(#fff8f1, #fdf2e8);
+}
+
+/* Fade the marquee's contents in/out at the left & right edges. */
+.marquee-fade {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+}
+
 /* Film-grain overlay via feTurbulence, very low opacity. */
 body::after {
   content: "";
@@ -415,31 +430,33 @@ body::after {
 @keyframes wfsc-slide-in-right {
   from {
     opacity: 0;
-    transform: translateX(26px);
+    transform: translateX(38px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
   }
 }
 
 @keyframes wfsc-slide-in-left {
   from {
     opacity: 0;
-    transform: translateX(-26px);
+    transform: translateX(-38px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateX(0) scale(1);
   }
 }
 
 @keyframes wfsc-fade-out {
   from {
     opacity: 1;
+    transform: scale(1);
   }
   to {
     opacity: 0;
+    transform: scale(0.985);
   }
 }
 
@@ -490,6 +507,18 @@ body::after {
   }
 }
 
+/* Marquee: a track holding two identical copies drifts left by exactly one
+   copy, so the loop is seamless. Each item carries its spacing as a right
+   margin (not flex gap) so half the track width lands on an exact seam. */
+@keyframes wfsc-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 /* Gentle side-to-side sway + tilt, layered inside the riser. */
 @keyframes wfsc-sway {
   0%,
@@ -528,17 +557,21 @@ body::after {
 .animate-sway {
   animation: wfsc-sway var(--sway-duration, 6s) ease-in-out infinite;
 }
+.animate-marquee {
+  animation: wfsc-marquee 48s linear infinite;
+  will-change: transform;
+}
 .animate-page-in {
   animation: wfsc-page-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .animate-slide-in-right {
-  animation: wfsc-slide-in-right 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: wfsc-slide-in-right 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .animate-slide-in-left {
-  animation: wfsc-slide-in-left 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: wfsc-slide-in-left 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .animate-fade-out {
-  animation: wfsc-fade-out 260ms ease both;
+  animation: wfsc-fade-out 320ms ease both;
 }
 .animate-flip-in {
   animation: wfsc-flip-in 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -556,6 +589,7 @@ body::after {
   .animate-spin-slow,
   .animate-rise,
   .animate-sway,
+  .animate-marquee,
   .animate-page-in,
   .animate-slide-in-right,
   .animate-slide-in-left,

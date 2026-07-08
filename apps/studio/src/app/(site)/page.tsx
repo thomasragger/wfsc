@@ -207,7 +207,9 @@ export default async function HomePage() {
                 className="animate-sway"
                 style={{ "--tilt": card.tilt, "--sway": card.sway } as React.CSSProperties}
               >
-                <BookTileVisual image={card.img} alt={card.caption} />
+                {/* A floating book needs a shadow to feel like a physical
+                    object — the flat BookTileVisual gets one from the caller. */}
+                <BookTileVisual image={card.img} alt={card.caption} className="shadow-polaroid" />
                 <p className="pt-2 text-center font-display text-xs font-bold text-ink">
                   {card.caption}
                 </p>
@@ -237,13 +239,65 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ------------------------- Flip through a finished book (near the hero) */}
+      <section className="flip-wash relative overflow-hidden py-14 sm:py-16">
+        <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
+          <Eyebrow className="mx-auto">See the real thing</Eyebrow>
+          <h2 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
+            Flip through a finished book.
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-ink-soft">
+            Every one of these is a real, complete sample book — page by page, the
+            same kind you&rsquo;ll hold in your hands.
+          </p>
+        </div>
+
+        {samples.length > 0 ? (
+          // Real book mockups drifting through, echoing the hero. Pauses on
+          // hover so a book can be grabbed; the second copy is a seamless
+          // loop tail and is hidden from AT / tab order.
+          <div className="marquee-fade mt-10 overflow-hidden py-3">
+            <div className="animate-marquee flex w-max hover:[animation-play-state:paused]">
+              {[...samples, ...samples].map((s, i) => {
+                const art = categoryArt(s.categoryId ?? "kids", s.categoryName ?? "Kids");
+                const clone = i >= samples.length;
+                return (
+                  <Link
+                    key={`${s.token}-${i}`}
+                    href={`/samples/${encodeURIComponent(s.token)}`}
+                    draggable={false}
+                    aria-hidden={clone}
+                    tabIndex={clone ? -1 : undefined}
+                    className="mr-6 w-36 shrink-0 sm:mr-8 sm:w-44"
+                  >
+                    <BookTileVisual
+                      image={s.mockupImageUrl ?? s.coverImageUrl ?? `/categories/${art.photo}.jpg`}
+                      alt={s.title ?? "A sample story"}
+                      className="shadow-polaroid transition-transform duration-300 hover:-translate-y-1.5"
+                    />
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <p className="mt-8 text-center text-sm text-ink-soft">
+            The first sample books are at the printer&rsquo;s — check back very soon.
+          </p>
+        )}
+
+        <div className="mt-10 text-center">
+          <ButtonLink href="/samples">Browse sample books</ButtonLink>
+        </div>
+      </section>
+
       {/* --------------------------------------------- Category cards (theme) */}
       <section className="mx-auto w-full max-w-6xl px-4 pb-6 pt-14 sm:px-6">
         <h2 className="font-display text-[1.7rem] font-bold text-ink sm:text-3xl">
           Gifts for all your favorite people
         </h2>
         {inspiration ? (
-          <Carousel className="mt-6" ariaLabel="Gift categories" bleedRight>
+          <Carousel className="mt-6" ariaLabel="Gift categories" fullBleed>
             {inspiration.categories.map((cat) => {
               const art = categoryArt(cat.id, cat.name);
               return (
@@ -309,28 +363,18 @@ export default async function HomePage() {
                       ) : null}
                     </div>
                   </div>
-                  <Carousel className="mt-5" ariaLabel={`${cat.name} story ideas`} itemGap="gap-5" bleedRight>
-                    {templates.map((tpl) => {
-                      const image = tpl.preview_image_url ?? tpl.example_image_url;
-                      return (
-                        <Link
-                          key={tpl.id}
-                          href={`/create?template=${encodeURIComponent(tpl.id)}`}
-                          draggable={false}
-                          className="tile-lift group flex w-56 shrink-0 flex-col rounded-3xl sm:w-64"
-                        >
-                          <BookTileVisual image={image} alt={tpl.title} className="aspect-square" />
-                          <div className="px-1 pb-1 pt-3 text-center">
-                            <p className="font-display text-sm font-extrabold leading-snug text-ink group-hover:text-coral">
-                              {tpl.title}
-                            </p>
-                            {tpl.tagline ? (
-                              <p className="mt-0.5 line-clamp-2 text-xs text-ink-soft">{tpl.tagline}</p>
-                            ) : null}
-                          </div>
-                        </Link>
-                      );
-                    })}
+                  <Carousel className="mt-5" ariaLabel={`${cat.name} story ideas`} itemGap="gap-6" fullBleed>
+                    {templates.map((tpl) => (
+                      <BookTile
+                        key={tpl.id}
+                        href={`/create?template=${encodeURIComponent(tpl.id)}`}
+                        image={tpl.preview_image_url ?? tpl.example_image_url}
+                        title={tpl.title}
+                        tagline={tpl.tagline}
+                        size="lg"
+                        aspectClassName="aspect-square"
+                      />
+                    ))}
                   </Carousel>
                 </div>
               );
@@ -345,52 +389,6 @@ export default async function HomePage() {
             action={<ButtonLink href="/create">Start from your own memory</ButtonLink>}
           />
         )}
-      </section>
-
-      {/* ------------------------------------------------------- Sample books */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-white/60 p-8 shadow-fuzzy ring-1 ring-white sm:p-12">
-          <Doodle src="spark-blue.png" size={24} className="animate-twinkle absolute right-[12%] top-8" />
-          <div className="flex flex-col items-start gap-10 lg:flex-row lg:items-center">
-            <div className="max-w-md">
-              <Eyebrow>See the real thing</Eyebrow>
-              <h2 className="mt-4 font-display text-3xl font-extrabold text-ink">
-                Flip through a finished book.
-              </h2>
-              <p className="mt-2 text-ink-soft">
-                These are complete sample books, page by page — the same kind of book
-                you&rsquo;ll hold in your hands.
-              </p>
-              <ButtonLink href="/samples" className="mt-6">
-                Browse sample books
-              </ButtonLink>
-            </div>
-            {samples.length > 0 ? (
-              <div className="flex flex-wrap items-end justify-center gap-6 pb-2 lg:ml-auto">
-                {samples.slice(0, 3).map((s) => {
-                  const art = categoryArt(s.categoryId ?? "kids", s.categoryName ?? "Kids");
-                  return (
-                    <BookTile
-                      key={s.token}
-                      href={`/samples/${encodeURIComponent(s.token)}`}
-                      image={s.mockupImageUrl ?? s.coverImageUrl ?? `/categories/${art.photo}.jpg`}
-                      title={s.title ?? "A sample story"}
-                      category={s.categoryName}
-                      size="sm"
-                    />
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="mx-auto flex flex-col items-center gap-2 text-center lg:ml-auto">
-                <Doodle src="cloud.png" size={56} className="animate-float" />
-                <p className="max-w-xs text-sm text-ink-soft">
-                  The first sample books are at the printer&rsquo;s — check back very soon.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
       </section>
 
       {/* ------------------------------------------------------- Closing CTA */}

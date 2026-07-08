@@ -56,7 +56,7 @@ export default async function SamplesPage() {
               <section key={group.id}>
                 <h2 className="font-display text-2xl font-extrabold text-ink">{group.name}</h2>
                 {/* Same tile, same size, same carousel as the homepage category row. */}
-                <Carousel className="mt-5" ariaLabel={`${group.name} sample books`} bleedRight>
+                <Carousel className="mt-5" ariaLabel={`${group.name} sample books`} fullBleed>
                   {group.items.map((sample) => (
                     <BookTile
                       key={sample.token}

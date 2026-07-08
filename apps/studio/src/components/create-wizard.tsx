@@ -272,7 +272,7 @@ export function CreateWizard() {
                   <BookTileVisual
                     image={tpl.previewImageUrl ?? tpl.exampleImageUrl ?? null}
                     alt={tpl.title}
-                    className="aspect-[5/4]"
+                    aspectClassName="aspect-[5/4]"
                   />
                   <div className="flex flex-1 flex-col px-1 pb-1 pt-4">
                     <p className="font-display text-lg font-extrabold leading-snug text-ink group-hover:text-coral">

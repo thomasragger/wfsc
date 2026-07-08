@@ -11,9 +11,11 @@
  * off the bottom). That leaves the vertical shadow free to paint while the
  * rail is still contained horizontally.
  *
- * `bleedRight` extends the rail to the viewport's right edge so off-screen
- * cards flow off the side of the screen instead of being sliced mid-column
- * with dead space beside them — the left stays aligned to the page column.
+ * `fullBleed` runs the rail edge-to-edge across the viewport: the first
+ * card still starts aligned to the page column (so it lines up with the
+ * heading), but cards flow off BOTH viewport edges as you drag instead of
+ * being sliced at a mid-column line with dead space beside them. The left
+ * inset is derived with calc(50vw - 50%) so it self-aligns at any width.
  * All new UI must come from src/components/ui/* — /styleguide is the living contract.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -25,25 +27,20 @@ const SPRING = 0.3; // pull-back strength past the bounds
 const FOLLOW_DRAGGING = 0.6; // how tightly the track tracks the pointer while held
 const FOLLOW_SETTLING = 0.24; // how tightly the track eases toward its target otherwise
 const SETTLE_EPSILON = 0.4;
-// The wrap carries pl-6/pr-6 (24px) of shadow-safe padding so the first and
-// last cards' horizontal shadow isn't clipped flush. clientWidth includes
-// that padding, so bounds math subtracts it back out: both sides in bounded
-// mode, only the left side when the right bleeds off the viewport edge.
-const EDGE_PADDING = 24;
 
 export function Carousel({
   children,
   className = "",
   itemGap = "gap-4",
   ariaLabel,
-  bleedRight = false,
+  fullBleed = false,
 }: {
   children: React.ReactNode;
   className?: string;
   itemGap?: string;
   ariaLabel?: string;
-  /** Extend the rail to the viewport's right edge (left stays column-aligned). */
-  bleedRight?: boolean;
+  /** Run the rail edge-to-edge across the viewport (first card stays column-aligned). */
+  fullBleed?: boolean;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -57,10 +54,13 @@ export function Carousel({
   const visibleWidth = useCallback(() => {
     const wrap = wrapRef.current;
     if (!wrap) return 0;
-    // Bounded mode pads both sides; bleed mode only the left (right runs to
-    // the viewport edge), so the visible track ends at the screen edge.
-    return wrap.clientWidth - EDGE_PADDING * (bleedRight ? 1 : 2);
-  }, [bleedRight]);
+    const cs = getComputedStyle(wrap);
+    const padL = parseFloat(cs.paddingLeft) || 0;
+    const padR = parseFloat(cs.paddingRight) || 0;
+    // Bleed mode runs content to the viewport's right edge, so only the left
+    // inset counts; bounded mode keeps a gutter on both sides.
+    return wrap.clientWidth - padL - (fullBleed ? 0 : padR);
+  }, [fullBleed]);
 
   const measure = useCallback(() => {
     const track = trackRef.current;
@@ -203,14 +203,17 @@ export function Carousel({
         ref={wrapRef}
         role="region"
         aria-label={ariaLabel}
-        /* -ml-6/pl-6 cancel out (content re-aligns to the caller's edge) but
-           push the clip boundary 24px left so the first card's shadow shows.
-           overflow-x:clip + overflow-y:visible keeps the vertical hover
-           shadow uncut. In bleedRight mode the right margin runs to the
-           viewport edge (calc(50% - 50vw)) so cards flow off the screen
-           instead of being sliced in dead column space. */
+        /* overflow-x:clip + overflow-y:visible clips the rail horizontally
+           while letting the cards' vertical hover shadow paint uncut.
+           Bounded: -mx-6/px-6 cancel out but push the clip 24px past the
+           column so edge cards' shadows show. fullBleed: both margins run to
+           the viewport edges (calc(50% - 50vw)); the left inset
+           (calc(50vw - 50%)) re-aligns the first card to the page column so
+           it lines up with the heading, and cards flow off both edges. */
         className={`${
-          bleedRight ? "-ml-6 mr-[calc(50%_-_50vw)] pl-6 pr-6" : "-mx-6 px-6"
+          fullBleed
+            ? "ml-[calc(50%_-_50vw)] mr-[calc(50%_-_50vw)] pl-[calc(50vw_-_50%)]"
+            : "-mx-6 px-6"
         } cursor-grab touch-pan-y select-none overflow-x-clip overflow-y-visible pb-10 pt-6`}
       >
         <div ref={trackRef} className={`flex w-max ${itemGap}`} style={{ willChange: "transform" }}>
