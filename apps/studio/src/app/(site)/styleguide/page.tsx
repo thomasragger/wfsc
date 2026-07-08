@@ -31,7 +31,7 @@ export const metadata = {
 
 const TOKENS = [
   { name: "ink", value: "#761e0b", text: "text-white" },
-  { name: "coral (primary)", value: "#ff4315", text: "text-white" },
+  { name: "coral (primary)", value: "#ff7916", text: "text-white" },
   { name: "ember", value: "#e8622c", text: "text-white" },
   { name: "marigold", value: "#f6b73c", text: "text-ink" },
   { name: "cobalt", value: "#2e5fd7", text: "text-white" },
@@ -270,7 +270,7 @@ export default function StyleguidePage() {
                 className="h-full w-full object-cover"
               />
             </div>
-            <BlobFrame shape="shell" from="#ff4315" to="#f6b73c" className="w-28">
+            <BlobFrame shape="shell" from="#ff7916" to="#f6b73c" className="w-28">
               <Image src="/mascot/part2.png" alt="" width={90} height={90} className="h-auto w-full" />
             </BlobFrame>
             <div className="flex items-center gap-4">

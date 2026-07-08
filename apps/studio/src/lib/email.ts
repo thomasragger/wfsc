@@ -44,7 +44,7 @@ export function reviewReadyEmail(book: { title: string | null; access_token: str
       Take a look, fine-tune the dedication, fonts and layouts if you like,
       and approve it for printing.
     </p>
-    <a href="${link}" style="display: inline-block; background: #ff4315; color: #ffffff; font-weight: 700; padding: 14px 34px; border-radius: 999px; text-decoration: none;">
+    <a href="${link}" style="display: inline-block; background: #ff7916; color: #ffffff; font-weight: 700; padding: 14px 34px; border-radius: 999px; text-decoration: none;">
       Review your book
     </a>
     <p style="font-size: 13px; color: #a58f85; margin-top: 28px;">
@@ -95,7 +95,7 @@ export function previewReadyEmail(book: { title: string | null; access_token: st
       The first pages of <strong>${title}</strong> are illustrated and waiting for you.
       Your private link never expires — come back anytime.
     </p>
-    <a href="${link}" style="display: inline-block; background: #ff4315; color: #ffffff; font-weight: 700; padding: 14px 34px; border-radius: 999px; text-decoration: none;">
+    <a href="${link}" style="display: inline-block; background: #ff7916; color: #ffffff; font-weight: 700; padding: 14px 34px; border-radius: 999px; text-decoration: none;">
       See your preview
     </a>
   </div>

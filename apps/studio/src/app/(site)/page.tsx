@@ -183,39 +183,45 @@ export default async function HomePage() {
               <Doodle src={d.src} size={d.size} className="opacity-90" />
             </div>
           ))}
-          {HERO_RIDERS.map((card) => (
-            <div
-              key={card.caption}
-              className={`animate-rise absolute ${
-                card.tier === 0
-                  ? ""
-                  : card.tier === 1
-                    ? "hidden sm:block"
-                    : "hidden motion-reduce:md:hidden md:block"
-              }`}
-              style={{
-                [card.side]: card.x,
-                top: card.top,
-                width: card.width,
-                "--rise-duration": card.duration,
-                "--rise-delay": card.delay,
-              } as React.CSSProperties}
-            >
-              {/* Same visual family as the sample books below — a floating
-                  book should look like a book, not a masked category tile. */}
+          {HERO_RIDERS.map((card, i) => {
+            // Real sample books float through — same square mockups shown in
+            // the marquee, so the hero shows the actual product, not stand-ins.
+            const book = samples.length ? samples[i % samples.length] : null;
+            const img = book?.mockupImageUrl ?? book?.coverImageUrl ?? card.img;
+            return (
               <div
-                className="animate-sway"
-                style={{ "--tilt": card.tilt, "--sway": card.sway } as React.CSSProperties}
+                key={i}
+                className={`animate-rise absolute ${
+                  card.tier === 0
+                    ? ""
+                    : card.tier === 1
+                      ? "hidden sm:block"
+                      : "hidden motion-reduce:md:hidden md:block"
+                }`}
+                style={{
+                  [card.side]: card.x,
+                  top: card.top,
+                  width: card.width,
+                  "--rise-duration": card.duration,
+                  "--rise-delay": card.delay,
+                } as React.CSSProperties}
               >
-                {/* A floating book needs a shadow to feel like a physical
-                    object — the flat BookTileVisual gets one from the caller. */}
-                <BookTileVisual image={card.img} alt={card.caption} className="shadow-polaroid" />
-                <p className="pt-2 text-center font-display text-xs font-bold text-ink">
-                  {card.caption}
-                </p>
+                <div
+                  className="animate-sway"
+                  style={{ "--tilt": card.tilt, "--sway": card.sway } as React.CSSProperties}
+                >
+                  {/* The mockup is a square product shot and already carries
+                      its own cover title — show it whole, no extra caption. */}
+                  <BookTileVisual
+                    image={img}
+                    alt={book?.title ?? ""}
+                    aspectClassName="aspect-square"
+                    className="shadow-polaroid"
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Centered logo + CTA + tagline, exactly like the storefront hero */}
@@ -236,58 +242,6 @@ export default async function HomePage() {
           <p className="mt-6 font-display text-lg font-bold text-ink sm:text-xl">
             Turn your favorite memory into art for a lifetime
           </p>
-        </div>
-      </section>
-
-      {/* ------------------------- Flip through a finished book (near the hero) */}
-      <section className="flip-wash relative overflow-hidden py-14 sm:py-16">
-        <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
-          <Eyebrow className="mx-auto">See the real thing</Eyebrow>
-          <h2 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
-            Flip through a finished book.
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-ink-soft">
-            Every one of these is a real, complete sample book — page by page, the
-            same kind you&rsquo;ll hold in your hands.
-          </p>
-        </div>
-
-        {samples.length > 0 ? (
-          // Real book mockups drifting through, echoing the hero. Pauses on
-          // hover so a book can be grabbed; the second copy is a seamless
-          // loop tail and is hidden from AT / tab order.
-          <div className="marquee-fade mt-10 overflow-hidden py-3">
-            <div className="animate-marquee flex w-max hover:[animation-play-state:paused]">
-              {[...samples, ...samples].map((s, i) => {
-                const art = categoryArt(s.categoryId ?? "kids", s.categoryName ?? "Kids");
-                const clone = i >= samples.length;
-                return (
-                  <Link
-                    key={`${s.token}-${i}`}
-                    href={`/samples/${encodeURIComponent(s.token)}`}
-                    draggable={false}
-                    aria-hidden={clone}
-                    tabIndex={clone ? -1 : undefined}
-                    className="mr-6 w-36 shrink-0 sm:mr-8 sm:w-44"
-                  >
-                    <BookTileVisual
-                      image={s.mockupImageUrl ?? s.coverImageUrl ?? `/categories/${art.photo}.jpg`}
-                      alt={s.title ?? "A sample story"}
-                      className="shadow-polaroid transition-transform duration-300 hover:-translate-y-1.5"
-                    />
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <p className="mt-8 text-center text-sm text-ink-soft">
-            The first sample books are at the printer&rsquo;s — check back very soon.
-          </p>
-        )}
-
-        <div className="mt-10 text-center">
-          <ButtonLink href="/samples">Browse sample books</ButtonLink>
         </div>
       </section>
 
@@ -389,6 +343,70 @@ export default async function HomePage() {
             action={<ButtonLink href="/create">Start from your own memory</ButtonLink>}
           />
         )}
+      </section>
+
+      {/* ---------------------------------------- Flip through a finished book */}
+      <section className="flip-wash relative overflow-hidden py-16 sm:py-20">
+        <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
+          <Eyebrow className="mx-auto">See the real thing</Eyebrow>
+          <h2 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
+            Flip through a finished book.
+          </h2>
+          <p className="mx-auto mt-3 max-w-md text-ink-soft">
+            Every one of these is a real, complete sample book — page by page, the
+            same kind you&rsquo;ll hold in your hands.
+          </p>
+        </div>
+
+        {samples.length > 0 ? (
+          // Real book mockups drifting through. overflow-y stays visible so the
+          // books' drop shadow is never clipped; the mask only fades the left
+          // & right edges. Pauses on hover so a book can be grabbed; the second
+          // copy is a seamless loop tail, hidden from AT / tab order.
+          <div className="marquee-fade mt-12 overflow-x-clip overflow-y-visible">
+            <div className="animate-marquee flex w-max items-start hover:[animation-play-state:paused]">
+              {[...samples, ...samples].map((s, i) => {
+                const art = categoryArt(s.categoryId ?? "kids", s.categoryName ?? "Kids");
+                const clone = i >= samples.length;
+                return (
+                  <Link
+                    key={`${s.token}-${i}`}
+                    href={`/samples/${encodeURIComponent(s.token)}`}
+                    draggable={false}
+                    aria-hidden={clone}
+                    tabIndex={clone ? -1 : undefined}
+                    className="group mr-7 flex w-40 shrink-0 flex-col sm:mr-9 sm:w-48"
+                  >
+                    <BookTileVisual
+                      image={s.mockupImageUrl ?? s.coverImageUrl ?? `/categories/${art.photo}.jpg`}
+                      alt={s.title ?? "A sample story"}
+                      aspectClassName="aspect-square"
+                      className="shadow-polaroid transition-transform duration-300 group-hover:-translate-y-1.5"
+                    />
+                    <div className="px-1 pt-4 text-center">
+                      <p className="line-clamp-2 font-display text-sm font-extrabold leading-snug text-ink transition-colors group-hover:text-coral">
+                        {s.title ?? "A sample story"}
+                      </p>
+                      {s.categoryName ? (
+                        <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-coral/70">
+                          {s.categoryName}
+                        </p>
+                      ) : null}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <p className="mt-8 text-center text-sm text-ink-soft">
+            The first sample books are at the printer&rsquo;s — check back very soon.
+          </p>
+        )}
+
+        <div className="mt-12 text-center">
+          <ButtonLink href="/samples">Browse sample books</ButtonLink>
+        </div>
       </section>
 
       {/* ------------------------------------------------------- Closing CTA */}

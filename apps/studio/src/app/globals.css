@@ -5,7 +5,7 @@
   --color-cream: #fffaf7;
   --color-ink: #761e0b;
   --color-ink-soft: #a15b44;
-  --color-coral: #ff4315;
+  --color-coral: #ff7916;
   --color-coral-deep: #761e0b;
   --color-ember: #e8622c;
   --color-marigold: #f6b73c;
@@ -20,7 +20,7 @@
 
   --shadow-fuzzy: 0 18px 40px -18px rgb(118 30 11 / 0.2);
   --shadow-polaroid: 0 22px 44px -18px rgb(118 30 11 / 0.3);
-  --shadow-pop: 0 12px 26px -10px rgb(255 67 21 / 0.35);
+  --shadow-pop: 0 12px 26px -10px rgb(255 121 22 / 0.35);
 }
 
 @theme inline {

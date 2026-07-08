@@ -93,14 +93,14 @@ export function BookTile({
       <BookTileVisual image={image} alt={title} aspectClassName={aspectClassName} priority={priority} />
       {/* Generous breathing room around the caption — a book jacket, not a
           cramped thumbnail label. */}
-      <div className="px-2 pb-1 pt-4 text-center">
+      <div className="px-3 pb-2 pt-5 text-center">
         <p className="font-display text-[0.95rem] font-extrabold leading-snug text-ink transition-colors group-hover:text-coral">
           {title}
         </p>
         {tagline ? (
-          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-soft">{tagline}</p>
+          <p className="mt-2.5 line-clamp-2 text-sm leading-relaxed text-ink-soft">{tagline}</p>
         ) : category ? (
-          <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.1em] text-coral/75">
+          <p className="mt-2.5 text-[11px] font-bold uppercase tracking-[0.1em] text-coral/75">
             {category}
           </p>
         ) : null}
