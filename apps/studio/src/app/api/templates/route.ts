@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const TEMPLATE_COLUMNS =
-  "id, category_id, title, tagline, description, suggested_style_id, example_image_url, sort_order";
+  "id, category_id, title, tagline, description, suggested_style_id, story_beats, example_image_url, sort_order";
 
 interface TemplateRow {
   id: string;
@@ -15,8 +15,20 @@ interface TemplateRow {
   tagline: string | null;
   description: string | null;
   suggested_style_id: string | null;
+  story_beats: unknown;
   example_image_url: string | null;
   sort_order: number;
+}
+
+interface CategoryRow {
+  id: string;
+  name: string;
+  tagline: string | null;
+}
+
+function beats(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((b): b is string => typeof b === "string");
 }
 
 function serialize(t: TemplateRow) {
@@ -27,15 +39,32 @@ function serialize(t: TemplateRow) {
     tagline: t.tagline,
     description: t.description,
     suggestedStyleId: t.suggested_style_id,
+    storyBeats: beats(t.story_beats),
     exampleImageUrl: t.example_image_url,
   };
 }
 
-/** GET /api/templates — all active story templates; ?id=<slug> for a single one. */
+async function loadCategory(id: string): Promise<CategoryRow | null> {
+  const db = supabaseAdmin();
+  const { data } = await db
+    .from("template_categories")
+    .select("id, name, tagline")
+    .eq("id", id)
+    .maybeSingle();
+  return (data as CategoryRow | null) ?? null;
+}
+
+/**
+ * GET /api/templates — all active story templates.
+ *   ?id=<slug>        a single template (includes its category)
+ *   ?category=<slug>  templates of one category, plus the category itself
+ */
 export async function GET(request: Request) {
   try {
     const db = supabaseAdmin();
-    const id = new URL(request.url).searchParams.get("id");
+    const params = new URL(request.url).searchParams;
+    const id = params.get("id");
+    const category = params.get("category");
 
     if (id) {
       const { data, error } = await db
@@ -48,7 +77,34 @@ export async function GET(request: Request) {
       if (!data) {
         return NextResponse.json({ error: "Template not found" }, { status: 404 });
       }
-      return NextResponse.json({ template: serialize(data as TemplateRow) });
+      const template = data as TemplateRow;
+      const cat = await loadCategory(template.category_id);
+      return NextResponse.json({
+        template: { ...serialize(template), categoryName: cat?.name ?? null },
+      });
+    }
+
+    if (category) {
+      const [cat, tplRes] = await Promise.all([
+        loadCategory(category),
+        db
+          .from("story_templates")
+          .select(TEMPLATE_COLUMNS)
+          .eq("category_id", category)
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true }),
+      ]);
+      if (tplRes.error) throw new Error(tplRes.error.message);
+      if (!cat) {
+        return NextResponse.json({ error: "Category not found" }, { status: 404 });
+      }
+      return NextResponse.json({
+        category: cat,
+        templates: ((tplRes.data ?? []) as TemplateRow[]).map((t) => ({
+          ...serialize(t),
+          categoryName: cat.name,
+        })),
+      });
     }
 
     const { data, error } = await db

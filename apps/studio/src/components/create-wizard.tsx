@@ -3,13 +3,15 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { ArtPlaceholder, Sparkle } from "@/components/decor";
+import { ArtPlaceholder, Doodle, Sparkle } from "@/components/decor";
 import { PERSON_ROLES, type PersonRole } from "@/lib/book-payload";
 import {
   createBook,
+  getCategoryTemplates,
   getStyles,
   getTemplate,
   uploadPhoto,
+  type CategorySummary,
   type StyleSummary,
   type TemplateSummary,
 } from "@/lib/client-api";
@@ -45,10 +47,23 @@ function newPerson(role: PersonRole = "child"): PersonDraft {
   return { key: crypto.randomUUID(), name: "", role, photoUrls: [], uploading: 0 };
 }
 
+/** "Our Day at the Zoo" -> "day at the zoo" — for the memory-prompt scaffold. */
+function templateNoun(title: string): string {
+  return title.replace(/^(our|the|a|an)\s+/i, "").toLowerCase();
+}
+
+function templatePlaceholder(tpl: TemplateSummary): string {
+  return (
+    `Tell us about YOUR ${templateNoun(tpl.title)} — who was there, how the day started, ` +
+    `the moment everyone still laughs about, and the little detail you never want to forget…`
+  );
+}
+
 export function CreateWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const templateId = searchParams.get("template");
+  const categoryId = searchParams.get("category");
 
   const [step, setStep] = useState(0);
   const [memoryText, setMemoryText] = useState("");
@@ -62,6 +77,11 @@ export function CreateWizard() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
+
+  // ?category= — offer that category's templates as pickable cards first.
+  const [category, setCategory] = useState<CategorySummary | null>(null);
+  const [categoryTemplates, setCategoryTemplates] = useState<TemplateSummary[] | null>(null);
+  const [pickerDismissed, setPickerDismissed] = useState(false);
 
   // Optional template preselect from ?template=
   useEffect(() => {
@@ -80,6 +100,31 @@ export function CreateWizard() {
       cancelled = true;
     };
   }, [templateId]);
+
+  // Load the category's templates for the picker (skipped once a template is set).
+  useEffect(() => {
+    if (!categoryId || templateId) return;
+    let cancelled = false;
+    getCategoryTemplates(categoryId)
+      .then(({ category: cat, templates }) => {
+        if (cancelled) return;
+        setCategory(cat);
+        setCategoryTemplates(templates);
+      })
+      .catch(() => setPickerDismissed(true)); // unknown category -> plain wizard
+    return () => {
+      cancelled = true;
+    };
+  }, [categoryId, templateId]);
+
+  function pickTemplate(tpl: TemplateSummary) {
+    setTemplate(tpl);
+    if (tpl.suggestedStyleId) {
+      setStyleId((current) => current ?? tpl.suggestedStyleId);
+    }
+    router.replace(`/create?template=${encodeURIComponent(tpl.id)}`, { scroll: false });
+    topRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
 
   useEffect(() => {
     getStyles()
@@ -168,8 +213,89 @@ export function CreateWizard() {
     }
   }
 
+  // ?category= entry: let the customer pick a story idea before the wizard.
+  const showPicker = !!categoryId && !templateId && !template && !pickerDismissed;
+
+  if (showPicker) {
+    return (
+      <div ref={topRef} className="scroll-mt-24">
+        <header className="text-center">
+          <span className="eyebrow mx-auto">
+            <Sparkle size={13} className="text-marigold" />
+            {category ? `Stories for ${category.name}` : "Pick a story idea"}
+          </span>
+          <h1 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
+            {category ? `A story they'll ask for every night.` : `Start from a story idea`}
+          </h1>
+          <p className="mx-auto mt-2 max-w-md text-ink-soft">
+            {category?.tagline ?? "Pick an idea to begin, then make it entirely yours."}
+          </p>
+        </header>
+
+        {categoryTemplates === null ? (
+          <div className="mt-10 grid gap-5 sm:grid-cols-2">
+            {[0, 1].map((i) => (
+              <div
+                key={i}
+                className="h-64 animate-shimmer rounded-3xl bg-gradient-to-r from-lavender via-white to-lavender"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-10 grid gap-5 sm:grid-cols-2">
+            {categoryTemplates.map((tpl) => (
+              <button
+                key={tpl.id}
+                type="button"
+                onClick={() => pickTemplate(tpl)}
+                className="group flex flex-col rounded-3xl bg-white/75 p-4 text-left shadow-fuzzy ring-1 ring-white transition-all duration-200 hover:-translate-y-1.5 hover:rotate-[-0.6deg] hover:shadow-polaroid"
+              >
+                <div className="scallop aspect-[5/4] overflow-hidden bg-lavender">
+                  {tpl.exampleImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={tpl.exampleImageUrl}
+                      alt=""
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <ArtPlaceholder />
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col px-1 pb-1 pt-4">
+                  <p className="font-display text-lg font-extrabold leading-snug text-ink group-hover:text-coral">
+                    {tpl.title}
+                  </p>
+                  {tpl.tagline ? (
+                    <p className="mt-1 text-sm text-ink-soft">{tpl.tagline}</p>
+                  ) : null}
+                  <span className="mt-4 inline-flex items-center gap-1.5 font-display text-sm font-bold text-coral">
+                    Start from this story <span aria-hidden="true">→</span>
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-8 text-center">
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => setPickerDismissed(true)}
+          >
+            Start from your own memory instead
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div ref={topRef} className="scroll-mt-24">
+      {template && step === 0 ? <TemplateIntroCard template={template} /> : null}
+
       {/* Progress */}
       <ol className="mb-8 flex items-center justify-between gap-1 sm:gap-2" aria-label="Steps">
         {STEPS.map((label, i) => {
@@ -220,22 +346,6 @@ export function CreateWizard() {
               </p>
             </header>
 
-            {template ? (
-              <div className="flex items-start gap-3 rounded-2xl bg-lavender/70 p-4">
-                <Sparkle className="mt-0.5 shrink-0 text-cobalt" size={18} />
-                <div>
-                  <p className="text-sm font-bold text-ink">
-                    Starting from: {template.title}
-                  </p>
-                  {template.description ?? template.tagline ? (
-                    <p className="mt-0.5 text-sm text-ink-soft">
-                      {template.description ?? template.tagline}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-
             <div>
               <label htmlFor="memory" className="mb-1.5 block text-sm font-bold text-ink">
                 Your memory
@@ -243,12 +353,14 @@ export function CreateWizard() {
               <textarea
                 id="memory"
                 className="input min-h-44 resize-y leading-relaxed"
-                placeholder={MEMORY_PROMPTS[0]}
+                placeholder={template ? templatePlaceholder(template) : MEMORY_PROMPTS[0]}
                 value={memoryText}
                 onChange={(e) => setMemoryText(e.target.value)}
               />
               <p className="mt-1.5 text-xs text-ink-soft">
-                Need a nudge? &ldquo;{MEMORY_PROMPTS[1]}&rdquo;
+                {template
+                  ? "Your real details make the story yours — names, places, the thing that made everyone laugh."
+                  : `Need a nudge? “${MEMORY_PROMPTS[1]}”`}
               </p>
             </div>
 
@@ -529,7 +641,7 @@ export function CreateWizard() {
         ) : null}
 
         {/* Nav */}
-        <div className="mt-8 flex items-center justify-between gap-3">
+        <div className="mt-8 flex items-center justify-between gap-3" id="wizard-nav">
           {step > 0 ? (
             <button type="button" className="btn btn-ghost" onClick={() => goTo(step - 1)}>
               Back
@@ -559,5 +671,72 @@ export function CreateWizard() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * The template intro card shown above the wizard when starting from a
+ * story idea — title, tagline, category chip, and the beats of the
+ * journey the finished book will follow.
+ */
+function TemplateIntroCard({ template }: { template: TemplateSummary }) {
+  const beats = template.storyBeats.slice(0, 10);
+  return (
+    <section
+      aria-label={`Story idea: ${template.title}`}
+      className="relative mb-8 overflow-hidden rounded-[2rem] shadow-fuzzy ring-1 ring-white"
+      style={{
+        background:
+          "linear-gradient(126deg, #ece5f8 0%, #fdf6ec 45%, #fbe3cb 80%, #f9d3ab 100%)",
+      }}
+    >
+      <Doodle src="sun.png" size={44} className="animate-drift absolute right-5 top-5 opacity-90" />
+      <Doodle src="heart-small.png" size={22} className="animate-twinkle absolute bottom-6 right-[22%]" />
+      <div className="relative p-6 sm:p-8">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="pill-label !text-xs">
+            {template.categoryName ?? "Story idea"}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/60 px-3 py-1.5 font-display text-xs font-bold text-ink-soft">
+            <Sparkle size={11} className="text-marigold" />
+            Illustration style pre-picked — change it anytime
+          </span>
+        </div>
+        <h2 className="mt-4 font-display text-2xl font-extrabold text-ink sm:text-3xl">
+          {template.title}
+        </h2>
+        {template.tagline ? (
+          <p className="mt-1 font-display text-base font-semibold text-coral">
+            {template.tagline}
+          </p>
+        ) : null}
+        {template.description ? (
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-soft">
+            {template.description}
+          </p>
+        ) : null}
+
+        {beats.length > 0 ? (
+          <div className="mt-6">
+            <p className="font-display text-sm font-extrabold uppercase tracking-wide text-ink/70">
+              The journey your book will take
+            </p>
+            <ol className="mt-3 grid gap-x-6 gap-y-2.5 sm:grid-cols-2">
+              {beats.map((beat, i) => (
+                <li key={beat} className="flex items-start gap-2.5">
+                  <span
+                    className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white font-display text-[11px] font-extrabold text-coral shadow-sm"
+                    aria-hidden="true"
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="text-sm leading-relaxed text-ink">{beat}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : null}
+      </div>
+    </section>
   );
 }

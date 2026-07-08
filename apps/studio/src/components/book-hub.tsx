@@ -73,20 +73,29 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
   );
 
   const isPreview = book.status === "preview_ready";
-  const previewSpreads = useMemo(
-    () => interiorSpreads.filter((s) => s.imageUrl !== null || s.kind === "greeting"),
-    [interiorSpreads],
-  );
 
   const pages: FlipPage[] = useMemo(() => {
-    const shown = isPreview ? previewSpreads : interiorSpreads;
-    const result: FlipPage[] = [{ kind: "cover" }, ...shown.map((spread) => ({ kind: "spread" as const, spread }))];
-    if (isPreview) {
-      const morePages = Math.max(book.pageCount - previewSpreads.length * 2, 2);
-      result.push({ kind: "locked", morePages });
+    if (!isPreview) {
+      return [
+        { kind: "cover" },
+        ...interiorSpreads.map((spread) => ({ kind: "spread" as const, spread })),
+      ];
+    }
+    // Preview gate: cover + the first two illustrated spreads are free;
+    // every remaining spread of the book renders as a locked teaser page.
+    const unlocked = interiorSpreads.filter((s) => s.kind === "story" && s.imageUrl !== null).slice(0, 2);
+    const morePages = Math.max(book.pageCount - unlocked.length * 2, 2);
+    const remainingRows = interiorSpreads.length - unlocked.length;
+    const lockedCount = Math.max(remainingRows, Math.ceil(morePages / 2));
+    const result: FlipPage[] = [
+      { kind: "cover" },
+      ...unlocked.map((spread) => ({ kind: "spread" as const, spread })),
+    ];
+    for (let i = 0; i < lockedCount; i++) {
+      result.push({ kind: "locked", morePages, variant: i });
     }
     return result;
-  }, [isPreview, previewSpreads, interiorSpreads, book.pageCount]);
+  }, [isPreview, interiorSpreads, book.pageCount]);
 
   const currentPage = pages[Math.min(pageIndex, pages.length - 1)];
   const currentSpread = currentPage?.kind === "spread" ? currentPage.spread : null;
@@ -363,7 +372,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
       ) : null}
 
       {isPreview ? (
-        <section className="mx-auto mt-14 max-w-3xl">
+        <section id="unlock" className="mx-auto mt-14 max-w-3xl scroll-mt-24">
           <h2 className="text-center font-display text-2xl font-bold text-ink">
             Love it? Let&rsquo;s print the whole story.
           </h2>

@@ -14,11 +14,19 @@ export interface StyleSummary {
 export interface TemplateSummary {
   id: string;
   categoryId: string;
+  categoryName?: string | null;
   title: string;
   tagline: string | null;
   description: string | null;
   suggestedStyleId: string | null;
+  storyBeats: string[];
   exampleImageUrl: string | null;
+}
+
+export interface CategorySummary {
+  id: string;
+  name: string;
+  tagline: string | null;
 }
 
 export interface CreateBookInput {
@@ -52,6 +60,14 @@ export async function getTemplate(id: string): Promise<TemplateSummary> {
     `/api/templates?id=${encodeURIComponent(id)}`,
   );
   return template;
+}
+
+export async function getCategoryTemplates(
+  categoryId: string,
+): Promise<{ category: CategorySummary; templates: TemplateSummary[] }> {
+  return request<{ category: CategorySummary; templates: TemplateSummary[] }>(
+    `/api/templates?category=${encodeURIComponent(categoryId)}`,
+  );
 }
 
 export async function uploadPhoto(file: File): Promise<string> {

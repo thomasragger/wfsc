@@ -1,23 +1,26 @@
 @import "tailwindcss";
 
 @theme {
-  /* WFSC brand palette */
-  --color-cream: #fffdf8;
-  --color-ink: #2b2320;
-  --color-ink-soft: #6f6058;
-  --color-coral: #e8622c;
-  --color-coral-deep: #c74e1d;
+  /* WFSC brand palette — tokens lifted from the live Shopify theme */
+  --color-cream: #fffaf7;
+  --color-ink: #761e0b;
+  --color-ink-soft: #a15b44;
+  --color-coral: #ff4315;
+  --color-coral-deep: #761e0b;
+  --color-ember: #e8622c;
   --color-marigold: #f6b73c;
   --color-marigold-deep: #dd9c1b;
   --color-cobalt: #2e5fd7;
+  --color-periwinkle: #9db8f0;
+  --color-rose: #f9c5d1;
   --color-sage: #7fa678;
   --color-lavender: #ece5f8;
   --color-lavender-deep: #d9cbf0;
   --color-peach: #fbe3cb;
 
-  --shadow-fuzzy: 0 18px 40px -18px rgb(43 35 32 / 0.22);
-  --shadow-polaroid: 0 22px 44px -18px rgb(43 35 32 / 0.32);
-  --shadow-pop: 0 12px 26px -10px rgb(232 98 44 / 0.4);
+  --shadow-fuzzy: 0 18px 40px -18px rgb(118 30 11 / 0.2);
+  --shadow-polaroid: 0 22px 44px -18px rgb(118 30 11 / 0.3);
+  --shadow-pop: 0 12px 26px -10px rgb(255 67 21 / 0.35);
 }
 
 @theme inline {
@@ -35,25 +38,26 @@ body {
   background-color: var(--color-cream);
 }
 
-/* Soft grainy pastel wash: lavender -> cream -> marigold -> coral edge,
-   pinned to the viewport so it never tiles or seams. */
+/* Whisper of the hero wash on every page: mostly #fffaf7 with faint
+   lavender / peach corners, pinned to the viewport. */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(120% 90% at 88% 108%, rgb(232 98 44 / 0.42) 0%, rgb(232 98 44 / 0) 46%),
-    radial-gradient(90% 80% at 8% -8%, rgb(217 203 240 / 0.85) 0%, rgb(217 203 240 / 0) 52%),
-    linear-gradient(
-      152deg,
-      #ece5f8 0%,
-      #f4ecfb 14%,
-      #fffdf8 40%,
-      #fff6ea 62%,
-      #fde3c6 82%,
-      #f8c98d 100%
-    );
+    radial-gradient(100% 70% at 92% 105%, rgb(251 227 203 / 0.55) 0%, rgb(251 227 203 / 0) 55%),
+    radial-gradient(80% 65% at 4% -6%, rgb(236 229 248 / 0.6) 0%, rgb(236 229 248 / 0) 55%),
+    linear-gradient(#fffaf7, #fffaf7);
+}
+
+/* The theme's grainy lavender -> cream -> peach/orange hero wash. */
+.hero-wash {
+  background:
+    radial-gradient(90% 90% at 100% 100%, rgb(240 145 58 / 0.75) 0%, rgb(240 145 58 / 0) 55%),
+    radial-gradient(70% 80% at 88% 30%, rgb(249 216 158 / 0.9) 0%, rgb(249 216 158 / 0) 60%),
+    radial-gradient(85% 95% at 0% 20%, rgb(217 203 240 / 0.95) 0%, rgb(217 203 240 / 0) 62%),
+    linear-gradient(118deg, #e5d7f5 0%, #f6ecf6 26%, #fdf3e4 52%, #fbe0bb 76%, #f6b477 100%);
 }
 
 /* Film-grain overlay via feTurbulence, very low opacity. */
@@ -102,18 +106,19 @@ body::after {
     outline-offset: 3px;
   }
 
+  /* Theme primary: flat orange pill, white text, deep-rust hover. */
   .btn-coral {
     background: var(--color-coral);
-    color: var(--color-cream);
-    box-shadow: 0 5px 0 var(--color-coral-deep), var(--shadow-pop);
+    color: #ffffff;
+    box-shadow: var(--shadow-pop);
   }
   .btn-coral:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 7px 0 var(--color-coral-deep), var(--shadow-pop);
+    background: var(--color-coral-deep);
+    transform: translateY(-1px);
   }
   .btn-coral:active:not(:disabled) {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 var(--color-coral-deep);
+    transform: translateY(1px);
+    box-shadow: none;
   }
 
   .btn-marigold {
@@ -131,19 +136,19 @@ body::after {
   }
 
   .btn-ghost {
-    background: rgb(255 255 255 / 0.7);
+    background: rgb(255 255 255 / 0.75);
     color: var(--color-ink);
-    border-color: color-mix(in srgb, var(--color-ink) 16%, transparent);
-    box-shadow: 0 5px 0 rgb(43 35 32 / 0.08);
+    border-color: color-mix(in srgb, var(--color-ink) 18%, transparent);
+    box-shadow: 0 4px 0 rgb(118 30 11 / 0.07);
   }
   .btn-ghost:hover:not(:disabled) {
     background: #fff;
     transform: translateY(-2px);
-    box-shadow: 0 7px 0 rgb(43 35 32 / 0.08);
+    box-shadow: 0 6px 0 rgb(118 30 11 / 0.07);
   }
   .btn-ghost:active:not(:disabled) {
     transform: translateY(2px);
-    box-shadow: 0 2px 0 rgb(43 35 32 / 0.08);
+    box-shadow: 0 2px 0 rgb(118 30 11 / 0.07);
   }
 
   /* --- surfaces --------------------------------------------------------- */
@@ -205,6 +210,32 @@ body::after {
   /* --- scalloped photo mask (bumpy-cloud edge) -------------------------- */
   .scallop {
     clip-path: url(#wfsc-scallop);
+  }
+
+  /* --- film grain overlay (theme hero texture) -------------------------- */
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.07;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* --- theme category card pill label ----------------------------------- */
+  .pill-label {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    background: #ffffff;
+    padding: 0.45rem 1.05rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--color-ink);
+    box-shadow: 0 4px 12px rgb(118 30 11 / 0.14);
   }
 
   /* --- how-it-works blob frame ----------------------------------------- */
@@ -289,6 +320,28 @@ body::after {
   }
 }
 
+/* Balloon rise: hero polaroids & doodles float up through the hero.
+   Each rider sets --rise-duration / --rise-delay inline for variety. */
+@keyframes wfsc-rise {
+  0% {
+    transform: translateY(58vh);
+  }
+  100% {
+    transform: translateY(-130vh);
+  }
+}
+
+/* Gentle side-to-side sway + tilt, layered inside the riser. */
+@keyframes wfsc-sway {
+  0%,
+  100% {
+    transform: translateX(0) rotate(var(--tilt, 0deg));
+  }
+  50% {
+    transform: translateX(var(--sway, 14px)) rotate(calc(var(--tilt, 0deg) * -1));
+  }
+}
+
 .animate-float {
   animation: wfsc-float 5.5s ease-in-out infinite;
 }
@@ -308,6 +361,14 @@ body::after {
 .hover-wobble:hover {
   animation: wfsc-wobble 0.6s ease-in-out;
 }
+.animate-rise {
+  animation: wfsc-rise var(--rise-duration, 24s) linear infinite;
+  animation-delay: var(--rise-delay, 0s);
+  will-change: transform;
+}
+.animate-sway {
+  animation: wfsc-sway var(--sway-duration, 6s) ease-in-out infinite;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .animate-float,
@@ -315,8 +376,13 @@ body::after {
   .animate-twinkle,
   .animate-shimmer,
   .animate-spin-slow,
+  .animate-rise,
+  .animate-sway,
   .hover-wobble:hover {
     animation: none;
+  }
+  .animate-sway {
+    transform: rotate(var(--tilt, 0deg));
   }
   html {
     scroll-behavior: auto;

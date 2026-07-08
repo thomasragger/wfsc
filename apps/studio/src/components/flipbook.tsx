@@ -8,11 +8,11 @@ import type { BookPayload, SpreadPayload } from "@/lib/book-payload";
 export type FlipPage =
   | { kind: "cover" }
   | { kind: "spread"; spread: SpreadPayload }
-  | { kind: "locked"; morePages: number };
+  | { kind: "locked"; morePages: number; variant: number };
 
 export function pageLabel(page: FlipPage): string {
   if (page.kind === "cover") return "Cover";
-  if (page.kind === "locked") return "The rest of your book";
+  if (page.kind === "locked") return "Waiting to be unlocked";
   if (page.spread.kind === "greeting") return "Dedication";
   return `Spread ${page.spread.position}`;
 }
@@ -68,23 +68,7 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
             </div>
           </div>
         ) : page.kind === "locked" ? (
-          <div className="relative aspect-2/1 overflow-hidden rounded-lg shadow-polaroid ring-8 ring-white">
-            <div className="absolute inset-0 grid grid-cols-2">
-              <div className="bg-gradient-to-br from-lavender to-cream blur-[2px]" />
-              <div className="bg-gradient-to-bl from-peach to-cream blur-[2px]" />
-            </div>
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/40 px-6 text-center backdrop-blur-[3px]">
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-marigold text-xl shadow-fuzzy" aria-hidden="true">
-                🔒
-              </span>
-              <p className="font-display text-lg font-bold text-ink">
-                {page.morePages} more pages are waiting for you
-              </p>
-              <p className="max-w-sm text-sm text-ink-soft">
-                The full story gets illustrated as soon as you order your book.
-              </p>
-            </div>
-          </div>
+          <LockedSpread morePages={page.morePages} variant={page.variant} />
         ) : (
           <SpreadCanvas spread={page.spread} bodyFont={bodyFont} />
         )}
@@ -217,5 +201,133 @@ function SpreadCanvas({
         aria-hidden="true"
       />
     </div>
+  );
+}
+
+/* ---------------------------------------------------------------- locked */
+
+const LOCKED_PALETTES: [string, string, string][] = [
+  ["#f6b73c", "#e8622c", "#fbe3cb"],
+  ["#f9c5d1", "#e8622c", "#ece5f8"],
+  ["#9db8f0", "#2e5fd7", "#ece5f8"],
+];
+
+/**
+ * A locked teaser spread shown before purchase: a believable page layout
+ * (soft out-of-focus art + squiggle "text" lines — never the real copy)
+ * under a warm blur, with a lock badge and an unlock CTA.
+ */
+function LockedSpread({ morePages, variant }: { morePages: number; variant: number }) {
+  const [from, to, wash] = LOCKED_PALETTES[variant % LOCKED_PALETTES.length];
+  const imageLeft = variant % 2 === 1;
+
+  const art = (
+    <div
+      className="relative h-full w-full overflow-hidden"
+      style={{ background: `linear-gradient(140deg, ${wash}, #fffaf7)` }}
+    >
+      <div
+        className="absolute -left-[8%] top-[10%] h-[58%] w-[46%] rounded-full opacity-70 blur-2xl"
+        style={{ background: from }}
+      />
+      <div
+        className="absolute bottom-[6%] right-[4%] h-[52%] w-[52%] rounded-full opacity-60 blur-2xl"
+        style={{ background: to }}
+      />
+      <div className="absolute left-[32%] top-[44%] h-[36%] w-[30%] rounded-full bg-white opacity-50 blur-xl" />
+    </div>
+  );
+
+  const textPage = (
+    <div className="flex h-full w-full items-center justify-center bg-cream p-[9%]">
+      <SquiggleLines />
+    </div>
+  );
+
+  return (
+    <div className="relative aspect-2/1 overflow-hidden rounded-lg shadow-polaroid ring-8 ring-white">
+      {/* Fake layout, blurred so nothing reads as content */}
+      <div className="absolute inset-0 grid grid-cols-2 blur-[5px]" aria-hidden="true">
+        {imageLeft ? (
+          <>
+            {art}
+            {textPage}
+          </>
+        ) : (
+          <>
+            {textPage}
+            {art}
+          </>
+        )}
+      </div>
+      <div
+        className="pointer-events-none absolute inset-y-0 left-1/2 w-10 -translate-x-1/2 bg-gradient-to-r from-transparent via-ink/10 to-transparent"
+        aria-hidden="true"
+      />
+
+      {/* Warm veil + message */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white/35 px-6 text-center backdrop-blur-[2px]">
+        <span
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-marigold text-ink shadow-fuzzy"
+          aria-hidden="true"
+        >
+          <LockIcon />
+        </span>
+        <p className="font-display text-xl font-extrabold text-ink sm:text-2xl">
+          {morePages} more pages are waiting
+        </p>
+        <p className="max-w-sm text-sm font-medium text-ink-soft">
+          Unlock your full book and we&rsquo;ll illustrate every page of your story.
+        </p>
+        <a href="#unlock" className="btn btn-coral mt-1 px-5 py-2.5 text-sm">
+          Unlock your full book
+        </a>
+      </div>
+    </div>
+  );
+}
+
+/** Placeholder "text" for locked pages — friendly squiggles, no real words. */
+function SquiggleLines() {
+  const lines = [
+    { width: 92, y: 6 },
+    { width: 84, y: 15 },
+    { width: 96, y: 24 },
+    { width: 72, y: 33 },
+    { width: 88, y: 42 },
+    { width: 46, y: 51 },
+  ];
+  return (
+    <svg viewBox="0 0 100 58" className="h-auto w-full max-w-[15rem] opacity-40" aria-hidden="true">
+      {lines.map((line, i) => {
+        const segments = Math.max(Math.floor((line.width - 4) / 8), 1);
+        const d = `M4 ${line.y} q 4 -2.4 8 0 ${"t 8 0 ".repeat(segments - 1)}`;
+        return (
+          <path
+            key={i}
+            d={d}
+            fill="none"
+            stroke="#761e0b"
+            strokeWidth={2.4}
+            strokeLinecap="round"
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="4.5" y="10" width="15" height="10.5" rx="2.5" fill="#761e0b" />
+      <path
+        d="M8 10V7.5a4 4 0 0 1 8 0V10"
+        stroke="#761e0b"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="15" r="1.6" fill="#f6b73c" />
+    </svg>
   );
 }
