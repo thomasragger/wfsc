@@ -334,19 +334,134 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
   // preview_ready & ready_for_review share the flipbook shell.
   const allConfirmed = book.people.length === 0 || book.people.every((p) => confirmedPeople.has(p.id));
 
+  // ---- preview_ready: a contained, two-column app view ---------------------
+  if (isPreview) {
+    return (
+      <Shell error={error}>
+        <div className="mb-6">
+          <p className="text-sm font-semibold text-coral">Your preview is ready!</p>
+          <h1 className="mt-1 font-display text-3xl font-extrabold text-ink sm:text-4xl">
+            {book.title ?? "Your storybook"}
+          </h1>
+          {book.style ? (
+            <p className="mt-1 text-sm text-ink-soft">
+              Illustrated in the <span className="font-semibold">{book.style.name}</span> style
+            </p>
+          ) : null}
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+          {/* Left — the book */}
+          <div className="min-w-0">
+            <Flipbook book={viewBook} pages={pages} index={pageIndex} onIndexChange={setPageIndex} />
+          </div>
+
+          {/* Right — action rail (sticky on desktop) */}
+          <aside className="flex flex-col gap-5 lg:sticky lg:top-24">
+            {book.people.length > 0 ? (
+              <Card className="p-5">
+                <h2 className="font-display text-base font-extrabold text-ink">Check your cast</h2>
+                <p className="mt-1 text-xs text-ink-soft">
+                  Confirm everyone looks like themselves before we illustrate the whole book.
+                </p>
+                <ul className="mt-4 flex flex-col gap-2.5">
+                  {book.people.map((person) => {
+                    const confirmed = confirmedPeople.has(person.id);
+                    return (
+                      <li key={person.id} className="flex items-center gap-3">
+                        <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-lavender ring-2 ring-white">
+                          {person.characterSheetUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={person.characterSheetUrl}
+                              alt={`${person.name} as a storybook character`}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <ArtPlaceholder />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-display text-sm font-bold text-ink">{person.name}</p>
+                          {person.role ? <p className="text-[11px] text-ink-soft">{person.role}</p> : null}
+                        </div>
+                        <button
+                          type="button"
+                          aria-pressed={confirmed}
+                          className={`shrink-0 rounded-full px-3 py-1.5 font-display text-xs font-bold transition-colors ${
+                            confirmed ? "bg-sage text-cream" : "bg-marigold text-ink hover:bg-marigold-deep"
+                          }`}
+                          onClick={() =>
+                            setConfirmedPeople((prev) => {
+                              const next = new Set(prev);
+                              if (confirmed) next.delete(person.id);
+                              else next.add(person.id);
+                              return next;
+                            })
+                          }
+                        >
+                          {confirmed ? "Looks right ✓" : "Looks right?"}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </Card>
+            ) : null}
+
+            <Card className="p-5" id="unlock">
+              <h2 className="font-display text-base font-extrabold text-ink">Make it a real book</h2>
+              <div className="mt-4 flex flex-col gap-3" role="radiogroup" aria-label="Book format">
+                {FORMATS.map((f) => {
+                  const selected = format === f.id;
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => setFormat(f.id)}
+                      className={`rounded-2xl border-2 bg-white p-4 text-left transition-all ${
+                        selected ? "border-coral shadow-fuzzy" : "border-ink/10 hover:border-marigold"
+                      }`}
+                    >
+                      <div className="flex items-baseline justify-between">
+                        <span className="font-display font-bold text-ink">{f.name}</span>
+                        <span className="font-display text-lg font-extrabold text-coral">{f.price}</span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-ink-soft">{f.blurb}</p>
+                    </button>
+                  );
+                })}
+              </div>
+              <Button
+                className="mt-4 w-full"
+                size="lg"
+                disabled={!allConfirmed}
+                pending={checkingOut}
+                pendingLabel="Taking you to checkout…"
+                onClick={() => void checkout()}
+              >
+                Create my book
+              </Button>
+              <p className="mt-2 text-center text-xs text-ink-soft">
+                {allConfirmed
+                  ? "Secure checkout · printed & shipped to your door"
+                  : "First confirm your cast so we illustrate the right people."}
+              </p>
+            </Card>
+          </aside>
+        </div>
+      </Shell>
+    );
+  }
+
+  // ---- ready_for_review: the full editor + approval ------------------------
   return (
     <Shell error={error}>
       <header className="mb-10 flex flex-col items-center text-center">
-        <CoverImage
-          src={coverImageUrl}
-          alt="Your book's cover"
-          size="md"
-          priority
-          className="mb-7"
-        />
-        <p className="text-sm font-semibold text-coral">
-          {isPreview ? "Your preview is ready!" : "Your book is ready for review"}
-        </p>
+        <CoverImage src={coverImageUrl} alt="Your book's cover" size="md" priority className="mb-7" />
+        <p className="text-sm font-semibold text-coral">Your book is ready for review</p>
         <h1 className="mt-1 font-display text-3xl font-bold text-ink sm:text-4xl">
           {book.title ?? "Your storybook"}
         </h1>
@@ -357,64 +472,9 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
         ) : null}
       </header>
 
-      {isPreview && book.people.length > 0 ? (
-        <section className="mb-12">
-          <h2 className="font-display text-xl font-bold text-ink">Meet your characters</h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            Check that everyone looks like themselves before we illustrate the whole book.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-5">
-            {book.people.map((person, i) => {
-              const confirmed = confirmedPeople.has(person.id);
-              return (
-                <div
-                  key={person.id}
-                  className={`polaroid w-40 ${i % 2 === 0 ? "-rotate-1" : "rotate-1"}`}
-                >
-                  <div className="aspect-square overflow-hidden rounded-sm bg-lavender">
-                    {person.characterSheetUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={person.characterSheetUrl}
-                        alt={`${person.name} as a storybook character`}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <ArtPlaceholder label="Being drawn…" />
-                    )}
-                  </div>
-                  <div className="pt-2 text-center">
-                    <p className="font-display text-sm font-bold text-ink">{person.name}</p>
-                    {person.role ? <p className="text-[11px] text-ink-soft">{person.role}</p> : null}
-                    <button
-                      type="button"
-                      className={`mt-2 w-full rounded-full px-2 py-1.5 font-display text-xs font-bold transition-colors ${
-                        confirmed
-                          ? "bg-sage text-cream"
-                          : "bg-marigold text-ink hover:bg-marigold-deep"
-                      }`}
-                      onClick={() =>
-                        setConfirmedPeople((prev) => {
-                          const next = new Set(prev);
-                          if (confirmed) next.delete(person.id);
-                          else next.add(person.id);
-                          return next;
-                        })
-                      }
-                    >
-                      {confirmed ? "Looks right ✓" : "Looks right?"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
-
       <Flipbook book={viewBook} pages={pages} index={pageIndex} onIndexChange={setPageIndex} />
 
-      {!isPreview && currentSpread ? (
+      {currentSpread ? (
         <div className="mx-auto mt-8 max-w-3xl">
           <SpreadEditor
             key={currentSpread.id}
@@ -426,99 +486,38 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
         </div>
       ) : null}
 
-      {!isPreview ? (
-        <div className="mx-auto mt-8 max-w-3xl">
-          <EditorPanel
-            book={book}
-            onSaveGreeting={saveGreeting}
-            onSelectFontPairing={selectFontPairing}
-          />
-        </div>
-      ) : null}
+      <div className="mx-auto mt-8 max-w-3xl">
+        <EditorPanel book={book} onSaveGreeting={saveGreeting} onSelectFontPairing={selectFontPairing} />
+      </div>
 
-      {isPreview ? (
-        <section id="unlock" className="mx-auto mt-14 max-w-3xl scroll-mt-24">
-          <h2 className="text-center font-display text-2xl font-bold text-ink">
-            Love it? Let&rsquo;s print the whole story.
-          </h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {FORMATS.map((f) => {
-              const selected = format === f.id;
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  onClick={() => setFormat(f.id)}
-                  className={`rounded-2xl border-2 bg-white p-6 text-left transition-all ${
-                    selected ? "border-coral shadow-fuzzy" : "border-ink/10 hover:border-marigold"
-                  }`}
-                >
-                  <div className="flex items-baseline justify-between">
-                    <span className="font-display text-lg font-bold text-ink">{f.name}</span>
-                    <span className="font-display text-xl font-extrabold text-coral">{f.price}</span>
-                  </div>
-                  <p className="mt-1 text-sm text-ink-soft">{f.blurb}</p>
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-6 flex flex-col items-center gap-2">
-            <Button
-              size="lg"
-              disabled={!allConfirmed}
-              pending={checkingOut}
-              pendingLabel="Taking you to checkout…"
-              onClick={() => void checkout()}
-            >
-              Create my book
-            </Button>
-            {!allConfirmed ? (
-              <p className="text-xs font-semibold text-ink-soft">
-                First confirm your characters above so we illustrate the right people.
+      <section className="mx-auto mt-12 max-w-3xl">
+        <Card className="flex flex-col items-center gap-4 p-8 text-center">
+          <h2 className="font-display text-xl font-bold text-ink">Happy with every page?</h2>
+          {confirmApprove ? (
+            <>
+              <p className="max-w-md text-sm text-ink-soft">
+                Once you approve, we prepare the print files and send your book to press — no more
+                changes after this point.
               </p>
-            ) : (
-              <p className="text-xs text-ink-soft">
-                Secure checkout · Printed &amp; shipped to your door
+              <div className="flex gap-3">
+                <Button pending={approving} pendingLabel="Approving…" onClick={() => void approve()}>
+                  Yes, print my book!
+                </Button>
+                <Button variant="ghost" disabled={approving} onClick={() => setConfirmApprove(false)}>
+                  Keep editing
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="max-w-md text-sm text-ink-soft">
+                Flip through every page, tweak anything you like, then send it to print.
               </p>
-            )}
-          </div>
-        </section>
-      ) : (
-        <section className="mx-auto mt-12 max-w-3xl">
-          <Card className="flex flex-col items-center gap-4 p-8 text-center">
-            <h2 className="font-display text-xl font-bold text-ink">Happy with every page?</h2>
-            {confirmApprove ? (
-              <>
-                <p className="max-w-md text-sm text-ink-soft">
-                  Once you approve, we prepare the print files and send your book to press —
-                  no more changes after this point.
-                </p>
-                <div className="flex gap-3">
-                  <Button
-                    pending={approving}
-                    pendingLabel="Approving…"
-                    onClick={() => void approve()}
-                  >
-                    Yes, print my book!
-                  </Button>
-                  <Button variant="ghost" disabled={approving} onClick={() => setConfirmApprove(false)}>
-                    Keep editing
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="max-w-md text-sm text-ink-soft">
-                  Flip through every page, tweak anything you like, then send it to print.
-                </p>
-                <Button onClick={() => setConfirmApprove(true)}>Approve for printing</Button>
-              </>
-            )}
-          </Card>
-        </section>
-      )}
+              <Button onClick={() => setConfirmApprove(true)}>Approve for printing</Button>
+            </>
+          )}
+        </Card>
+      </section>
     </Shell>
   );
 }
