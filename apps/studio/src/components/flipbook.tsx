@@ -7,6 +7,7 @@ import { FONT_PAIRINGS, fontStylesheetUrl } from "@wfsc/book-engine";
 import { Sparkle } from "@/components/decor";
 import { ButtonLink } from "@/components/ui/button";
 import { CoverImage } from "@/components/ui/cover-image";
+import { IconChevronLeft, IconChevronRight } from "@/components/ui/icons";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { BookPayload, SpreadPayload } from "@/lib/book-payload";
 
@@ -147,18 +148,18 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
           aria-label="Previous page"
           disabled={clamped === 0}
           onClick={() => onIndexChange(clamped - 1)}
-          className="absolute -left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white font-display text-lg text-ink shadow-fuzzy transition hover:bg-marigold disabled:opacity-30 sm:-left-5"
+          className="absolute -left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink shadow-fuzzy transition hover:bg-marigold disabled:opacity-30 sm:-left-5"
         >
-          ‹
+          <IconChevronLeft />
         </button>
         <button
           type="button"
           aria-label="Next page"
           disabled={clamped === pages.length - 1}
           onClick={() => onIndexChange(clamped + 1)}
-          className="absolute -right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white font-display text-lg text-ink shadow-fuzzy transition hover:bg-marigold disabled:opacity-30 sm:-right-5"
+          className="absolute -right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink shadow-fuzzy transition hover:bg-marigold disabled:opacity-30 sm:-right-5"
         >
-          ›
+          <IconChevronRight />
         </button>
       </div>
 

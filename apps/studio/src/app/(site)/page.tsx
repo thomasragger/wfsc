@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { ArtPlaceholder, Doodle } from "@/components/decor";
+import { Doodle } from "@/components/decor";
 import { HeroAnimatedBackground } from "@/components/ui/animated-bg";
+import { BookTile, BookTileVisual } from "@/components/ui/book-tile";
 import { ButtonLink } from "@/components/ui/button";
 import { Carousel } from "@/components/ui/carousel";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -200,24 +201,17 @@ export default async function HomePage() {
                 "--rise-delay": card.delay,
               } as React.CSSProperties}
             >
-              <figure
-                className="animate-sway rounded-2xl bg-white p-2 pb-1 shadow-polaroid"
+              {/* Same visual family as the sample books below — a floating
+                  book should look like a book, not a masked category tile. */}
+              <div
+                className="animate-sway"
                 style={{ "--tilt": card.tilt, "--sway": card.sway } as React.CSSProperties}
               >
-                <div className="overflow-hidden rounded-xl">
-                  <Image
-                    src={card.img}
-                    alt=""
-                    width={280}
-                    height={335}
-                    priority={false}
-                    className="h-auto w-full"
-                  />
-                </div>
-                <figcaption className="px-1 py-1.5 text-center font-display text-[0.8rem] font-bold text-ink">
+                <BookTileVisual image={card.img} alt={card.caption} />
+                <p className="pt-2 text-center font-display text-xs font-bold text-ink">
                   {card.caption}
-                </figcaption>
-              </figure>
+                </p>
+              </div>
             </div>
           ))}
         </div>
@@ -249,7 +243,7 @@ export default async function HomePage() {
           Gifts for all your favorite people
         </h2>
         {inspiration ? (
-          <Carousel className="mt-6" ariaLabel="Gift categories">
+          <Carousel className="mt-6" ariaLabel="Gift categories" infinite>
             {inspiration.categories.map((cat) => {
               const art = categoryArt(cat.id, cat.name);
               return (
@@ -260,7 +254,6 @@ export default async function HomePage() {
                   label={cat.name}
                   gradientFrom={art.from}
                   gradientTo={art.to}
-                  variant="category"
                 />
               );
             })}
@@ -324,22 +317,9 @@ export default async function HomePage() {
                           key={tpl.id}
                           href={`/create?template=${encodeURIComponent(tpl.id)}`}
                           draggable={false}
-                          className="tile-lift group flex w-56 shrink-0 snap-start flex-col rounded-3xl bg-white/70 p-3 ring-1 ring-white sm:w-64"
+                          className="tile-lift group flex w-56 shrink-0 flex-col rounded-3xl sm:w-64"
                         >
-                          <div className="scallop aspect-square overflow-hidden bg-lavender">
-                            {image ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={image}
-                                alt=""
-                                draggable={false}
-                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <ArtPlaceholder />
-                            )}
-                          </div>
+                          <BookTileVisual image={image} alt={tpl.title} className="aspect-square" />
                           <div className="px-1 pb-1 pt-3 text-center">
                             <p className="font-display text-sm font-extrabold leading-snug text-ink group-hover:text-coral">
                               {tpl.title}
@@ -390,14 +370,13 @@ export default async function HomePage() {
                 {samples.slice(0, 3).map((s) => {
                   const art = categoryArt(s.categoryId ?? "kids", s.categoryName ?? "Kids");
                   return (
-                    <PhotoTile
+                    <BookTile
                       key={s.token}
                       href={`/samples/${encodeURIComponent(s.token)}`}
-                      image={s.coverImageUrl ?? `/categories/${art.photo}.jpg`}
-                      label={s.title ?? "A sample story"}
-                      gradientFrom={art.from}
-                      gradientTo={art.to}
-                      variant="book"
+                      image={s.mockupImageUrl ?? s.coverImageUrl ?? `/categories/${art.photo}.jpg`}
+                      title={s.title ?? "A sample story"}
+                      category={s.categoryName}
+                      size="sm"
                     />
                   );
                 })}

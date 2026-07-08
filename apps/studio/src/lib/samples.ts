@@ -11,6 +11,9 @@ export interface SampleSummary {
   token: string;
   title: string | null;
   coverImageUrl: string | null;
+  /** Photorealistic product-shot render of the cover, if generated — prefer
+   *  this over coverImageUrl anywhere a book is shown as a physical object. */
+  mockupImageUrl: string | null;
   templateId: string | null;
   categoryId: string | null;
   categoryName: string | null;
@@ -20,6 +23,7 @@ interface SampleRow {
   access_token: string;
   title: string | null;
   cover_image_url: string | null;
+  mockup_image_url: string | null;
   template_id: string | null;
 }
 
@@ -28,7 +32,7 @@ export async function fetchSamples(): Promise<SampleSummary[]> {
     const db = supabaseAdmin();
     const { data, error } = await db
       .from("books")
-      .select("access_token, title, cover_image_url, template_id")
+      .select("access_token, title, cover_image_url, mockup_image_url, template_id")
       .eq("is_sample", true)
       .order("created_at", { ascending: true });
     if (error) return [];
@@ -65,6 +69,7 @@ export async function fetchSamples(): Promise<SampleSummary[]> {
         token: r.access_token,
         title: r.title,
         coverImageUrl: r.cover_image_url,
+        mockupImageUrl: r.mockup_image_url,
         templateId: r.template_id,
         categoryId,
         categoryName: categoryId ? (categoryNames.get(categoryId) ?? null) : null,

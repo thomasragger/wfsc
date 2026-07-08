@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SampleViewer } from "@/components/sample-viewer";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { IconArrowLeft } from "@/components/ui/icons";
 import { PageTransition } from "@/components/ui/page-transition";
 import { fetchSampleBundle } from "@/lib/samples";
 
@@ -44,8 +45,12 @@ export default async function SampleBookPage({
   return (
     <PageTransition className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       <header className="mb-10 text-center">
-        <Link href="/samples" className="text-sm font-semibold text-coral hover:underline">
-          ← All sample books
+        <Link
+          href="/samples"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-coral hover:underline"
+        >
+          <IconArrowLeft className="h-3.5 w-3.5" />
+          All sample books
         </Link>
         <h1 className="mt-3 font-display text-3xl font-bold text-ink sm:text-4xl">
           {payload.title ?? "A sample storybook"}

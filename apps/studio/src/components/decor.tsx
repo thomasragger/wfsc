@@ -3,7 +3,8 @@
  * Pure SVG/CSS + a handful of brand doodle PNGs. Server-safe.
  */
 
-/* Generated scalloped (bumpy-cloud) squircle paths in a 0..100 box. */
+/* Generated scalloped (bumpy-cloud) squircle paths in a 0..100 box, used by
+ * the `.scallop` utility and the how-it-works BlobFrame. */
 const SCALLOP_CLOUD =
   "M 8 8 A 10.50 10.50 0 0 0 29.00 8.00A 10.50 10.50 0 0 0 50.00 8.00A 10.50 10.50 0 0 0 71.00 8.00A 10.50 10.50 0 0 0 92.00 8.00A 10.50 10.50 0 0 0 92.00 29.00A 10.50 10.50 0 0 0 92.00 50.00A 10.50 10.50 0 0 0 92.00 71.00A 10.50 10.50 0 0 0 92.00 92.00A 10.50 10.50 0 0 0 71.00 92.00A 10.50 10.50 0 0 0 50.00 92.00A 10.50 10.50 0 0 0 29.00 92.00A 10.50 10.50 0 0 0 8.00 92.00A 10.50 10.50 0 0 0 8.00 71.00A 10.50 10.50 0 0 0 8.00 50.00A 10.50 10.50 0 0 0 8.00 29.00A 10.50 10.50 0 0 0 8.00 8.00Z";
 const SCALLOP_SHELL =
@@ -24,38 +25,54 @@ export type BlobShape = keyof typeof BLOB_SHAPES;
  * children union together) rather than a single hand-drawn path — much
  * easier to get right than deriving arc strings by hand.
  *
- * Two families by design: categories get the "ovals & bubbles" family,
- * books get the original scallop family (cloud/shell/coil) — so the two
- * content types read as visually distinct, while PhotoTile still varies
- * the exact shape per tile for organic variety.
+ * Used only by category tiles (PhotoTile) — books use the unmasked BookTile
+ * instead, so PhotoTile still varies the exact shape per tile (via `seed`)
+ * for organic variety without the two content types competing visually.
  */
+// Every shape below is checked by hand to stay fully inside the 0..1
+// objectBoundingBox — a circle/ellipse that pokes past 0 or 1 gets its
+// round edge sliced flat by the tile's own clipping box, which reads as a
+// visible "cut corner" bug rather than a smooth bump.
 const OVALS_V = [
-  { cx: 0.5, cy: 0.14, rx: 0.42, ry: 0.17 },
-  { cx: 0.5, cy: 0.38, rx: 0.42, ry: 0.17 },
-  { cx: 0.5, cy: 0.62, rx: 0.42, ry: 0.17 },
-  { cx: 0.5, cy: 0.86, rx: 0.42, ry: 0.17 },
+  { cx: 0.5, cy: 0.15, rx: 0.4, ry: 0.15 },
+  { cx: 0.5, cy: 0.383, rx: 0.4, ry: 0.15 },
+  { cx: 0.5, cy: 0.617, rx: 0.4, ry: 0.15 },
+  { cx: 0.5, cy: 0.85, rx: 0.4, ry: 0.15 },
 ];
 const OVALS_H = [
-  { cx: 0.18, cy: 0.5, rx: 0.19, ry: 0.42 },
-  { cx: 0.5, cy: 0.5, rx: 0.19, ry: 0.42 },
-  { cx: 0.82, cy: 0.5, rx: 0.19, ry: 0.42 },
+  { cx: 0.19, cy: 0.5, rx: 0.19, ry: 0.4 },
+  { cx: 0.5, cy: 0.5, rx: 0.19, ry: 0.4 },
+  { cx: 0.81, cy: 0.5, rx: 0.19, ry: 0.4 },
 ];
 const BUBBLES = [
-  { cx: 0.5, cy: 0.5, r: 0.3 },
-  { cx: 0.78, cy: 0.5, r: 0.24 },
-  { cx: 0.7, cy: 0.7, r: 0.24 },
-  { cx: 0.5, cy: 0.78, r: 0.24 },
-  { cx: 0.3, cy: 0.7, r: 0.24 },
-  { cx: 0.22, cy: 0.5, r: 0.24 },
-  { cx: 0.3, cy: 0.3, r: 0.24 },
-  { cx: 0.5, cy: 0.22, r: 0.24 },
-  { cx: 0.7, cy: 0.3, r: 0.24 },
+  { cx: 0.5, cy: 0.5, r: 0.26 },
+  { cx: 0.74, cy: 0.5, r: 0.19 },
+  { cx: 0.67, cy: 0.67, r: 0.19 },
+  { cx: 0.5, cy: 0.74, r: 0.19 },
+  { cx: 0.33, cy: 0.67, r: 0.19 },
+  { cx: 0.26, cy: 0.5, r: 0.19 },
+  { cx: 0.33, cy: 0.33, r: 0.19 },
+  { cx: 0.5, cy: 0.26, r: 0.19 },
+  { cx: 0.67, cy: 0.33, r: 0.19 },
+];
+/** Four big lobes meeting in the middle — a rounded quatrefoil/clover. */
+const CLOVER = [
+  { cx: 0.32, cy: 0.32, r: 0.3 },
+  { cx: 0.68, cy: 0.32, r: 0.3 },
+  { cx: 0.32, cy: 0.68, r: 0.3 },
+  { cx: 0.68, cy: 0.68, r: 0.3 },
+];
+/** An asymmetric organic "puddle" — five irregular overlapping circles. */
+const PUDDLE = [
+  { cx: 0.42, cy: 0.42, r: 0.3 },
+  { cx: 0.64, cy: 0.32, r: 0.22 },
+  { cx: 0.7, cy: 0.56, r: 0.24 },
+  { cx: 0.52, cy: 0.68, r: 0.26 },
+  { cx: 0.32, cy: 0.58, r: 0.24 },
 ];
 
-const CATEGORY_MASKS = ["ovals-v", "ovals-h", "bubbles"] as const;
-const BOOK_MASKS = ["cloud", "shell", "coil"] as const;
+const CATEGORY_MASKS = ["ovals-v", "ovals-h", "bubbles", "clover", "puddle"] as const;
 export type CategoryMaskShape = (typeof CATEGORY_MASKS)[number];
-export type BookMaskShape = (typeof BOOK_MASKS)[number];
 
 /** Deterministic (not Math.random) so server- and client-rendered markup match. */
 function seededPick<T extends readonly string[]>(seed: string, pool: T): T[number] {
@@ -69,20 +86,15 @@ export function pickCategoryMask(seed: string): CategoryMaskShape {
   return seededPick(seed, CATEGORY_MASKS);
 }
 
-/** Picks a book-family mask shape, stable per `seed` (e.g. the tile's href). */
-export function pickBookMask(seed: string): BookMaskShape {
-  return seededPick(seed, BOOK_MASKS);
-}
-
-/** The clip-path id + CSS class for a given mask shape (any family). */
-export function maskClipId(shape: CategoryMaskShape | BookMaskShape): string {
+/** The clip-path id + CSS class for a given mask shape. */
+export function maskClipId(shape: CategoryMaskShape): string {
   return `wfsc-mask-${shape}`;
 }
 
 /**
- * SVG defs mounted once (in the layout). Provides every clip-path used by
- * masked photo tiles across the app: the original `.scallop` default plus
- * the named category/book mask family, all addressable via maskClipId().
+ * SVG defs mounted once (in the layout). Provides every clip-path used
+ * across the app: the original `.scallop` default plus the category mask
+ * family, all addressable via maskClipId().
  */
 export function ScallopDefs() {
   return (
@@ -91,11 +103,6 @@ export function ScallopDefs() {
         <clipPath id="wfsc-scallop" clipPathUnits="objectBoundingBox">
           <path transform="scale(0.01)" d={SCALLOP_CLOUD} />
         </clipPath>
-        {(Object.entries(BLOB_SHAPES) as [BookMaskShape, string][]).map(([key, d]) => (
-          <clipPath key={key} id={maskClipId(key)} clipPathUnits="objectBoundingBox">
-            <path transform="scale(0.01)" d={d} />
-          </clipPath>
-        ))}
         <clipPath id={maskClipId("ovals-v")} clipPathUnits="objectBoundingBox">
           {OVALS_V.map((o, i) => (
             <ellipse key={i} cx={o.cx} cy={o.cy} rx={o.rx} ry={o.ry} />
@@ -108,6 +115,16 @@ export function ScallopDefs() {
         </clipPath>
         <clipPath id={maskClipId("bubbles")} clipPathUnits="objectBoundingBox">
           {BUBBLES.map((c, i) => (
+            <circle key={i} cx={c.cx} cy={c.cy} r={c.r} />
+          ))}
+        </clipPath>
+        <clipPath id={maskClipId("clover")} clipPathUnits="objectBoundingBox">
+          {CLOVER.map((c, i) => (
+            <circle key={i} cx={c.cx} cy={c.cy} r={c.r} />
+          ))}
+        </clipPath>
+        <clipPath id={maskClipId("puddle")} clipPathUnits="objectBoundingBox">
+          {PUDDLE.map((c, i) => (
             <circle key={i} cx={c.cx} cy={c.cy} r={c.r} />
           ))}
         </clipPath>

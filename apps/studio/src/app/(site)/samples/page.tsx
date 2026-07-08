@@ -1,9 +1,9 @@
 import { Doodle } from "@/components/decor";
+import { BookTile } from "@/components/ui/book-tile";
 import { ButtonLink } from "@/components/ui/button";
 import { Carousel } from "@/components/ui/carousel";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { PhotoTile } from "@/components/ui/photo-tile";
 import { categoryArt } from "@/lib/category-art";
 import { fetchSamples, type SampleSummary } from "@/lib/samples";
 
@@ -58,14 +58,12 @@ export default async function SamplesPage() {
                 {/* Same tile, same size, same carousel as the homepage category row. */}
                 <Carousel className="mt-5" ariaLabel={`${group.name} sample books`}>
                   {group.items.map((sample) => (
-                    <PhotoTile
+                    <BookTile
                       key={sample.token}
                       href={`/samples/${encodeURIComponent(sample.token)}`}
-                      image={sample.coverImageUrl ?? `/categories/${art.photo}.jpg`}
-                      label={sample.title ?? "A sample story"}
-                      gradientFrom={art.from}
-                      gradientTo={art.to}
-                      variant="book"
+                      image={sample.mockupImageUrl ?? sample.coverImageUrl ?? `/categories/${art.photo}.jpg`}
+                      title={sample.title ?? "A sample story"}
+                      category={sample.categoryName}
                     />
                   ))}
                 </Carousel>

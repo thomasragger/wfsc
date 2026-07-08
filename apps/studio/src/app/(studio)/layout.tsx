@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { IconArrowLeft } from "@/components/ui/icons";
+
 /**
  * Focused creator chrome for /create and /book/*: small logo, a quiet way
  * back to the storefront, and a one-line micro-footer. No marketing nav,
@@ -34,9 +36,10 @@ export default function StudioLayout({
           </Link>
           <a
             href="https://www.warmfuzzystoryclub.com"
-            className="text-xs font-semibold text-ink-soft transition-colors hover:text-coral"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-ink-soft transition-colors hover:text-coral"
           >
-            ← back to warmfuzzystoryclub.com
+            <IconArrowLeft className="h-3 w-3" />
+            back to warmfuzzystoryclub.com
           </a>
         </div>
       </header>

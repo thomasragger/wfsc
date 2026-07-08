@@ -5,10 +5,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ArtPlaceholder, Doodle, Sparkle } from "@/components/decor";
 import { Alert } from "@/components/ui/alert";
+import { BookTileVisual } from "@/components/ui/book-tile";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip, PillLabel } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { IconArrowRight } from "@/components/ui/icons";
 import { Field, Select, TextArea, TextInput } from "@/components/ui/input";
 import { PageTransition, StepTransition } from "@/components/ui/page-transition";
 import { Skeleton, SkeletonGrid } from "@/components/ui/skeleton";
@@ -265,21 +267,13 @@ export function CreateWizard() {
                   key={tpl.id}
                   type="button"
                   onClick={() => pickTemplate(tpl)}
-                  className="tile-lift group flex flex-col rounded-3xl bg-white/75 p-4 text-left ring-1 ring-white"
+                  className="tile-lift group flex flex-col rounded-3xl text-left"
                 >
-                  <div className="scallop aspect-[5/4] overflow-hidden bg-lavender">
-                    {(tpl.previewImageUrl ?? tpl.exampleImageUrl) ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={tpl.previewImageUrl ?? tpl.exampleImageUrl ?? undefined}
-                        alt=""
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <ArtPlaceholder />
-                    )}
-                  </div>
+                  <BookTileVisual
+                    image={tpl.previewImageUrl ?? tpl.exampleImageUrl ?? null}
+                    alt={tpl.title}
+                    className="aspect-[5/4]"
+                  />
                   <div className="flex flex-1 flex-col px-1 pb-1 pt-4">
                     <p className="font-display text-lg font-extrabold leading-snug text-ink group-hover:text-coral">
                       {tpl.title}
@@ -288,7 +282,7 @@ export function CreateWizard() {
                       <p className="mt-1 text-sm text-ink-soft">{tpl.tagline}</p>
                     ) : null}
                     <span className="mt-4 inline-flex items-center gap-1.5 font-display text-sm font-bold text-coral">
-                      Start from this story <span aria-hidden="true">→</span>
+                      Start from this story <IconArrowRight />
                     </span>
                   </div>
                 </button>
