@@ -9,6 +9,113 @@
  */
 {
   "sections": {
+    "wfsc_animated_hero_gD7iaR": {
+      "type": "wfsc-animated-hero",
+      "blocks": {
+        "doodle_AJLGCh": {
+          "type": "doodle",
+          "settings": {
+            "kind": "sun",
+            "x": 12,
+            "y": 14,
+            "size": 72
+          }
+        },
+        "doodle_Aqmd8G": {
+          "type": "doodle",
+          "settings": {
+            "kind": "cloud",
+            "x": 84,
+            "y": 18,
+            "size": 64
+          }
+        },
+        "doodle_qHEYP6": {
+          "type": "doodle",
+          "settings": {
+            "kind": "heart",
+            "x": 8,
+            "y": 66,
+            "size": 40
+          }
+        },
+        "doodle_rjRLze": {
+          "type": "doodle",
+          "settings": {
+            "kind": "flower",
+            "x": 88,
+            "y": 70,
+            "size": 48
+          }
+        },
+        "doodle_WJxCz3": {
+          "type": "doodle",
+          "settings": {
+            "kind": "sparkle",
+            "x": 48,
+            "y": 8,
+            "size": 32
+          }
+        },
+        "polaroid_fJtHYK": {
+          "type": "polaroid",
+          "settings": {
+            "caption": "Malia & Mama",
+            "x": 6,
+            "y": 22,
+            "tilt": -5
+          }
+        },
+        "polaroid_fFznwB": {
+          "type": "polaroid",
+          "settings": {
+            "caption": "Malia & Mama",
+            "x": 78,
+            "y": 30,
+            "tilt": 4
+          }
+        },
+        "polaroid_T3MFXJ": {
+          "type": "polaroid",
+          "settings": {
+            "caption": "Malia & Mama",
+            "x": 14,
+            "y": 58,
+            "tilt": 3
+          }
+        },
+        "polaroid_BXXq4K": {
+          "type": "polaroid",
+          "settings": {
+            "caption": "Malia & Mama",
+            "x": 72,
+            "y": 62,
+            "tilt": -3
+          }
+        }
+      },
+      "block_order": [
+        "doodle_AJLGCh",
+        "doodle_Aqmd8G",
+        "doodle_qHEYP6",
+        "doodle_rjRLze",
+        "doodle_WJxCz3",
+        "polaroid_fJtHYK",
+        "polaroid_fFznwB",
+        "polaroid_T3MFXJ",
+        "polaroid_BXXq4K"
+      ],
+      "custom_css": [],
+      "name": "WFSC Animated hero",
+      "settings": {
+        "logo": "shopify://shop_images/logo.png",
+        "logo_width": 300,
+        "tagline": "Turn your favorite memory into art for a lifetime",
+        "cta_label": "Write your story",
+        "cta_url": "https://wfsc-studio.vercel.app/create",
+        "height": 90
+      }
+    },
     "section_6PnLrM": {
       "type": "section",
       "blocks": {
@@ -125,6 +232,7 @@
       "block_order": [
         "group_kE9mgh"
       ],
+      "disabled": true,
       "name": "Logo banner",
       "settings": {
         "content_direction": "column",
@@ -931,6 +1039,7 @@
     }
   },
   "order": [
+    "wfsc_animated_hero_gD7iaR",
     "section_6PnLrM",
     "collection_list_ADwjMb",
     "section_yKkHVH",

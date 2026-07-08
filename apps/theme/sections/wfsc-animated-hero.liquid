@@ -1,10 +1,15 @@
 {% comment %}
-  WFSC Animated Hero — floating polaroid memory cards + twinkling doodles over
-  the brand gradient. Add via theme editor: "WFSC Animated hero".
-  Pure CSS animation; respects prefers-reduced-motion.
+  WFSC Animated Hero v2
+  - Animated background: UnicornStudio embed (same as the password page) with
+    an animated CSS gradient fallback underneath.
+  - Polaroid book previews rise continuously through the hero like balloons
+    (many books passing by), with bundled default images when none are picked.
+  - Brand colors from the theme palette: text #761e0b, button #ff4315.
+  Pure CSS animation for the cards/doodles; respects prefers-reduced-motion.
 {% endcomment %}
 
 {%- assign uid = section.id | replace: '_', '' | downcase -%}
+{%- assign default_captions = 'Malia & Mama,Ella & Grandpa,Theo & Sam,Sabine & Aunt Mary,Phoebe & Papa,Maria & Mama' | split: ',' -%}
 
 <style>
   .wfsc-hero-{{ uid }} {
@@ -14,78 +19,130 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background:
-      radial-gradient(60% 80% at 85% 90%, rgba(232, 98, 44, 0.35), transparent 60%),
-      radial-gradient(50% 60% at 80% 30%, rgba(246, 183, 60, 0.4), transparent 65%),
-      linear-gradient(115deg, #e9dff5 0%, #fdf3ec 38%, #fbe6c4 68%, #f5b087 100%);
   }
-  .wfsc-hero-{{ uid }}::after {
-    content: '';
-    position: absolute; inset: 0; pointer-events: none; opacity: 0.05;
+  /* Fallback animated gradient (visible until/unless UnicornStudio loads) */
+  .wfsc-hero-{{ uid }} .wfsc-hero__gradient {
+    position: absolute; inset: 0; z-index: 0;
+    background: linear-gradient(115deg, #e9dff5, #fdf3ec, #fbe6c4, #f5a267, #e9dff5);
+    background-size: 300% 300%;
+    animation: wfsc-gradient-{{ uid }} 18s ease-in-out infinite;
+  }
+  @keyframes wfsc-gradient-{{ uid }} {
+    0%, 100% { background-position: 0% 40%; }
+    50% { background-position: 100% 60%; }
+  }
+  .wfsc-hero-{{ uid }} .wfsc-hero__grain {
+    position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0.05;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
-  .wfsc-hero-{{ uid }} .wfsc-hero__center { position: relative; z-index: 3; text-align: center; padding: 4rem 1.5rem; max-width: 640px; }
-  .wfsc-hero-{{ uid }} .wfsc-hero__logo img { width: min(46vw, {{ section.settings.logo_width }}px); height: auto; }
-  .wfsc-hero-{{ uid }} .wfsc-hero__tagline { margin-top: 1rem; color: #5b4f49; font-size: 1.1rem; }
+
+  .wfsc-hero-{{ uid }} .wfsc-hero__center { position: relative; z-index: 5; text-align: center; padding: 4rem 1.5rem; max-width: 680px; }
+  .wfsc-hero-{{ uid }} .wfsc-hero__logo { display: flex; justify-content: center; }
+  .wfsc-hero-{{ uid }} .wfsc-hero__logo img { width: min(60vw, {{ section.settings.logo_width }}px); height: auto; display: block; margin: 0 auto; }
+  .wfsc-hero-{{ uid }} .wfsc-hero__tagline {
+    margin-top: 1.1rem; color: #761e0b; font-size: 1.2rem; font-weight: 600;
+  }
   .wfsc-hero-{{ uid }} .wfsc-hero__cta {
-    display: inline-block; margin-top: 1.4rem; background: #e8622c; color: #fffdf8;
-    font-weight: 700; padding: 0.9rem 2.2rem; border-radius: 999px; text-decoration: none;
-    box-shadow: 0 6px 18px rgba(232, 98, 44, 0.35);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: inline-block; margin-top: 1.5rem; background: #ff4315; color: #ffffff;
+    font-weight: 700; font-size: 1.05rem; padding: 1rem 2.6rem; border-radius: 999px; text-decoration: none;
+    box-shadow: 0 8px 22px rgba(255, 67, 21, 0.35);
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
   }
-  .wfsc-hero-{{ uid }} .wfsc-hero__cta:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 10px 24px rgba(232, 98, 44, 0.45); }
+  .wfsc-hero-{{ uid }} .wfsc-hero__cta:hover {
+    background: #761e0b; transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 12px 28px rgba(118, 30, 11, 0.4);
+  }
 
+  /* Rising polaroids: continuous balloon-like traversal, bottom → top */
   .wfsc-hero-{{ uid }} .wfsc-polaroid {
-    position: absolute; z-index: 2; background: #fffdf8; border-radius: 14px;
-    padding: 10px 10px 30px; box-shadow: 0 14px 34px rgba(90, 60, 30, 0.18);
-    width: clamp(120px, 14vw, 210px);
-    animation: wfsc-bob-{{ uid }} 7s ease-in-out infinite;
+    position: absolute; z-index: 3; background: #fffdf8; border-radius: 16px;
+    padding: 12px 12px 36px; box-shadow: 0 16px 38px rgba(90, 60, 30, 0.2);
+    width: clamp(170px, 17vw, 270px);
+    top: 100%;
+    animation: wfsc-rise-{{ uid }} var(--dur, 26s) linear infinite;
+    animation-delay: var(--delay, 0s);
+    will-change: transform;
   }
-  .wfsc-hero-{{ uid }} .wfsc-polaroid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; display: block; }
-  .wfsc-hero-{{ uid }} .wfsc-polaroid figcaption { font-size: 0.78rem; font-weight: 700; color: #2b2320; padding-top: 8px; }
-  .wfsc-hero-{{ uid }} .wfsc-doodle { position: absolute; z-index: 1; animation: wfsc-twinkle-{{ uid }} 5s ease-in-out infinite; }
+  .wfsc-hero-{{ uid }} .wfsc-polaroid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; display: block; }
+  .wfsc-hero-{{ uid }} .wfsc-polaroid figcaption { font-size: 0.92rem; font-weight: 700; color: #761e0b; padding-top: 10px; text-align: center; }
+  @keyframes wfsc-rise-{{ uid }} {
+    0%   { transform: translateY(6vh) rotate(var(--tilt, 0deg)); }
+    50%  { transform: translateY(calc(-0.5 * ({{ section.settings.height }}vh + 60vh))) rotate(calc(var(--tilt, 0deg) * -1)); }
+    100% { transform: translateY(calc(-1 * ({{ section.settings.height }}vh + 60vh))) rotate(var(--tilt, 0deg)); }
+  }
 
-  @keyframes wfsc-bob-{{ uid }} {
-    0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
-    50% { transform: translateY(-14px) rotate(calc(var(--tilt, 0deg) + 1.5deg)); }
-  }
+  .wfsc-hero-{{ uid }} .wfsc-doodle { position: absolute; z-index: 3; animation: wfsc-twinkle-{{ uid }} 5s ease-in-out infinite; }
   @keyframes wfsc-twinkle-{{ uid }} {
     0%, 100% { transform: translateY(0) scale(1); opacity: 0.95; }
-    50% { transform: translateY(-8px) scale(1.08); opacity: 0.7; }
+    50% { transform: translateY(-10px) scale(1.1); opacity: 0.7; }
   }
+
   @media (prefers-reduced-motion: reduce) {
-    .wfsc-hero-{{ uid }} .wfsc-polaroid, .wfsc-hero-{{ uid }} .wfsc-doodle { animation: none; }
+    .wfsc-hero-{{ uid }} .wfsc-hero__gradient { animation: none; }
+    .wfsc-hero-{{ uid }} .wfsc-doodle { animation: none; }
+    .wfsc-hero-{{ uid }} .wfsc-polaroid { animation: none; top: auto; }
+    .wfsc-hero-{{ uid }} .wfsc-polaroid:nth-child(n+3) { display: none; }
   }
   @media (max-width: 749px) {
-    .wfsc-hero-{{ uid }} .wfsc-polaroid { width: clamp(88px, 24vw, 130px); padding-bottom: 22px; }
-    .wfsc-hero-{{ uid }} .wfsc-polaroid figcaption { font-size: 0.6rem; }
+    .wfsc-hero-{{ uid }} .wfsc-polaroid { width: clamp(110px, 26vw, 160px); padding-bottom: 26px; }
+    .wfsc-hero-{{ uid }} .wfsc-polaroid figcaption { font-size: 0.68rem; }
   }
 </style>
 
 <div class="wfsc-hero-{{ uid }}">
+  <div class="wfsc-hero__gradient"></div>
+
+  {%- if section.settings.unicorn_project != blank -%}
+    <div data-us-project="{{ section.settings.unicorn_project }}"
+         style="width:100%; height:100%; position:absolute; top:0; left:0; z-index:1;"></div>
+    <script type="text/javascript">
+      !function(){if(!window.UnicornStudio){window.UnicornStudio={isInitialized:!1};var i=document.createElement("script");i.src="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v1.4.34/dist/unicornStudio.umd.js",i.onload=function(){window.UnicornStudio.isInitialized||(UnicornStudio.init(),window.UnicornStudio.isInitialized=!0)},(document.head||document.body).appendChild(i)}}();
+    </script>
+  {%- endif -%}
+
+  <div class="wfsc-hero__grain"></div>
+
+  {%- assign polaroid_i = 0 -%}
   {%- for block in section.blocks -%}
-    {%- assign delay = forloop.index0 | times: 0.9 -%}
     {%- case block.type -%}
       {%- when 'polaroid' -%}
+        {%- assign polaroid_i = polaroid_i | plus: 1 -%}
+        {%- assign asset_cycle = polaroid_i | modulo: 6 | plus: 1 -%}
+        {%- assign default_caption_index = polaroid_i | modulo: 6 -%}
+        {%- assign p_x = block.settings.x | default: 8 -%}
+        {%- assign p_tilt = block.settings.tilt | default: -4 -%}
+        {%- assign p_dur_default = polaroid_i | times: 5 | plus: 19 -%}
+        {%- assign p_dur = block.settings.duration | default: p_dur_default -%}
+        {%- assign p_off_default = polaroid_i | times: 9 -%}
+        {%- assign p_off = block.settings.start_offset | default: p_off_default -%}
         <figure class="wfsc-polaroid" {{ block.shopify_attributes }}
-          style="left: {{ block.settings.x }}%; top: {{ block.settings.y }}%; --tilt: {{ block.settings.tilt }}deg; animation-delay: {{ delay }}s;">
+          style="left: {{ p_x }}%; --tilt: {{ p_tilt }}deg; --dur: {{ p_dur }}s; --delay: -{{ p_off }}s;">
           {%- if block.settings.image -%}
-            {{ block.settings.image | image_url: width: 420 | image_tag: loading: 'lazy', alt: block.settings.caption }}
+            {{ block.settings.image | image_url: width: 540 | image_tag: loading: 'lazy', alt: block.settings.caption }}
+          {%- else -%}
+            <img src="{{ 'wfsc-polaroid-' | append: asset_cycle | append: '.jpg' | asset_url }}" loading="lazy" alt="{{ block.settings.caption }}"/>
           {%- endif -%}
-          {%- if block.settings.caption != blank -%}<figcaption>{{ block.settings.caption }}</figcaption>{%- endif -%}
+          {%- assign cap = block.settings.caption -%}
+          {%- comment -%} The v1 preset stamped 'Malia & Mama' on every card; cycle varied example captions instead of repeating it. {%- endcomment -%}
+          {%- if cap == blank -%}
+            {%- assign cap = default_captions[default_caption_index] -%}
+          {%- elsif cap == 'Malia & Mama' and polaroid_i > 1 -%}
+            {%- assign cap = default_captions[default_caption_index] -%}
+          {%- endif -%}
+          <figcaption>{{ cap }}</figcaption>
         </figure>
       {%- when 'doodle' -%}
         <span class="wfsc-doodle" {{ block.shopify_attributes }}
-          style="left: {{ block.settings.x }}%; top: {{ block.settings.y }}%; width: {{ block.settings.size }}px; animation-delay: {{ delay }}s;">
+          style="left: {{ block.settings.x }}%; top: {{ block.settings.y }}%; width: {{ block.settings.size }}px; animation-delay: {{ forloop.index0 | times: 0.9 }}s;">
           {%- case block.settings.kind -%}
             {%- when 'sun' -%}
-              <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="16" fill="#F6B73C"/><path d="M32 6v8M32 50v8M6 32h8M50 32h8M13 13l6 6M45 45l6 6M51 13l-6 6M19 45l-6 6" stroke="#E8622C" stroke-width="3.5" stroke-linecap="round"/><path d="M26 32c1.5 2 3.5 3 6 3s4.5-1 6-3" stroke="#B34A16" stroke-width="2.5" stroke-linecap="round"/><circle cx="26" cy="27" r="1.8" fill="#B34A16"/><circle cx="38" cy="27" r="1.8" fill="#B34A16"/></svg>
+              <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="16" fill="#F6B73C"/><path d="M32 6v8M32 50v8M6 32h8M50 32h8M13 13l6 6M45 45l6 6M51 13l-6 6M19 45l-6 6" stroke="#ff4315" stroke-width="3.5" stroke-linecap="round"/><path d="M26 32c1.5 2 3.5 3 6 3s4.5-1 6-3" stroke="#761e0b" stroke-width="2.5" stroke-linecap="round"/><circle cx="26" cy="27" r="1.8" fill="#761e0b"/><circle cx="38" cy="27" r="1.8" fill="#761e0b"/></svg>
             {%- when 'cloud' -%}
               <svg viewBox="0 0 72 48" fill="none"><path d="M18 40c-8 0-14-5-14-12s6-12 12-11c2-8 9-13 17-13 9 0 16 6 18 14 7 0 13 5 13 11s-6 11-13 11H18z" fill="#2E5FD7"/><path d="M28 26c1.2 1.6 2.8 2.4 5 2.4s3.8-.8 5-2.4" stroke="#12296B" stroke-width="2.5" stroke-linecap="round"/><circle cx="26" cy="20" r="2" fill="#12296B"/><circle cx="40" cy="20" r="2" fill="#12296B"/></svg>
             {%- when 'heart' -%}
-              <svg viewBox="0 0 48 44" fill="none"><path d="M24 42C10 32 2 24 2 14 2 6 8 2 14 2c4 0 8 2 10 6 2-4 6-6 10-6 6 0 12 4 12 12 0 10-8 18-22 28z" fill="#E8622C"/></svg>
+              <svg viewBox="0 0 48 44" fill="none"><path d="M24 42C10 32 2 24 2 14 2 6 8 2 14 2c4 0 8 2 10 6 2-4 6-6 10-6 6 0 12 4 12 12 0 10-8 18-22 28z" fill="#ff4315"/></svg>
             {%- when 'flower' -%}
-              <svg viewBox="0 0 56 56" fill="none"><g fill="#E8622C"><circle cx="28" cy="10" r="9"/><circle cx="46" cy="22" r="9"/><circle cx="40" cy="42" r="9"/><circle cx="16" cy="42" r="9"/><circle cx="10" cy="22" r="9"/></g><circle cx="28" cy="28" r="7" fill="#F6B73C"/></svg>
+              <svg viewBox="0 0 56 56" fill="none"><g fill="#ff4315"><circle cx="28" cy="10" r="9"/><circle cx="46" cy="22" r="9"/><circle cx="40" cy="42" r="9"/><circle cx="16" cy="42" r="9"/><circle cx="10" cy="22" r="9"/></g><circle cx="28" cy="28" r="7" fill="#F6B73C"/></svg>
             {%- else -%}
               <svg viewBox="0 0 40 40" fill="none"><path d="M20 2c2 8 6 12 14 14-8 2-12 6-14 14-2-8-6-12-14-14 8-2 12-6 14-14z" fill="#F6B73C"/></svg>
           {%- endcase -%}
@@ -95,10 +152,10 @@
 
   <div class="wfsc-hero__center">
     {%- if section.settings.logo != blank -%}
-      <div class="wfsc-hero__logo">{{ section.settings.logo | image_url: width: 640 | image_tag: loading: 'eager', alt: shop.name }}</div>
+      <div class="wfsc-hero__logo">{{ section.settings.logo | image_url: width: 800 | image_tag: loading: 'eager', alt: shop.name }}</div>
     {%- endif -%}
     {%- if section.settings.cta_label != blank -%}
-      <a class="wfsc-hero__cta" href="{{ section.settings.cta_url | default: '/' }}">{{ section.settings.cta_label }}</a>
+      <div><a class="wfsc-hero__cta" href="{{ section.settings.cta_url | default: '/' }}">{{ section.settings.cta_label }}</a></div>
     {%- endif -%}
     {%- if section.settings.tagline != blank -%}
       <p class="wfsc-hero__tagline">{{ section.settings.tagline }}</p>
@@ -111,22 +168,24 @@
   "name": "WFSC Animated hero",
   "settings": [
     { "type": "image_picker", "id": "logo", "label": "Logo image" },
-    { "type": "range", "id": "logo_width", "label": "Logo width (px)", "min": 160, "max": 520, "step": 20, "default": 300 },
+    { "type": "range", "id": "logo_width", "label": "Logo width (px)", "min": 200, "max": 640, "step": 20, "default": 380 },
     { "type": "text", "id": "tagline", "label": "Tagline", "default": "Turn your favorite memory into art for a lifetime" },
     { "type": "text", "id": "cta_label", "label": "Button label", "default": "Write your story" },
     { "type": "text", "id": "cta_url", "label": "Button link", "default": "https://wfsc-studio.vercel.app/create" },
+    { "type": "text", "id": "unicorn_project", "label": "UnicornStudio project ID", "info": "Animated background (same as password page). Clear to use the CSS gradient instead.", "default": "OA1dHoarDruW6pvS4sNA" },
     { "type": "range", "id": "height", "label": "Height (vh)", "min": 50, "max": 100, "step": 5, "default": 90 }
   ],
   "blocks": [
     {
       "type": "polaroid",
-      "name": "Floating polaroid",
+      "name": "Rising book preview",
       "settings": [
-        { "type": "image_picker", "id": "image", "label": "Photo / illustration" },
-        { "type": "text", "id": "caption", "label": "Caption", "default": "Malia & Mama" },
+        { "type": "image_picker", "id": "image", "label": "Photo / illustration", "info": "Leave empty to use a bundled example book image" },
+        { "type": "text", "id": "caption", "label": "Caption", "info": "Leave empty for an example caption" },
         { "type": "range", "id": "x", "label": "Horizontal position (%)", "min": 0, "max": 90, "step": 1, "default": 8 },
-        { "type": "range", "id": "y", "label": "Vertical position (%)", "min": 0, "max": 80, "step": 1, "default": 15 },
-        { "type": "range", "id": "tilt", "label": "Tilt (deg)", "min": -12, "max": 12, "step": 1, "default": -4 }
+        { "type": "range", "id": "tilt", "label": "Tilt (deg)", "min": -12, "max": 12, "step": 1, "default": -4 },
+        { "type": "range", "id": "duration", "label": "Rise duration (s)", "min": 14, "max": 48, "step": 2, "default": 28 },
+        { "type": "range", "id": "start_offset", "label": "Start offset (s)", "min": 0, "max": 46, "step": 2, "default": 0 }
       ]
     },
     {
@@ -143,7 +202,7 @@
           ] },
         { "type": "range", "id": "x", "label": "Horizontal position (%)", "min": 0, "max": 96, "step": 1, "default": 20 },
         { "type": "range", "id": "y", "label": "Vertical position (%)", "min": 0, "max": 92, "step": 1, "default": 20 },
-        { "type": "range", "id": "size", "label": "Size (px)", "min": 24, "max": 120, "step": 4, "default": 56 }
+        { "type": "range", "id": "size", "label": "Size (px)", "min": 32, "max": 160, "step": 4, "default": 84 }
       ]
     }
   ],
@@ -151,15 +210,17 @@
     {
       "name": "WFSC Animated hero",
       "blocks": [
-        { "type": "doodle", "settings": { "kind": "sun", "x": 12, "y": 14, "size": 72 } },
-        { "type": "doodle", "settings": { "kind": "cloud", "x": 84, "y": 18, "size": 64 } },
-        { "type": "doodle", "settings": { "kind": "heart", "x": 8, "y": 66, "size": 40 } },
-        { "type": "doodle", "settings": { "kind": "flower", "x": 88, "y": 70, "size": 48 } },
-        { "type": "doodle", "settings": { "kind": "sparkle", "x": 48, "y": 8, "size": 32 } },
-        { "type": "polaroid", "settings": { "x": 6, "y": 22, "tilt": -5 } },
-        { "type": "polaroid", "settings": { "x": 78, "y": 30, "tilt": 4 } },
-        { "type": "polaroid", "settings": { "x": 14, "y": 58, "tilt": 3 } },
-        { "type": "polaroid", "settings": { "x": 72, "y": 62, "tilt": -3 } }
+        { "type": "doodle", "settings": { "kind": "sun", "x": 10, "y": 12, "size": 104 } },
+        { "type": "doodle", "settings": { "kind": "cloud", "x": 84, "y": 16, "size": 96 } },
+        { "type": "doodle", "settings": { "kind": "heart", "x": 6, "y": 62, "size": 56 } },
+        { "type": "doodle", "settings": { "kind": "flower", "x": 90, "y": 66, "size": 68 } },
+        { "type": "doodle", "settings": { "kind": "sparkle", "x": 48, "y": 6, "size": 44 } },
+        { "type": "polaroid", "settings": { "x": 3, "tilt": -5, "duration": 26, "start_offset": 4 } },
+        { "type": "polaroid", "settings": { "x": 16, "tilt": 4, "duration": 34, "start_offset": 18 } },
+        { "type": "polaroid", "settings": { "x": 66, "tilt": -3, "duration": 30, "start_offset": 10 } },
+        { "type": "polaroid", "settings": { "x": 80, "tilt": 5, "duration": 24, "start_offset": 22 } },
+        { "type": "polaroid", "settings": { "x": 32, "tilt": -6, "duration": 40, "start_offset": 30 } },
+        { "type": "polaroid", "settings": { "x": 50, "tilt": 3, "duration": 36, "start_offset": 40 } }
       ]
     }
   ]
