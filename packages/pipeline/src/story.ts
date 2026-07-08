@@ -96,5 +96,14 @@ Return the complete book via the emit_story tool.`;
   if (!toolUse || toolUse.type !== 'tool_use') {
     throw new Error('Story generation returned no structured output');
   }
-  return StorySchema.parse(toolUse.input);
+  // The model occasionally emits nested fields as JSON-encoded strings.
+  const input = toolUse.input as Record<string, unknown>;
+  if (typeof input.spreads === 'string') {
+    try {
+      input.spreads = JSON.parse(input.spreads);
+    } catch {
+      // fall through to schema error
+    }
+  }
+  return StorySchema.parse(input);
 }
