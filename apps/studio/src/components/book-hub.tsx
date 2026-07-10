@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useTranslations } from "next-intl";
 
-import type { FontPairingId, LayoutId } from "@wfsc/book-engine";
+import { FONT_PAIRINGS, type FontPairingId, type LayoutId } from "@wfsc/book-engine";
 
 import { ArtPlaceholder } from "@/components/decor";
 import { EditorPanel, SpreadEditor } from "@/components/editor";
@@ -16,6 +16,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageTransition } from "@/components/ui/page-transition";
+import { ProgressiveImage } from "@/components/ui/progressive-image";
 import type { BookFormat, BookPayload, BookStatus, PersonPayload } from "@/lib/book-payload";
 import {
   addBookToCart,
@@ -57,6 +58,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
   const [retrying, setRetrying] = useState(false);
   const [slow, setSlow] = useState(false);
   const [zoomed, setZoomed] = useState<PersonPayload | null>(null);
+  const [readerOpen, setReaderOpen] = useState(false);
 
   // Poll while the pipeline is working so the page moves forward on its own.
   useEffect(() => {
@@ -365,6 +367,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
   if (isPreview) {
     return (
       <Shell error={error}>
+        <div className="mx-auto w-full lg:max-w-[56rem]">
         <div className="mb-6">
           <p className="text-sm font-semibold text-coral">{t("preview.ready")}</p>
           <h1 className="mt-1 font-display text-3xl font-extrabold text-ink sm:text-4xl">
@@ -380,14 +383,50 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
           ) : null}
         </div>
 
-        {/* The book gets the full width (it's the star); cast confirmation
-            with big character-sheet tiles sits underneath, next to checkout. */}
-        <div className="flex flex-col gap-10">
-          <Flipbook book={viewBook} pages={pages} index={pageIndex} onIndexChange={setPageIndex} />
+        {/* Same layout as the sample detail page: a cover hero that opens
+            the overlay reader, cast confirmation under the cover, and the
+            unlock card as the sticky rail. */}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,34rem)_20rem] lg:items-start lg:justify-center lg:gap-8">
+          <div className="mx-auto w-full min-w-0 max-w-[min(34rem,70vh)] lg:mx-0">
+            <button
+              type="button"
+              onClick={() => setReaderOpen(true)}
+              aria-label={t("preview.readBook")}
+              className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-lavender shadow-polaroid ring-8 ring-white transition-transform hover:scale-[1.01]"
+            >
+              {coverImageUrl ? (
+                <ProgressiveImage
+                  src={coverImageUrl}
+                  alt={book.title ?? t("defaultTitle")}
+                  priority
+                  className="h-full w-full"
+                  imgClassName="h-full w-full object-cover"
+                />
+              ) : (
+                <ArtPlaceholder />
+              )}
+              {!book.coverHasTitle && book.title ? (
+                <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-ink/55 to-transparent px-[6%] pb-[10%] pt-[5%]">
+                  <span
+                    className="block text-center text-[clamp(1.2rem,3vw,2rem)] font-extrabold leading-tight text-white drop-shadow-sm"
+                    style={{
+                      fontFamily: `'${FONT_PAIRINGS[book.fontPairing].display.family}', sans-serif`,
+                      fontWeight: FONT_PAIRINGS[book.fontPairing].display.weight,
+                    }}
+                  >
+                    {book.title}
+                  </span>
+                </div>
+              ) : null}
+              <span className="absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-ink/50 to-transparent pb-5 pt-10">
+                <span className="rounded-full bg-white px-5 py-2.5 font-display text-sm font-bold text-ink shadow-fuzzy transition-colors group-hover:bg-marigold">
+                  {t("preview.readBook")}
+                </span>
+              </span>
+            </button>
 
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
             {book.people.length > 0 ? (
-              <Card className="p-6">
+              <Card className="mt-8 p-6">
                 <h2 className="font-display text-lg font-extrabold text-ink">{t("preview.castTitle")}</h2>
                 <p className="mt-1 text-sm text-ink-soft">
                   {t("preview.castBody")}
@@ -450,7 +489,10 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
               </Card>
             ) : null}
 
-            <Card className="p-5 lg:sticky lg:top-24" id="unlock">
+          </div>
+
+          <aside className="lg:sticky lg:top-24">
+            <Card className="p-5" id="unlock">
               <h2 className="font-display text-base font-extrabold text-ink">{t("preview.unlockTitle")}</h2>
               <div className="mt-4 flex flex-col gap-3" role="radiogroup" aria-label={t("preview.formatGroupLabel")}>
                 {FORMATS.map((f) => {
@@ -490,9 +532,24 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                   ? t("preview.secureNote")
                   : t("preview.confirmCastFirst")}
               </p>
+              <Button variant="ghost" className="mt-3 w-full" onClick={() => setReaderOpen(true)}>
+                {t("preview.readBook")}
+              </Button>
             </Card>
-          </div>
+          </aside>
         </div>
+        </div>
+
+        {readerOpen ? (
+          <Flipbook
+            book={viewBook}
+            pages={pages}
+            index={pageIndex}
+            onIndexChange={setPageIndex}
+            fullscreenOnly
+            onClose={() => setReaderOpen(false)}
+          />
+        ) : null}
 
         {zoomed?.characterSheetUrl ? (
           <div

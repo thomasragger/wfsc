@@ -2,9 +2,8 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import { Link } from "@/i18n/navigation";
-import { ArtPlaceholder } from "@/components/decor";
-import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { ButtonLink } from "@/components/ui/button";
+import { ProductCard } from "@/components/ui/product-card";
 import { Card } from "@/components/ui/card";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { getCustomerRefreshToken, getCustomerToken } from "@/lib/customer-session";
@@ -57,15 +56,6 @@ async function savedBooksFor(email: string): Promise<SavedBook[]> {
   }
 }
 
-const STATUS_TONE: Record<string, string> = {
-  preview_ready: "bg-marigold/20 text-ink",
-  ready_for_review: "bg-marigold/20 text-ink",
-  shipped: "bg-sage/20 text-ink",
-  approved: "bg-sage/20 text-ink",
-  submitted_to_print: "bg-sage/20 text-ink",
-  cancelled: "bg-ink/5 text-ink-soft",
-};
-
 function humanize(value: string): string {
   return value.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
@@ -116,46 +106,16 @@ export default async function AccountPage() {
           <section className="mt-12">
             <h2 className="font-display text-2xl font-extrabold text-ink">{t("yourBooks")}</h2>
             {savedBooks.length > 0 ? (
-              <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
                 {savedBooks.map((b) => (
-                  <Link
+                  <ProductCard
                     key={b.token}
                     href={`/book/${encodeURIComponent(b.token)}`}
-                    className="group flex flex-col"
-                  >
-                    <div className="tile-lift relative aspect-square w-full overflow-hidden rounded-3xl bg-lavender shadow-fuzzy ring-1 ring-ink/5">
-                      {b.image ? (
-                        <ProgressiveImage
-                          src={b.image}
-                          alt=""
-                          className="h-full w-full"
-                          imgClassName="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <ArtPlaceholder />
-                      )}
-                      {/* Title on the cover when the artwork doesn't carry it */}
-                      {!b.coverHasTitle && b.title ? (
-                        <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-ink/55 to-transparent px-4 pb-8 pt-4">
-                          <p className="text-center font-display text-xl font-extrabold leading-tight text-white drop-shadow-sm">
-                            {b.title}
-                          </p>
-                        </div>
-                      ) : null}
-                    </div>
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <p className="min-w-0 truncate font-display font-bold text-ink group-hover:text-coral">
-                        {b.title ?? t("bookFallbackTitle")}
-                      </p>
-                      <span
-                        className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                          STATUS_TONE[b.status] ?? "bg-lavender text-ink"
-                        }`}
-                      >
-                        {b.status === "preview_ready" ? t("previewReady") : humanize(b.status)}
-                      </span>
-                    </div>
-                  </Link>
+                    image={b.image}
+                    title={b.title ?? t("bookFallbackTitle")}
+                    subtitle={b.status === "preview_ready" ? t("previewReady") : humanize(b.status)}
+                    ctaLabel={t("openBook")}
+                  />
                 ))}
               </div>
             ) : (

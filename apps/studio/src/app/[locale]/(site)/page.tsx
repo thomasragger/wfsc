@@ -6,7 +6,8 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Doodle } from "@/components/decor";
 import { HeroAnimatedBackground } from "@/components/ui/animated-bg";
-import { BookTile, BookTileVisual } from "@/components/ui/book-tile";
+import { BookTileVisual } from "@/components/ui/book-tile";
+import { ProductCard } from "@/components/ui/product-card";
 import { ButtonLink } from "@/components/ui/button";
 import { Carousel } from "@/components/ui/carousel";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -171,11 +172,12 @@ const HERO_DOODLES = [
 
 export default async function HomePage() {
   const region = await detectRegion();
-  const [inspiration, samples, places, t] = await Promise.all([
+  const [inspiration, samples, places, t, tCard] = await Promise.all([
     loadInspiration(),
     fetchSamples(),
     loadAudiencePage("places", region),
     getTranslations("home"),
+    getTranslations("categoryShowcase"),
   ]);
   const placeTemplates = places?.templates ?? [];
   const axes = t.raw("axes") as { title: string; body: string; cta: string }[];
@@ -341,26 +343,23 @@ export default async function HomePage() {
                 {t("placesIntro", { region: REGION_LABELS[region] })}
               </p>
             </div>
-            <Link
-              href="/for/places"
-              className="group hidden shrink-0 items-center gap-1.5 text-sm font-bold text-coral sm:inline-flex"
-            >
+            <ButtonLink href="/for/places" variant="ghost" size="sm" className="hidden shrink-0 sm:inline-flex">
               {t("placesSeeAll")}
-              <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Link>
+              <IconArrowRight className="ml-1.5 h-4 w-4" />
+            </ButtonLink>
           </div>
           <Carousel className="mt-6" ariaLabel={t("placesCarouselAria")} fullBleed>
             {placeTemplates.map((tpl) => (
-              <BookTile
-                key={tpl.id}
-                href={`/create?template=${encodeURIComponent(tpl.id)}`}
-                image={tpl.mockupImageUrl ?? tpl.previewImageUrl ?? tpl.exampleImageUrl}
-                hoverImage={tpl.mockupImageUrl ? tpl.previewImageUrl : null}
-                title={tpl.title}
-                tagline={tpl.tagline}
-                size="md"
-                aspectClassName="aspect-square"
-              />
+              <div key={tpl.id} className="w-56 shrink-0 sm:w-64">
+                <ProductCard
+                  href={`/create?template=${encodeURIComponent(tpl.id)}`}
+                  image={tpl.mockupImageUrl ?? tpl.previewImageUrl ?? tpl.exampleImageUrl}
+                  hoverImage={tpl.mockupImageUrl ? tpl.previewImageUrl : null}
+                  title={tpl.title}
+                  subtitle={tpl.tagline}
+                  ctaLabel={tCard("cardCta")}
+                />
+              </div>
             ))}
           </Carousel>
         </section>
@@ -431,25 +430,34 @@ export default async function HomePage() {
                         className="h-full w-full object-cover"
                       />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <h3 className="font-display text-2xl font-extrabold text-ink">{cat.name}</h3>
                       {cat.tagline ? (
                         <p className="text-sm text-ink-soft">{cat.tagline}</p>
                       ) : null}
                     </div>
+                    <ButtonLink
+                      href={`/for/${encodeURIComponent(cat.id)}`}
+                      variant="ghost"
+                      size="sm"
+                      className="hidden shrink-0 sm:inline-flex"
+                    >
+                      {t("seeAll", { name: cat.name })}
+                      <IconArrowRight className="ml-1.5 h-4 w-4" />
+                    </ButtonLink>
                   </div>
                   <Carousel className="mt-5" ariaLabel={t("ideasCarouselAria", { name: cat.name })} itemGap="gap-6" fullBleed>
                     {templates.map((tpl) => (
-                      <BookTile
-                        key={tpl.id}
-                        href={`/create?template=${encodeURIComponent(tpl.id)}`}
-                        image={tpl.mockup_image_url ?? tpl.preview_image_url ?? tpl.example_image_url}
-                        hoverImage={tpl.mockup_image_url ? tpl.preview_image_url : null}
-                        title={tpl.title}
-                        tagline={tpl.tagline}
-                        size="lg"
-                        aspectClassName="aspect-square"
-                      />
+                      <div key={tpl.id} className="w-56 shrink-0 sm:w-64">
+                        <ProductCard
+                          href={`/create?template=${encodeURIComponent(tpl.id)}`}
+                          image={tpl.mockup_image_url ?? tpl.preview_image_url ?? tpl.example_image_url}
+                          hoverImage={tpl.mockup_image_url ? tpl.preview_image_url : null}
+                          title={tpl.title}
+                          subtitle={tpl.tagline}
+                          ctaLabel={tCard("cardCta")}
+                        />
+                      </div>
                     ))}
                   </Carousel>
                 </div>

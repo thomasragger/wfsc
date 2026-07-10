@@ -14,6 +14,7 @@ import { ProgressiveImage } from "@/components/ui/progressive-image";
  */
 export function ProductCard({
   href,
+  onClick,
   image,
   hoverImage = null,
   title,
@@ -21,7 +22,9 @@ export function ProductCard({
   ctaLabel,
   priority = false,
 }: {
-  href: string;
+  /** Link target — or pass `onClick` instead to render as a button. */
+  href?: string;
+  onClick?: () => void;
   image: string | null;
   /** Cross-faded in on hover (e.g. flat art over the 3D mockup). */
   hoverImage?: string | null;
@@ -30,12 +33,10 @@ export function ProductCard({
   ctaLabel: string;
   priority?: boolean;
 }) {
-  return (
-    <Link
-      href={href}
-      draggable={false}
-      className="tile-lift group flex w-full flex-col overflow-hidden rounded-3xl bg-white shadow-fuzzy ring-1 ring-ink/5"
-    >
+  const className =
+    "tile-lift group flex w-full flex-col overflow-hidden rounded-3xl bg-white text-left shadow-fuzzy ring-1 ring-ink/5";
+  const body = (
+    <>
       <div className="relative aspect-square w-full overflow-hidden bg-cream">
         {image ? (
           <ProgressiveImage
@@ -69,6 +70,19 @@ export function ProductCard({
           <IconArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
         </span>
       </div>
-    </Link>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} draggable={false} className={className}>
+        {body}
+      </Link>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} className={className}>
+      {body}
+    </button>
   );
 }

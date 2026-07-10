@@ -96,7 +96,8 @@
       "secureNote": "Secure checkout · printed & shipped to your door",
       "confirmCastFirst": "First confirm your cast so we illustrate the right people.",
       "personUpClose": "{name} up close",
-      "close": "Close"
+      "close": "Close",
+      "readBook": "Flip through your book"
     },
     "review": {
       "coverAlt": "Your book's cover",
@@ -382,7 +383,8 @@
     ],
     "closingHeading": "Every family has a story worth keeping.",
     "closingIntro": "It takes about five minutes to tell us yours. The book lasts a lifetime.",
-    "closingCta": "Write your story"
+    "closingCta": "Write your story",
+    "seeAll": "See all {name}"
   },
   "legal": {
     "privacy": {
@@ -723,7 +725,8 @@
     "addressTitle": "Delivery address",
     "addressNone": "No saved address yet. You'll add one during checkout.",
     "manageAccount": "Manage account details",
-    "manageAccountNote": "Addresses and personal details live in your secure Shopify account."
+    "manageAccountNote": "Addresses and personal details live in your secure Shopify account.",
+    "openBook": "Open book"
   },
   "cart": {
     "heading": "Your cart",

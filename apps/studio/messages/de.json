@@ -97,7 +97,8 @@
       "secureNote": "Sichere Kasse · gedruckt & zu dir nach Hause geliefert",
       "confirmCastFirst": "Bestätige zuerst deine Besetzung, damit wir die richtigen Menschen illustrieren.",
       "personUpClose": "{name} aus der Nähe",
-      "close": "Schließen"
+      "close": "Schließen",
+      "readBook": "Blätter durch dein Buch"
     },
     "review": {
       "coverAlt": "Das Cover deines Buches",
@@ -383,7 +384,8 @@
     ],
     "closingHeading": "Jede Familie hat eine Geschichte, die es wert ist, bewahrt zu werden.",
     "closingIntro": "Es dauert etwa fünf Minuten, uns deine zu erzählen. Das Buch hält ein Leben lang.",
-    "closingCta": "Schreib deine Geschichte"
+    "closingCta": "Schreib deine Geschichte",
+    "seeAll": "Alle {name} ansehen"
   },
   "legal": {
     "privacy": {
@@ -727,7 +729,8 @@
     "addressTitle": "Lieferadresse",
     "addressNone": "Noch keine gespeicherte Adresse. Du gibst sie beim Bezahlen an.",
     "manageAccount": "Kontodaten verwalten",
-    "manageAccountNote": "Adressen und persönliche Daten verwaltest du in deinem sicheren Shopify-Konto."
+    "manageAccountNote": "Adressen und persönliche Daten verwaltest du in deinem sicheren Shopify-Konto.",
+    "openBook": "Buch öffnen"
   },
   "cart": {
     "heading": "Dein Warenkorb",

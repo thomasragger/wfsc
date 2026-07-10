@@ -9,12 +9,12 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { ArtPlaceholder, Sparkle } from "@/components/decor";
 import { Alert } from "@/components/ui/alert";
 import { BookTileVisual } from "@/components/ui/book-tile";
+import { ProductCard } from "@/components/ui/product-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Carousel } from "@/components/ui/carousel";
 import { Chip, PillLabel } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { IconArrowRight } from "@/components/ui/icons";
 import { Field, Select, TextArea, TextInput } from "@/components/ui/input";
 import { PageTransition, StepTransition } from "@/components/ui/page-transition";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
@@ -512,29 +512,17 @@ export function CreateWizard() {
           {categoryTemplates === null ? (
             <SkeletonGrid count={2} className="mt-10 grid gap-5 sm:grid-cols-2" itemClassName="h-64 rounded-3xl" />
           ) : (
-            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
               {categoryTemplates.map((tpl) => (
-                <button
+                <ProductCard
                   key={tpl.id}
-                  type="button"
                   onClick={() => pickTemplate(tpl)}
-                  className="tile-lift group flex flex-col rounded-3xl text-left"
-                >
-                  <BookTileVisual
-                    image={tpl.mockupImageUrl ?? tpl.previewImageUrl ?? tpl.exampleImageUrl ?? null}
-                    alt={tpl.title}
-                    aspectClassName="aspect-square"
-                  />
-                  <div className="flex flex-1 flex-col px-2 pb-1 pt-4">
-                    <p className="font-display text-lg font-extrabold leading-snug text-ink group-hover:text-coral">
-                      {tpl.title}
-                    </p>
-                    {tpl.tagline ? <p className="mt-1 text-sm text-ink-soft">{tpl.tagline}</p> : null}
-                    <span className="mt-4 inline-flex items-center gap-1.5 font-display text-sm font-bold text-coral">
-                      {t("pickerCardCta")} <IconArrowRight />
-                    </span>
-                  </div>
-                </button>
+                  image={tpl.mockupImageUrl ?? tpl.previewImageUrl ?? tpl.exampleImageUrl ?? null}
+                  hoverImage={tpl.mockupImageUrl ? tpl.previewImageUrl : null}
+                  title={tpl.title}
+                  subtitle={tpl.tagline}
+                  ctaLabel={t("pickerCardCta")}
+                />
               ))}
             </div>
           )}
