@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
+import { JsonLd, productJsonLd } from "@/components/json-ld";
 import { SampleViewer } from "@/components/sample-viewer";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -9,9 +11,32 @@ import { fetchSampleBundle } from "@/lib/samples";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Sample book — Warm Fuzzy Story Club",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const bundle = await fetchSampleBundle(token);
+  if (!bundle) return { title: "Sample book" };
+  const { payload } = bundle;
+  const title = payload.title ?? "A sample storybook";
+  const styleName = payload.style?.name;
+  const description = styleName
+    ? `A finished sample book, illustrated in the ${styleName} style. Flip through it page by page.`
+    : "A finished sample book you can flip through page by page.";
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      url: `/samples/${token}`,
+      ...(payload.coverImageUrl ? { images: [payload.coverImageUrl] } : {}),
+    },
+  };
+}
 
 export default async function SampleBookPage({
   params,
@@ -44,6 +69,16 @@ export default async function SampleBookPage({
 
   return (
     <PageTransition className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+      <JsonLd
+        data={productJsonLd({
+          name: payload.title ?? "A sample storybook",
+          description: payload.style
+            ? `A personalized storybook illustrated in the ${payload.style.name} style.`
+            : "A personalized, illustrated storybook.",
+          image: payload.coverImageUrl,
+          url: `/samples/${book.access_token}`,
+        })}
+      />
       <header className="mb-10 text-center">
         <Link
           href="/samples"

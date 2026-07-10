@@ -20,7 +20,7 @@ export default async function SiteLayout({
 
       <SiteNav audience={audience} occasions={occasions} />
 
-      <main className="flex flex-1 flex-col">{children}</main>
+      <main id="main-content" className="flex flex-1 flex-col">{children}</main>
 
       <SiteFooter audience={audience} occasions={occasions} />
     </>
