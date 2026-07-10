@@ -370,6 +370,33 @@ Acceptance: `tsc --noEmit` and `pnpm lint` clean; every sample book renders
 title, greeting, all spread text and cover art in German for a `de` visitor;
 customer books untouched.
 
+### O11 — Locale-prefixed URLs (`/de/...`) — `launch/o11-locale-urls`
+
+Decision 2026-07-10: path-based locales BEFORE launch (Google crawls without the
+locale cookie from US IPs, so cookie-based German pages are invisible to German
+search). Prefix only; slugs stay English (they are DB ids). Scope:
+
+1. next-intl routing: `defineRouting` with locales en/de, `localePrefix:
+   "as-needed"` (en stays unprefixed at `/`, German lives at `/de/...`).
+   Move `app/(site)` and `app/(studio)` under `app/[locale]/`; API routes,
+   sitemap/robots/manifest and the root metadata-image files stay outside.
+2. Middleware (locale negotiation only, nothing else): cookie `wfsc_locale`
+   wins, then the region rule (DACH geo header -> de), then en. Keep
+   `POST /api/locale` working (the switcher sets the cookie), and make the
+   footer LanguageSwitcher navigate to the prefixed path as well as set the
+   cookie.
+3. Replace `next/link`/`useRouter`/`redirect` with the wrappers from
+   `createNavigation` (new `src/i18n/navigation.ts`) across components so
+   internal links keep the active prefix. Sweep ALL of src.
+4. `resolveLocale` (`src/i18n/request.ts`) reads the route segment when
+   present; API routes keep the cookie/geo fallback (they have no segment).
+5. SEO wiring: hreflang alternates (en + de + x-default) on every page via
+   the routing config; sitemap emits both URL variants per entry.
+6. Acceptance: `/` is English, `/de` is the same page in German; every page
+   emits hreflang pairs; switcher round-trips; wizard + book flows work under
+   both prefixes; typecheck, lint and production build green; no unprefixed
+   German content remains reachable.
+
 ---
 
 ## Sequencing
