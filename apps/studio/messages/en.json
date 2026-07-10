@@ -27,7 +27,10 @@
     "emptyBody": "Check back very soon, or skip the queue and make a book starring your own family.",
     "emptyCta": "Write your story",
     "closingTitle": "Ready to see your own family in one of these?",
-    "closingCta": "Make your own"
+    "closingCta": "Make your own",
+    "allSamples": "All sample books",
+    "detailFallbackTitle": "A sample storybook",
+    "illustratedIn": "Illustrated in the {style} style"
   },
   "bookHub": {
     "defaultTitle": "Your storybook",

@@ -48,14 +48,15 @@ export function SampleViewer({
   const pairing = FONT_PAIRINGS[book.fontPairing];
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start">
-      {/* Left — cover hero; clicking it opens the overlay reader */}
-      <div className="flex min-w-0 flex-col items-center">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+      {/* Left — one shared content width so the cover and the cast cards
+          align edge-to-edge. */}
+      <div className="mx-auto w-full max-w-[min(34rem,70vh)] min-w-0 lg:mx-0">
         <button
           type="button"
           onClick={() => setReaderOpen(true)}
           aria-label={t("readBook")}
-          className="group relative aspect-square w-full max-w-[min(34rem,70vh)] overflow-hidden rounded-2xl bg-lavender shadow-polaroid ring-8 ring-white transition-transform hover:scale-[1.01]"
+          className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-lavender shadow-polaroid ring-8 ring-white transition-transform hover:scale-[1.01]"
         >
           {book.coverImageUrl ? (
             <ProgressiveImage
@@ -87,14 +88,14 @@ export function SampleViewer({
           </span>
         </button>
 
-        {/* Cast transformation below the cover */}
+        {/* Cast transformation below the cover, same width as the cover */}
         {cast.length > 0 ? (
           <section className="mt-10 w-full">
             <h2 className="text-center font-display text-2xl font-extrabold text-ink">
               {t("castTitle")}
             </h2>
             <p className="mx-auto mt-2 max-w-md text-center text-sm text-ink-soft">{t("castBody")}</p>
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            <div className="mt-6 grid gap-5">
               {cast.map((person) => (
                 <div
                   key={person.id}
@@ -148,19 +149,28 @@ export function SampleViewer({
         ) : null}
       </div>
 
-      {/* Right — sticky CTA, above the fold */}
-      <aside className="flex flex-col gap-4 lg:sticky lg:top-24">
-        <section className="rounded-3xl bg-white p-6 text-center shadow-fuzzy ring-1 ring-ink/5">
-          <p className="font-display text-lg font-extrabold text-ink">{t("ctaTitle")}</p>
-          <p className="mt-2 text-sm text-ink-soft">
+      {/* Right — sticky CTA, top-aligned with the cover, above the fold */}
+      <aside className="lg:sticky lg:top-24">
+        <section className="rounded-3xl bg-white p-6 shadow-fuzzy ring-1 ring-ink/5">
+          {book.style?.name ? (
+            <p className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-coral">
+              {book.style.name}
+            </p>
+          ) : null}
+          <p className="mt-2 font-display text-xl font-extrabold leading-snug text-ink">
+            {t("ctaTitle")}
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
             {suggestedTemplateId ? t("ctaBodyTemplate") : t("ctaBodyDefault")}
           </p>
-          <ButtonLink href={createHref} size="lg" className="mt-4 w-full">
-            {t("ctaButton")}
-          </ButtonLink>
-          <Button variant="ghost" className="mt-2 w-full" onClick={() => setReaderOpen(true)}>
-            {t("readBook")}
-          </Button>
+          <div className="mt-5 flex flex-col gap-2">
+            <ButtonLink href={createHref} size="lg" className="w-full">
+              {t("ctaButton")}
+            </ButtonLink>
+            <Button variant="ghost" className="w-full" onClick={() => setReaderOpen(true)}>
+              {t("readBook")}
+            </Button>
+          </div>
         </section>
       </aside>
 

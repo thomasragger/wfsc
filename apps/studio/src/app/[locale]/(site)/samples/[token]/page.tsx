@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
-import { Link } from "@/i18n/navigation";
 import { JsonLd, productJsonLd } from "@/components/json-ld";
 import { SampleViewer } from "@/components/sample-viewer";
 import { ButtonLink } from "@/components/ui/button";
@@ -68,8 +68,10 @@ export default async function SampleBookPage({
 
   const { book, payload } = bundle;
 
+  const t = await getTranslations("samples");
+
   return (
-    <PageTransition className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-14">
+    <PageTransition className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       <JsonLd
         data={productJsonLd({
           name: payload.title ?? "A sample storybook",
@@ -80,20 +82,19 @@ export default async function SampleBookPage({
           url: `/samples/${book.access_token}`,
         })}
       />
-      <header className="mb-10 text-center">
-        <Link
-          href="/samples"
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-coral hover:underline"
-        >
-          <IconArrowLeft className="h-3.5 w-3.5" />
-          All sample books
-        </Link>
-        <h1 className="mt-3 font-display text-3xl font-bold text-ink sm:text-4xl">
-          {payload.title ?? "A sample storybook"}
+      <div className="mb-6">
+        <ButtonLink href="/samples" variant="ghost" size="sm">
+          <IconArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+          {t("allSamples")}
+        </ButtonLink>
+      </div>
+      <header className="mb-8">
+        <h1 className="font-display text-3xl font-bold text-ink sm:text-4xl">
+          {payload.title ?? t("detailFallbackTitle")}
         </h1>
         {payload.style ? (
           <p className="mt-1 text-sm text-ink-soft">
-            Illustrated in the <span className="font-semibold">{payload.style.name}</span> style
+            {t("illustratedIn", { style: payload.style.name })}
           </p>
         ) : null}
       </header>

@@ -28,7 +28,10 @@
     "emptyBody": "Schau bald wieder vorbei, oder überspring die Warteschlange und mach ein Buch mit deiner eigenen Familie in der Hauptrolle.",
     "emptyCta": "Erzähl deine Geschichte",
     "closingTitle": "Bereit, deine eigene Familie in so einem Buch zu sehen?",
-    "closingCta": "Jetzt selbst gestalten"
+    "closingCta": "Jetzt selbst gestalten",
+    "allSamples": "Alle Beispielbücher",
+    "detailFallbackTitle": "Ein Beispielbuch",
+    "illustratedIn": "Illustriert im {style}-Stil"
   },
   "bookHub": {
     "defaultTitle": "Dein Bilderbuch",
