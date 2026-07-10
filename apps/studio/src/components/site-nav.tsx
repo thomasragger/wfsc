@@ -2,20 +2,20 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Link } from "@/i18n/navigation";
 import { CartButton } from "@/components/cart";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ButtonLink } from "@/components/ui/button";
-import { IconChevronDown, IconClose, IconMenu, IconUser } from "@/components/ui/icons";
+import { IconChevronDown, IconChevronRight, IconClose, IconMenu, IconUser } from "@/components/ui/icons";
 import type { AudienceCategory, OccasionCategory } from "@/lib/categories";
 
 /**
  * WFSC design system — SiteNav.
  * The marketing header: logo, a desktop mega-menu over the audience +
  * occasion categories (hover/focus panels, CSS-driven), and a mobile
- * slide-down panel. All links are internal now (no more deep-links out to
+ * full-height sheet. All links are internal now (no more deep-links out to
  * the legacy Liquid theme).
  */
 export function SiteNav({
@@ -35,6 +35,23 @@ export function SiteNav({
   const [mobileOpen, setMobileOpen] = useState(false);
   const t = useTranslations("nav");
   const locale = useLocale();
+
+  // While the sheet is open: lock body scroll and let Escape close it.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [mobileOpen]);
+
+  const close = () => setMobileOpen(false);
 
   return (
     <header className="sticky top-0 z-40 border-b border-ink/5 bg-cream/85 backdrop-blur-md">
@@ -78,9 +95,10 @@ export function SiteNav({
           </ButtonLink>
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-ink/5 md:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-ink hover:bg-ink/5 md:hidden"
             aria-label={mobileOpen ? t("closeMenu") : t("openMenu")}
             aria-expanded={mobileOpen}
+            aria-controls="mobile-nav-sheet"
             onClick={() => setMobileOpen((v) => !v)}
           >
             {mobileOpen ? <IconClose /> : <IconMenu />}
@@ -88,38 +106,58 @@ export function SiteNav({
         </div>
       </div>
 
-      {/* Mobile panel */}
+      {/* Mobile sheet: full-height below the 3.5rem header, scrollable body with
+          a CTA pinned at the bottom. */}
       {mobileOpen ? (
-        <div className="animate-page-in border-t border-ink/5 bg-cream md:hidden">
-          {/* Any tap inside (a category link, the CTA) closes the panel. */}
-          <div
-            className="mx-auto max-h-[calc(100vh-3.5rem)] w-full max-w-7xl space-y-6 overflow-y-auto px-5 py-6"
-            onClick={() => setMobileOpen(false)}
-          >
-            <div onClick={(e) => e.stopPropagation()}>
+        <div
+          id="mobile-nav-sheet"
+          className="animate-page-in fixed inset-x-0 bottom-0 top-14 z-40 flex flex-col bg-cream md:hidden"
+        >
+          <div className="flex-1 space-y-8 overflow-y-auto overscroll-contain px-5 py-6">
+            {/* (a) Primary links as large touch rows */}
+            <nav aria-label="Primary" className="space-y-1">
+              <MobileRow href="/books" onClick={close}>
+                {t("ourBooks")}
+              </MobileRow>
+              <MobileRow href="/for/places" onClick={close}>
+                {t("placesYouLove")}
+              </MobileRow>
+              <MobileRow href="/samples" onClick={close}>
+                {t("sampleBooks")}
+              </MobileRow>
+            </nav>
+
+            {/* (b) Category groups as compact, collapsible chip grids */}
+            <MobileGroup
+              title={t("whoItsFor")}
+              items={audience.map((c) => ({ href: `/for/${c.id}`, label: c.name }))}
+              onNavigate={close}
+            />
+            <MobileGroup
+              title={t("occasions")}
+              items={occasions.map((c) => ({ href: `/occasions/${c.id}`, label: c.name }))}
+              onNavigate={close}
+            />
+
+            {/* (d) Language + account access */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ink/5 pt-6">
               <LanguageSwitcher current={locale} />
+              {accountsEnabled ? (
+                <Link
+                  href="/account"
+                  onClick={close}
+                  className="inline-flex min-h-[44px] items-center gap-2 rounded-full px-4 font-display font-bold text-ink hover:text-coral"
+                >
+                  <IconUser className="h-5 w-5" />
+                  {t("accountAria")}
+                </Link>
+              ) : null}
             </div>
-            <MobileSection title={t("browse")}>
-              <MobileLink href="/books">{t("ourBooks")}</MobileLink>
-              <MobileLink href="/for/places">{t("placesYouLove")}</MobileLink>
-              <MobileLink href="/samples">{t("sampleBooks")}</MobileLink>
-              <MobileLink href="/create">{t("writeYourStory")}</MobileLink>
-            </MobileSection>
-            <MobileSection title={t("whoItsFor")}>
-              {audience.map((c) => (
-                <MobileLink key={c.id} href={`/for/${c.id}`}>
-                  {c.name}
-                </MobileLink>
-              ))}
-            </MobileSection>
-            <MobileSection title={t("occasions")}>
-              {occasions.map((c) => (
-                <MobileLink key={c.id} href={`/occasions/${c.id}`}>
-                  {c.name}
-                </MobileLink>
-              ))}
-            </MobileSection>
-            <ButtonLink href="/create" className="w-full">
+          </div>
+
+          {/* (c) CTA pinned at the bottom, always visible */}
+          <div className="border-t border-ink/10 bg-cream px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
+            <ButtonLink href="/create" size="lg" className="w-full" onClick={close}>
               {t("writeYourStory")}
             </ButtonLink>
           </div>
@@ -178,19 +216,69 @@ function MegaItem({
   );
 }
 
-function MobileSection({ title, children }: { title: string; children: React.ReactNode }) {
+/** A large, thumb-friendly primary link row in the mobile sheet. */
+function MobileRow({
+  href,
+  onClick,
+  children,
+}: {
+  href: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
-    <div>
-      <p className="mb-2 font-display text-xs font-extrabold uppercase tracking-wide text-ink/50">{title}</p>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1">{children}</div>
-    </div>
+    <Link
+      href={href}
+      onClick={onClick}
+      className="flex min-h-[3.25rem] items-center justify-between rounded-2xl px-4 font-display text-lg font-extrabold text-ink transition-colors hover:bg-lavender/50 active:bg-lavender/60"
+    >
+      {children}
+      <IconChevronRight className="h-5 w-5 text-ink/30" />
+    </Link>
   );
 }
 
-function MobileLink({ href, children }: { href: string; children: React.ReactNode }) {
+/**
+ * Collapsible category group in the mobile sheet: a tappable header toggles a
+ * compact grid of chip-style links, so long taxonomies never become an
+ * endless list.
+ */
+function MobileGroup({
+  title,
+  items,
+  onNavigate,
+}: {
+  title: string;
+  items: { href: string; label: string }[];
+  onNavigate: () => void;
+}) {
+  const [open, setOpen] = useState(true);
+  if (items.length === 0) return null;
   return (
-    <Link href={href} className="rounded-xl py-2 font-display font-bold text-ink hover:text-coral">
-      {children}
-    </Link>
+    <div>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="flex min-h-[44px] w-full items-center justify-between rounded-xl font-display text-xs font-extrabold uppercase tracking-wide text-ink/50"
+      >
+        {title}
+        <IconChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open ? (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {items.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onNavigate}
+              className="inline-flex min-h-[44px] items-center rounded-full border-2 border-ink/15 bg-white px-4 font-display text-sm font-bold text-ink transition-colors hover:border-marigold active:border-coral"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }

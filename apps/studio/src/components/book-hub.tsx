@@ -413,7 +413,9 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                         key={person.id}
                         className="rounded-3xl bg-white/70 p-4 shadow-fuzzy ring-1 ring-ink/5"
                       >
-                        <div className="flex items-center gap-3 sm:gap-4">
+                        {/* Wrap on narrow phones so the name isn't squeezed to
+                            nothing between the thumbnails and the confirm pill. */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-3 sm:gap-x-4">
                           {person.photoUrls[0] ? (
                             <>
                               <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-lavender">
@@ -455,7 +457,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                               <ArtPlaceholder />
                             )}
                           </button>
-                          <div className="min-w-0 flex-1">
+                          <div className="min-w-[7rem] flex-1">
                             <p className="truncate font-display font-bold text-ink">{person.name}</p>
                             {person.role ? <p className="text-xs text-ink-soft">{person.role}</p> : null}
                           </div>
@@ -558,7 +560,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
             <div className="animate-page-in relative w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
               <div className="overflow-hidden rounded-3xl bg-cream shadow-polaroid">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={zoomed.characterSheetUrl} alt={t("preview.characterAlt", { name: zoomed.name })} className="w-full" />
+                <img src={zoomed.characterSheetUrl} alt={t("preview.characterAlt", { name: zoomed.name })} className="max-h-[65vh] w-full object-contain" />
                 <div className="flex items-center justify-between gap-3 px-5 py-4">
                   <div>
                     <p className="font-display text-lg font-extrabold text-ink">{zoomed.name}</p>

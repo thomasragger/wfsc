@@ -364,11 +364,22 @@ export function Flipbook({
       </div>
 
       {/* Dot nav */}
-      <div className="flex items-center gap-3">
+      <div className="flex max-w-full items-center gap-3">
         <p className="text-xs font-semibold text-ink-soft">
           {pageLabel(pages[clamped], t)}
         </p>
-        <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label={t("pages")}>
+        {/* A 20+ dot rail wraps into many rows on a phone in fullscreen, so we
+            hide it there and show a compact "3 / 18" counter instead. */}
+        {fullscreen ? (
+          <p className="text-xs font-bold text-ink sm:hidden">
+            {clamped + 1} / {pages.length}
+          </p>
+        ) : null}
+        <div
+          className={`items-center gap-1.5 ${fullscreen ? "hidden sm:flex sm:flex-wrap" : "flex flex-wrap"}`}
+          role="tablist"
+          aria-label={t("pages")}
+        >
           {pages.map((p, i) => (
             <button
               key={i}
