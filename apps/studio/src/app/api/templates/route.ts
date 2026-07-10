@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 
+import { resolveLocale } from "@/i18n/request";
+import { localizeRow } from "@/lib/i18n-content";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const TEMPLATE_COLUMNS =
-  "id, category_id, title, tagline, description, suggested_style_id, story_beats, cover_concept, prompt_scaffold, example_image_url, preview_image_url, mockup_image_url, age_min, age_max, occasions, sort_order";
+  "id, category_id, title, tagline, description, suggested_style_id, story_beats, cover_concept, prompt_scaffold, example_image_url, preview_image_url, mockup_image_url, age_min, age_max, occasions, sort_order, translations";
 
 interface TemplateRow {
   preview_image_url?: string | null;
@@ -58,14 +60,15 @@ function serialize(t: TemplateRow) {
   };
 }
 
-async function loadCategory(id: string): Promise<CategoryRow | null> {
+async function loadCategory(id: string, locale: string): Promise<CategoryRow | null> {
   const db = supabaseAdmin();
   const { data } = await db
     .from("template_categories")
-    .select("id, name, tagline")
+    .select("id, name, tagline, translations")
     .eq("id", id)
     .maybeSingle();
-  return (data as CategoryRow | null) ?? null;
+  if (!data) return null;
+  return localizeRow(data, locale) as CategoryRow;
 }
 
 /**
@@ -76,9 +79,16 @@ async function loadCategory(id: string): Promise<CategoryRow | null> {
 export async function GET(request: Request) {
   try {
     const db = supabaseAdmin();
+    const locale = await resolveLocale();
     const params = new URL(request.url).searchParams;
     const id = params.get("id");
     const category = params.get("category");
+
+    // Display fields (title/tagline/description) localize; story_beats and
+    // prompt_scaffold stay English on purpose — they feed the story writer,
+    // which writes in the book's locale regardless.
+    const localize = (t: TemplateRow) =>
+      localizeRow(t as unknown as Record<string, unknown>, locale) as unknown as TemplateRow;
 
     if (id) {
       const { data, error } = await db
@@ -91,8 +101,8 @@ export async function GET(request: Request) {
       if (!data) {
         return NextResponse.json({ error: "Template not found" }, { status: 404 });
       }
-      const template = data as TemplateRow;
-      const cat = await loadCategory(template.category_id);
+      const template = localize(data as TemplateRow);
+      const cat = await loadCategory(template.category_id, locale);
       return NextResponse.json({
         template: { ...serialize(template), categoryName: cat?.name ?? null },
       });
@@ -100,7 +110,7 @@ export async function GET(request: Request) {
 
     if (category) {
       const [cat, tplRes] = await Promise.all([
-        loadCategory(category),
+        loadCategory(category, locale),
         db
           .from("story_templates")
           .select(TEMPLATE_COLUMNS)
@@ -114,7 +124,7 @@ export async function GET(request: Request) {
       }
       return NextResponse.json({
         category: cat,
-        templates: ((tplRes.data ?? []) as TemplateRow[]).map((t) => ({
+        templates: ((tplRes.data ?? []) as TemplateRow[]).map(localize).map((t) => ({
           ...serialize(t),
           categoryName: cat.name,
         })),
@@ -127,7 +137,9 @@ export async function GET(request: Request) {
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
     if (error) throw new Error(error.message);
-    return NextResponse.json({ templates: ((data ?? []) as TemplateRow[]).map(serialize) });
+    return NextResponse.json({
+      templates: ((data ?? []) as TemplateRow[]).map(localize).map(serialize),
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to load templates" },

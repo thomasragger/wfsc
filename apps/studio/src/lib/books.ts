@@ -8,6 +8,8 @@ import type {
   SpreadPayload,
   StylePayload,
 } from "@/lib/book-payload";
+import { resolveLocale } from "@/i18n/request";
+import { localizeRow } from "@/lib/i18n-content";
 import { signUrls } from "@/lib/storage";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -97,7 +99,7 @@ export async function fetchBookBundle(token: string): Promise<BookBundle | null>
     book.style_id
       ? db
           .from("styles")
-          .select("id, name, description, preview_image_url")
+          .select("id, name, description, preview_image_url, translations")
           .eq("id", book.style_id)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
@@ -105,7 +107,9 @@ export async function fetchBookBundle(token: string): Promise<BookBundle | null>
 
   const people = (peopleRes.data ?? []) as PersonRow[];
   const spreads = (spreadsRes.data ?? []) as SpreadRow[];
-  const style = (styleRes.data ?? null) as StyleRow | null;
+  const style = styleRes.data
+    ? (localizeRow(styleRes.data, await resolveLocale()) as unknown as StyleRow)
+    : null;
 
   return {
     book,
