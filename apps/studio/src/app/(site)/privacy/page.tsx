@@ -2,7 +2,7 @@ import { Doodle } from "@/components/decor";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 export const metadata = {
-  title: "Privacy · Warm Fuzzy Story Club",
+  title: "Privacy",
   description:
     "How Warm Fuzzy Story Club handles your photos, your family memories, and your personal data. Plainly, and with care.",
 };

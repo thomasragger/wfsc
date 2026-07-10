@@ -2,7 +2,7 @@ import { Doodle } from "@/components/decor";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 export const metadata = {
-  title: "Terms · Warm Fuzzy Story Club",
+  title: "Terms",
   description:
     "The simple agreement between you and Warm Fuzzy Story Club when you create and order a personalized book.",
 };

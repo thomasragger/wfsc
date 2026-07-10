@@ -11,7 +11,7 @@ import { isCustomerAccountsConfigured } from "@/lib/shopify-customer";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Page not found — Warm Fuzzy Story Club",
+  title: "Page not found",
   description: "We couldn't find that page, but there are plenty of stories waiting.",
 };
 

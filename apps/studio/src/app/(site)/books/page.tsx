@@ -4,7 +4,7 @@ import { loadAllTemplates } from "@/lib/categories";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Our books — Warm Fuzzy Story Club",
+  title: "Our books",
   description: "Every story idea you can make into a personalized book.",
 };
 

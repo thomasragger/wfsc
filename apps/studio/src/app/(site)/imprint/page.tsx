@@ -2,7 +2,7 @@ import { Doodle } from "@/components/decor";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 export const metadata = {
-  title: "Impressum · Warm Fuzzy Story Club",
+  title: "Impressum",
   description: "Anbieterkennzeichnung nach § 5 DDG für Warm Fuzzy Story Club.",
 };
 

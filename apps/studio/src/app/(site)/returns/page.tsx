@@ -2,7 +2,7 @@ import { Doodle } from "@/components/decor";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 export const metadata = {
-  title: "Returns and withdrawal · Warm Fuzzy Story Club",
+  title: "Returns and withdrawal",
   description:
     "Your 14-day EU right of withdrawal, the exception for personalized books, and how we make things right if your book arrives damaged.",
 };

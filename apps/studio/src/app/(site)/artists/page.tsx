@@ -6,7 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Our styles — Warm Fuzzy Story Club",
+  title: "Our styles",
   description:
     "Explore the illustration styles your storybook can be drawn in, from soft watercolor to bold cut-paper. Every look is crafted, never a generic filter.",
 };

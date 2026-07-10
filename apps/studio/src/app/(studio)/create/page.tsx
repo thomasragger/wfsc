@@ -4,7 +4,7 @@ import { CreateWizard } from "@/components/create-wizard";
 import { SkeletonGrid } from "@/components/ui/skeleton";
 
 export const metadata = {
-  title: "Start your book — Warm Fuzzy Story Club",
+  title: "Start your book",
 };
 
 export default function CreatePage() {

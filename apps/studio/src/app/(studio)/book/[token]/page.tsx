@@ -6,7 +6,7 @@ import { fetchBookBundle, type BookBundle } from "@/lib/books";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Your book — Warm Fuzzy Story Club",
+  title: "Your book",
 };
 
 export default async function BookPage({

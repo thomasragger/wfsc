@@ -3,7 +3,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
 export const metadata = {
-  title: "Contact · Warm Fuzzy Story Club",
+  title: "Contact",
   description:
     "How to reach the humans at Warm Fuzzy Story Club: help with an order, a privacy request, or an artist collaboration.",
 };

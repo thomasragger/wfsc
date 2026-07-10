@@ -10,7 +10,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Your account — Warm Fuzzy Story Club" };
+export const metadata = { title: "Your account" };
 
 interface SavedBook {
   token: string;
