@@ -8,7 +8,6 @@ import { FONT_PAIRINGS, SCRIPT_FONT, fontStylesheetUrl } from "@wfsc/book-engine
 
 import { Sparkle } from "@/components/decor";
 import { ButtonLink } from "@/components/ui/button";
-import { CoverImage } from "@/components/ui/cover-image";
 import { IconChevronLeft, IconChevronRight } from "@/components/ui/icons";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -133,15 +132,36 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
 
   function renderPage(p: FlipPage) {
     if (p.kind === "cover") {
+      // The cover fills the canvas height so it reads at the same scale as
+      // every spread (it used to render as a small fixed-size tile).
       return (
-        <div className="flex h-full flex-col items-center justify-center gap-5 text-center">
-          <CoverImage src={book.coverImageUrl} alt={t("bookCoverAlt")} size="lg" priority />
-          {/* When the title is illustrated onto the cover, don't repeat it. */}
-          {book.coverHasTitle ? null : (
-            <h2 className="font-display text-2xl font-extrabold text-ink sm:text-3xl">
-              {book.title ?? t("defaultTitle")}
-            </h2>
-          )}
+        <div className="flex h-full items-center justify-center">
+          <div className="relative aspect-square h-full overflow-hidden rounded-xl bg-lavender shadow-polaroid ring-8 ring-white">
+            {book.coverImageUrl ? (
+              <ProgressiveImage
+                src={book.coverImageUrl}
+                alt={t("bookCoverAlt")}
+                priority
+                className="h-full w-full"
+                imgClassName="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-cream">
+                <Sparkle className="h-10 w-10 text-marigold" />
+              </div>
+            )}
+            {/* When the title is illustrated onto the cover, don't repeat it. */}
+            {book.coverHasTitle ? null : (
+              <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-ink/55 to-transparent px-[6%] pb-[10%] pt-[5%]">
+                <h2
+                  className="text-center text-[clamp(1.1rem,3.2vw,2rem)] font-extrabold leading-tight text-white drop-shadow-sm"
+                  style={displayFont}
+                >
+                  {book.title ?? t("defaultTitle")}
+                </h2>
+              </div>
+            )}
+          </div>
         </div>
       );
     }
