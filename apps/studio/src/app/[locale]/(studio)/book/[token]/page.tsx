@@ -1,4 +1,8 @@
+import { getTranslations } from "next-intl/server";
+
 import { BookHub } from "@/components/book-hub";
+import { IconArrowLeft } from "@/components/ui/icons";
+import { getCustomerRefreshToken, getCustomerToken } from "@/lib/customer-session";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { captureServer } from "@/lib/analytics";
@@ -79,5 +83,24 @@ export default async function BookPage({
     await captureServer("review_page_opened", bundle.book.id, { status });
   }
 
-  return <BookHub token={token} initial={bundle.payload} />;
+  // Signed-in customers get a way back to their account overview; email-link
+  // visitors without a session see no dead-end chrome.
+  const hasAccountSession = Boolean(
+    (await getCustomerToken()) ?? (await getCustomerRefreshToken()),
+  );
+  const t = await getTranslations("account");
+
+  return (
+    <>
+      {hasAccountSession ? (
+        <div className="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6">
+          <ButtonLink href="/account" variant="ghost" size="sm">
+            <IconArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+            {t("backToAccount")}
+          </ButtonLink>
+        </div>
+      ) : null}
+      <BookHub token={token} initial={bundle.payload} />
+    </>
+  );
 }

@@ -729,7 +729,8 @@
     "openBook": "Open book",
     "deleteBook": "Delete book",
     "deleteConfirm": "Delete this book and all its photos forever? This cannot be undone.",
-    "deleting": "Deleting…"
+    "deleting": "Deleting…",
+    "backToAccount": "Back to my account"
   },
   "cart": {
     "heading": "Your cart",

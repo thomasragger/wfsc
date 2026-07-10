@@ -733,7 +733,8 @@
     "openBook": "Buch öffnen",
     "deleteBook": "Buch löschen",
     "deleteConfirm": "Dieses Buch und alle Fotos für immer löschen? Das kann nicht rückgängig gemacht werden.",
-    "deleting": "Wird gelöscht…"
+    "deleting": "Wird gelöscht…",
+    "backToAccount": "Zurück zu meinem Konto"
   },
   "cart": {
     "heading": "Dein Warenkorb",
