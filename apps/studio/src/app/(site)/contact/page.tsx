@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 
 import { Doodle } from "@/components/decor";
@@ -17,6 +18,14 @@ export async function generateMetadata() {
  * lone mailto link: purpose-specific addresses, response times, and what to
  * include. Facts needing D1 (postal address) are marked with [LEGAL REVIEW].
  */
+// One mascot coin per contact channel (in card order), matching the tinted
+// mascot treatment on the home page.
+const CHANNEL_ART = [
+  { mascot: "/mascots/story.png", tint: "#efe9ff" },
+  { mascot: "/mascots/family.png", tint: "#fce9ef" },
+  { mascot: "/mascots/travel.png", tint: "#e6f3fb" },
+];
+
 function Review({ children }: { children: React.ReactNode }) {
   return (
     <mark className="rounded bg-marigold/40 px-1.5 py-0.5 font-bold text-ink">
@@ -52,13 +61,24 @@ export default async function ContactPage() {
       </header>
 
       <div className="mt-12 grid gap-5 sm:grid-cols-3">
-        {channels.map((c) => (
+        {channels.map((c, i) => {
+          const art = CHANNEL_ART[i % CHANNEL_ART.length];
+          return (
           <div
             key={c.title}
             className="flex flex-col rounded-3xl bg-white/70 p-6 shadow-fuzzy ring-1 ring-ink/5"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-lavender/70 text-xl">
-              {c.emoji}
+            <div
+              className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full ring-4 ring-white shadow-polaroid"
+              style={{ backgroundColor: art.tint }}
+            >
+              <Image
+                src={art.mascot}
+                alt=""
+                width={128}
+                height={128}
+                className="h-full w-full object-cover"
+              />
             </div>
             <h2 className="mt-4 font-display text-lg font-extrabold text-ink">{c.title}</h2>
             <p className="mt-2 flex-1 text-sm text-ink-soft">{c.body}</p>
@@ -69,7 +89,8 @@ export default async function ContactPage() {
               {c.email}
             </a>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <section className="mt-8 rounded-3xl bg-marigold/15 p-6 sm:p-8">

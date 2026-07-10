@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+
 import Image from "next/image";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
@@ -253,8 +255,19 @@ export default async function HomePage() {
               className="h-auto w-56 drop-shadow-sm sm:w-72"
             />
           </h1>
-          <p className="mt-10 max-w-xl font-display text-2xl font-extrabold leading-tight text-ink sm:mt-12 sm:text-3xl">
-            {t("heroTagline")}
+          {/* Keep each sentence intact so it never wraps mid-phrase; breaks fall
+              between sentences, so the last one drops to its own line on narrow
+              screens (and stays on one line when it fits). Locale-agnostic. */}
+          <p className="mt-10 max-w-xl text-balance font-display text-2xl font-extrabold leading-tight text-ink sm:mt-12 sm:text-3xl">
+            {t("heroTagline")
+              .split(". ")
+              .map((part, i, arr) => (i < arr.length - 1 ? `${part}.` : part))
+              .map((sentence, i) => (
+                <Fragment key={sentence}>
+                  {i > 0 ? " " : null}
+                  <span className="whitespace-nowrap">{sentence}</span>
+                </Fragment>
+              ))}
           </p>
           <p className="mt-3 max-w-md text-base text-ink-soft sm:text-lg">
             {t("heroSubtitle")}
