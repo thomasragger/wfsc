@@ -2,7 +2,9 @@ import type { MetadataRoute } from "next";
 
 import { supabaseAdmin } from "@/lib/supabase";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://warmfuzzystoryclub.com";
+import { siteUrl } from "@/lib/site-url";
+
+const SITE_URL = siteUrl();
 
 // Sitemap reads live catalog data; never cache a stale snapshot.
 export const dynamic = "force-dynamic";

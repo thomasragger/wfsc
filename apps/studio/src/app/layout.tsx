@@ -5,6 +5,7 @@ import { Baloo_2, Quicksand } from "next/font/google";
 import "./globals.css";
 
 import { ScallopDefs } from "@/components/decor";
+import { isLaunched, siteUrl } from "@/lib/site-url";
 import { PostHogProvider } from "@/components/posthog-provider";
 
 const baloo = Baloo_2({
@@ -19,17 +20,17 @@ const quicksand = Quicksand({
   weight: ["400", "500", "600", "700"],
 });
 
-/**
- * Production base URL for absolute metadata (canonical, OG, sitemap). Overridable
- * per environment via NEXT_PUBLIC_SITE_URL; falls back to the live domain.
- */
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://warmfuzzystoryclub.com";
+// Environment-driven origin + launch gate (see lib/site-url.ts): the real
+// domain when NEXT_PUBLIC_SITE_URL is set, the *.vercel.app staging origin
+// otherwise — in which case the whole site is noindexed until launch.
+const SITE_URL = siteUrl();
 
 const SITE_DESCRIPTION =
   "Turn a real family memory into a one-of-a-kind, beautifully illustrated children's book, starring the people you love. Free preview in minutes, a printed keepsake at your door.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  ...(isLaunched() ? {} : { robots: { index: false, follow: false } }),
   title: {
     default: "Warm Fuzzy Story Club: personalized children's books from your memories",
     template: "%s · Warm Fuzzy Story Club",
