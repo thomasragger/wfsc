@@ -47,13 +47,28 @@ export default function StudioLayout({
 
       <main className="flex flex-1 flex-col">{children}</main>
 
-      <footer className="border-t border-ink/5 py-4 text-center text-xs text-ink-soft">
-        <p>
-          Warm Fuzzy Story Club · your story stays private ·{" "}
-          <a href="https://www.warmfuzzystoryclub.com/pages/about" className="font-semibold hover:text-coral">
-            about us
-          </a>
-        </p>
+      <footer className="border-t border-ink/5 py-5 text-center text-xs text-ink-soft">
+        <p>Warm Fuzzy Story Club · your story stays private</p>
+        <nav className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 font-semibold">
+          <Link href="/about" className="hover:text-coral">
+            About
+          </Link>
+          <Link href="/contact" className="hover:text-coral">
+            Contact
+          </Link>
+          <Link href="/imprint" className="hover:text-coral">
+            Impressum
+          </Link>
+          <Link href="/privacy" className="hover:text-coral">
+            Privacy
+          </Link>
+          <Link href="/terms" className="hover:text-coral">
+            Terms
+          </Link>
+          <Link href="/returns" className="hover:text-coral">
+            Returns
+          </Link>
+        </nav>
       </footer>
     </>
   );

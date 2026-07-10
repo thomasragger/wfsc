@@ -972,9 +972,16 @@ function FinishStep({
       </Field>
 
       <p className="rounded-2xl bg-lavender/60 p-4 text-xs leading-relaxed text-ink-soft">
-        By continuing you agree that we may use the story and photos you provided to create your book
-        preview. We only use your email for your preview link and order updates — no newsletters, no
-        sharing with anyone else.
+        By continuing you agree that we may use the story and photos you provided to create your book,
+        including processing them with trusted third-party AI partners (such as Anthropic and
+        Replicate) to write the story and generate the illustrations. Your source photos are deleted
+        30 days after your book is delivered, and your memory text is kept only while your book
+        exists. We use your email only for your preview link and order updates, never for newsletters
+        or sharing. See our{" "}
+        <a href="/privacy" className="font-semibold text-ink underline hover:text-coral">
+          privacy policy
+        </a>
+        .
       </p>
     </section>
   );

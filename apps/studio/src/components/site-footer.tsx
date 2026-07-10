@@ -18,7 +18,7 @@ export async function SiteFooter({
     <footer className="relative mt-20 overflow-hidden border-t border-ink/5 bg-white/50 backdrop-blur-sm">
       <Doodle src="cloud.png" size={44} className="animate-float absolute right-[8%] top-4 opacity-70" />
       <Doodle src="flower.png" size={26} className="animate-drift absolute bottom-6 left-[6%] opacity-70" />
-      <div className="mx-auto grid w-full max-w-6xl gap-8 px-6 py-12 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto grid w-full max-w-6xl gap-8 px-6 py-12 sm:grid-cols-2 lg:grid-cols-5">
         <div>
           <div className="flex items-center gap-2.5">
             <Image src="/logo.png" alt="" width={30} height={36} />
@@ -49,6 +49,16 @@ export async function SiteFooter({
               {c.name}
             </FooterLink>
           ))}
+        </FooterCol>
+
+        {/* Legal + trust column (O1). Plain literals for now; O7 can extract. */}
+        <FooterCol title="Legal">
+          <FooterLink href="/about">About us</FooterLink>
+          <FooterLink href="/contact">Contact</FooterLink>
+          <FooterLink href="/imprint">Impressum</FooterLink>
+          <FooterLink href="/privacy">Privacy</FooterLink>
+          <FooterLink href="/terms">Terms</FooterLink>
+          <FooterLink href="/returns">Returns and withdrawal</FooterLink>
         </FooterCol>
       </div>
     </footer>
