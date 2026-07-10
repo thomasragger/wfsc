@@ -101,6 +101,17 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
     return () => clearTimeout(t);
   }, [leaving]);
 
+  // Fullscreen overlay reading mode: same viewer, near-viewport size.
+  const [fullscreen, setFullscreen] = useState(false);
+  useEffect(() => {
+    if (!fullscreen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [fullscreen]);
+
   // Swipe navigation (pointer-based, works for touch and mouse).
   const swipe = useRef<{ x: number; y: number } | null>(null);
   function onPointerDown(e: React.PointerEvent) {
@@ -207,7 +218,11 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
 
   return (
     <div
-      className="flex flex-col items-center gap-4"
+      className={
+        fullscreen
+          ? "fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-ink/90 p-4 backdrop-blur-sm sm:p-8"
+          : "flex flex-col items-center gap-4"
+      }
       tabIndex={0}
       role="group"
       aria-label={t("bookPreview")}
@@ -215,12 +230,41 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
       onKeyDown={(e) => {
         if (e.key === "ArrowLeft" && clamped > 0) onIndexChange(clamped - 1);
         if (e.key === "ArrowRight" && clamped < pages.length - 1) onIndexChange(clamped + 1);
+        if (e.key === "Escape") setFullscreen(false);
+      }}
+      onClick={(e) => {
+        // Backdrop click closes the overlay (clicks on the book don't bubble here
+        // with a matching target).
+        if (fullscreen && e.target === e.currentTarget) setFullscreen(false);
       }}
     >
       {/* React hoists this to <head>; loads the pairing's Google fonts. */}
       <link rel="stylesheet" href={fontStylesheetUrl(pairing)} />
 
-      <div className="relative w-full max-w-3xl">
+      {/* Width is viewport-height-aware: a 2:1 spread at min(78rem, 150vh)
+          never exceeds ~75vh tall, so wide screens get a genuinely big book
+          without pushing the pager off-screen. */}
+      <div
+        className={`relative w-full ${
+          fullscreen ? "max-w-[min(96vw,170vh)]" : "max-w-[min(78rem,150vh)]"
+        }`}
+      >
+        <button
+          type="button"
+          aria-label={fullscreen ? t("closeFullscreen") : t("viewLarger")}
+          onClick={() => setFullscreen((f) => !f)}
+          className="absolute -top-4 right-0 z-20 flex h-9 w-9 -translate-y-full items-center justify-center rounded-full bg-white text-ink shadow-fuzzy transition hover:bg-marigold"
+        >
+          {fullscreen ? (
+            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M5 5l10 10M15 5L5 15" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 3h5v5M8 17H3v-5M17 3l-6 6M3 17l6-6" />
+            </svg>
+          )}
+        </button>
         <div
           className="relative aspect-2/1 touch-pan-y select-none"
           onPointerDown={onPointerDown}
@@ -268,7 +312,9 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
 
       {/* Dot nav */}
       <div className="flex items-center gap-3">
-        <p className="text-xs font-semibold text-ink-soft">{pageLabel(pages[clamped], t)}</p>
+        <p className={`text-xs font-semibold ${fullscreen ? "text-cream/80" : "text-ink-soft"}`}>
+          {pageLabel(pages[clamped], t)}
+        </p>
         <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label={t("pages")}>
           {pages.map((p, i) => (
             <button
@@ -279,7 +325,11 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
               aria-label={pageLabel(p, t)}
               onClick={() => onIndexChange(i)}
               className={`h-2.5 rounded-full transition-all ${
-                i === clamped ? "w-6 bg-coral" : "w-2.5 bg-ink/15 hover:bg-ink/30"
+                i === clamped
+                  ? "w-6 bg-coral"
+                  : fullscreen
+                    ? "w-2.5 bg-white/30 hover:bg-white/50"
+                    : "w-2.5 bg-ink/15 hover:bg-ink/30"
               }`}
             />
           ))}

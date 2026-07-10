@@ -187,7 +187,9 @@
     "pages": "Seiten",
     "morePagesWaiting": "Noch {count} Seiten warten auf dich",
     "unlockBody": "Schalte dein ganzes Buch frei und wir illustrieren jede Seite deiner Geschichte.",
-    "unlockCta": "Ganzes Buch freischalten"
+    "unlockCta": "Ganzes Buch freischalten",
+    "viewLarger": "Größer ansehen",
+    "closeFullscreen": "Vollbild schließen"
   },
   "studioChrome": {
     "homeAria": "Warm Fuzzy Story Club Startseite",

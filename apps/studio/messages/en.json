@@ -186,7 +186,9 @@
     "pages": "Pages",
     "morePagesWaiting": "{count} more pages are waiting",
     "unlockBody": "Unlock your full book and we'll illustrate every page of your story.",
-    "unlockCta": "Unlock your full book"
+    "unlockCta": "Unlock your full book",
+    "viewLarger": "View larger",
+    "closeFullscreen": "Close fullscreen"
   },
   "studioChrome": {
     "homeAria": "Warm Fuzzy Story Club home",
