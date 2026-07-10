@@ -22,6 +22,7 @@ export interface BookRow {
   template_id: string | null;
   style_id: string | null;
   format: BookFormat | null;
+  locale: string | null;
   font_pairing: string;
   greeting: string | null;
   greeting_from: string | null;
@@ -65,7 +66,7 @@ export interface BookBundle {
 }
 
 const BOOK_COLUMNS =
-  "id, access_token, email, status, title, memory_text, template_id, style_id, format, font_pairing, greeting, greeting_from, cover_has_title, page_count, cover_image_url, approved_at, created_at";
+  "id, access_token, email, status, title, memory_text, template_id, style_id, format, locale, font_pairing, greeting, greeting_from, cover_has_title, page_count, cover_image_url, approved_at, created_at";
 
 /**
  * Load a book (with people, spreads, style) by its access token.

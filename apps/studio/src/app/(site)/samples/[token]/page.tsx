@@ -33,7 +33,8 @@ export async function generateMetadata({
       description,
       type: "article",
       url: `/samples/${token}`,
-      ...(payload.coverImageUrl ? { images: [payload.coverImageUrl] } : {}),
+      // No explicit images: the route's opengraph-image.tsx renders the
+      // generative card (cover + title + messaging), which must win here.
     },
   };
 }

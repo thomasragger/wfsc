@@ -6,9 +6,31 @@ import { fetchBookBundle, type BookBundle } from "@/lib/books";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Your book",
-};
+/**
+ * Private page (capability URL): personalized title/OG for the share preview
+ * when customers send their link to family, but explicitly noindex so a
+ * shared link never lands the book in a search index (robots.txt disallow
+ * alone doesn't prevent indexing of externally-linked URLs).
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}) {
+  const { token } = await params;
+  const bundle = await fetchBookBundle(token).catch(() => null);
+  const de = bundle?.book.locale === "de";
+  const title = bundle?.payload.title ?? "Your book";
+  const description = de
+    ? "Ein einzigartiges Bilderbuch aus einer echten Familienerinnerung."
+    : "A one-of-a-kind picture book made from a real family memory.";
+  return {
+    title,
+    description,
+    robots: { index: false, follow: false },
+    openGraph: { title, description, type: "book" },
+  };
+}
 
 export default async function BookPage({
   params,

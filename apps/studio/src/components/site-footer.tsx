@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { Doodle } from "@/components/decor";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import type { AudienceCategory, OccasionCategory } from "@/lib/categories";
 
 /** Marketing footer — internal links + a peek at the category axes. */
@@ -13,7 +14,7 @@ export async function SiteFooter({
   audience: AudienceCategory[];
   occasions: OccasionCategory[];
 }) {
-  const t = await getTranslations("footer");
+  const [t, locale] = await Promise.all([getTranslations("footer"), getLocale()]);
   return (
     <footer className="relative mt-20 overflow-hidden border-t border-ink/5 bg-white/50 backdrop-blur-sm">
       <Doodle src="cloud.png" size={44} className="animate-float absolute right-[8%] top-4 opacity-70" />
@@ -25,6 +26,9 @@ export async function SiteFooter({
             <p className="font-display font-extrabold text-ink">Warm Fuzzy Story Club</p>
           </div>
           <p className="mt-3 text-sm text-ink-soft">{t("tagline")}</p>
+          <div className="mt-4">
+            <LanguageSwitcher current={locale} />
+          </div>
         </div>
 
         <FooterCol title={t("explore")}>
