@@ -1,0 +1,26 @@
+{
+  "_readme": "German catalog — filled in by workstream O7. Keys missing or empty here fall back to English per-key (see src/i18n/request.ts). Voice: warm, du-Form, plain-spoken; see the English source for tone.",
+  "footer": {
+    "tagline": "Aus Erinnerungen wird Kunst fürs Leben.",
+    "explore": "Entdecken",
+    "writeYourStory": "Erzähl deine Geschichte",
+    "ourBooks": "Unsere Bücher",
+    "placesYouLove": "Orte, die ihr liebt",
+    "sampleBooks": "Beispielbücher",
+    "ourArtists": "Unsere Künstler:innen",
+    "whoItsFor": "Für wen?",
+    "occasions": "Anlässe"
+  },
+  "samples": {
+    "metaTitle": "Beispielbücher — Warm Fuzzy Story Club",
+    "metaDescription": "Blättere fertige Beispielbücher durch, Seite für Seite.",
+    "eyebrow": "Echte Bücher, von vorn bis hinten",
+    "heading": "Blättere durch ein Beispielbuch.",
+    "intro": "Jedes Buch hier ist genauso entstanden, wie deins entstehen wird — aus einer Familienerinnerung, ein paar Fotos und ganz viel Herzenswärme.",
+    "emptyTitle": "Die ersten Beispielbücher sind noch in der Druckerei.",
+    "emptyBody": "Schau bald wieder vorbei — oder überspring die Warteschlange und mach ein Buch mit deiner eigenen Familie in der Hauptrolle.",
+    "emptyCta": "Erzähl deine Geschichte",
+    "closingTitle": "Bereit, deine eigene Familie in so einem Buch zu sehen?",
+    "closingCta": "Jetzt selbst gestalten"
+  }
+}

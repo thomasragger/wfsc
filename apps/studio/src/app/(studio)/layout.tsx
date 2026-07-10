@@ -16,30 +16,31 @@ export default function StudioLayout({
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-ink/5 bg-cream/85 backdrop-blur-md">
-        <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4 sm:px-6">
           <Link
             href="/"
             className="flex w-fit items-center gap-2.5"
             aria-label="Warm Fuzzy Story Club home"
           >
             <Image
-              src="/logo.png"
-              alt=""
-              width={32}
-              height={38}
+              src="/logo-landscape.png"
+              alt="Warm Fuzzy Story Club"
+              width={1216}
+              height={527}
               priority
-              className="transition-transform duration-300 hover:-rotate-6"
+              className="h-7 w-auto transition-transform duration-300 hover:-rotate-2 sm:h-8"
             />
-            <span className="hidden font-display text-sm font-extrabold text-ink sm:block">
+            <span className="hidden rounded-full bg-lavender/60 px-2.5 py-1 font-display text-xs font-extrabold text-ink sm:block">
               Story Studio
             </span>
           </Link>
           <Link
             href="/"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-ink-soft transition-colors hover:text-coral"
+            className="inline-flex items-center gap-1.5 rounded-full border border-ink/15 bg-white/70 px-4 py-2 text-xs font-bold text-ink shadow-sm transition hover:bg-white hover:shadow"
           >
-            <IconArrowLeft className="h-3 w-3" />
-            back to warmfuzzystoryclub.com
+            <IconArrowLeft className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Back to site</span>
+            <span className="sm:hidden">Back</span>
           </Link>
         </div>
       </header>

@@ -1,0 +1,14 @@
+{
+  "memoryText": "Sofia is five, and one cold bright morning she and Mum went out on a little boat to look for whales. They wore big jackets and rubber boots, and the boat smelled of salt and adventure. The engine hummed and the shore got smaller and smaller until it was just a line. Sofia scanned the horizon and kept asking where the whale was. A big splash turned out to be only a cheeky seagull, so they waited quietly together with cups of hot chocolate warming their hands. Then a spout of water shot up like a fountain, and the whale rose beside the boat, enormous and gentle and impossible. Right before it dived, it lifted its huge tail and waved, as if saying hello just to them. Back on land, Sofia's heart stayed out on the water.",
+  "people": [
+    { "name": "Sofia", "role": "child", "appearance": "a 5-year-old girl with straight black hair in a high ponytail, light tan skin, dark eyes, wearing a bright yellow raincoat and a red knitted beanie" },
+    { "name": "Mum", "role": "mama", "appearance": "a woman in her late 30s with dark hair tucked under a navy wool hat, olive skin, wearing a chunky teal windbreaker" }
+  ],
+  "styleId": "riso-print",
+  "styleReferencePaths": ["../style-refs/riso-print/sea.png", "../style-refs/riso-print/park.png"],
+  "spreadCount": 12,
+  "targetAge": 5,
+  "greeting": "For Sofia, who waited so patiently on the big blue for a giant to say hello.",
+  "greetingFrom": "Mum",
+  "fontPairing": "storybook"
+}

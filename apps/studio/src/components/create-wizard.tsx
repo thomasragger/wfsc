@@ -98,6 +98,7 @@ export function CreateWizard() {
   const [memoryText, setMemoryText] = useState("");
   const [title, setTitle] = useState("");
   const [greeting, setGreeting] = useState("");
+  const [greetingFrom, setGreetingFrom] = useState("");
   const [targetAge, setTargetAge] = useState<number | null>(null);
   const [template, setTemplate] = useState<TemplateSummary | null>(null);
   const [templateFailed, setTemplateFailed] = useState(false);
@@ -237,6 +238,7 @@ export function CreateWizard() {
         memoryText: memoryText.trim(),
         title: title.trim() || undefined,
         greeting: greeting.trim() || undefined,
+        greetingFrom: greetingFrom.trim() || undefined,
         templateId: template?.id,
         styleId,
         email: email.trim(),
@@ -387,6 +389,8 @@ export function CreateWizard() {
                 onTitleChange={setTitle}
                 greeting={greeting}
                 onGreetingChange={setGreeting}
+                greetingFrom={greetingFrom}
+                onGreetingFromChange={setGreetingFrom}
                 email={email}
                 onEmailChange={setEmail}
               />
@@ -891,6 +895,8 @@ function FinishStep({
   onTitleChange,
   greeting,
   onGreetingChange,
+  greetingFrom,
+  onGreetingFromChange,
   email,
   onEmailChange,
 }: {
@@ -899,6 +905,8 @@ function FinishStep({
   onTitleChange: (v: string) => void;
   greeting: string;
   onGreetingChange: (v: string) => void;
+  greetingFrom: string;
+  onGreetingFromChange: (v: string) => void;
   email: string;
   onEmailChange: (v: string) => void;
 }) {
@@ -930,10 +938,25 @@ function FinishStep({
         <TextArea
           id="greeting"
           className="min-h-24 leading-relaxed"
-          placeholder="For Mia, who makes every ordinary day an adventure. Love, Mum & Dad xx"
+          placeholder="For Mia, who makes every ordinary day an adventure."
           value={greeting}
           onChange={(e) => onGreetingChange(e.target.value)}
           maxLength={600}
+        />
+      </Field>
+
+      <Field
+        label="Signed, from"
+        htmlFor="greeting-from"
+        optional
+        hint="Shown under the note, e.g. “Love, Mum & Dad”."
+      >
+        <TextInput
+          id="greeting-from"
+          placeholder="Mum & Dad"
+          value={greetingFrom}
+          onChange={(e) => onGreetingFromChange(e.target.value)}
+          maxLength={80}
         />
       </Field>
 

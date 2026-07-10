@@ -33,6 +33,12 @@ const POLLING_STATUSES: BookStatus[] = ["preview_generating", "purchased", "gene
 
 const FORMATS: { id: BookFormat; name: string; price: string; blurb: string }[] = [
   {
+    id: "board",
+    name: "Board book",
+    price: "€39",
+    blurb: "Chunky, drop-proof pages — made for ages 2 to 4.",
+  },
+  {
     id: "softcover",
     name: "Softcover",
     price: "€49",
@@ -117,9 +123,9 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
     const dedication = book.greeting ?? greetingSpread?.text ?? null;
     return [
       { kind: "title", title: book.title ?? "Your storybook", styleName: book.style?.name ?? null },
-      ...(dedication ? [{ kind: "dedication" as const, text: dedication }] : []),
+      ...(dedication ? [{ kind: "dedication" as const, text: dedication, from: book.greetingFrom }] : []),
     ];
-  }, [book.greeting, book.title, book.style, book.spreads]);
+  }, [book.greeting, book.greetingFrom, book.title, book.style, book.spreads]);
 
   const isPreview = book.status === "preview_ready";
 
@@ -307,6 +313,22 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
           book={book}
           title="Your whole book is being illustrated"
           body="Thank you for your order! Every page of your story is now being written and painted. We'll email you the moment it's ready for your review."
+        />
+      </Shell>
+    );
+  }
+
+  if (book.status === "generation_failed" || book.status === "print_failed") {
+    return (
+      <Shell error={error}>
+        <EmptyState
+          doodle="cloud.png"
+          title="We hit a snag — and we're on it"
+          body={
+            book.status === "generation_failed"
+              ? "Something went wrong while illustrating your book. Our team has been notified and is already looking into it — your story, photos and order are safe, and we'll email you the moment it's ready. No action needed."
+              : "Something went wrong while sending your book to the printer. Our team has been notified and is on it — we'll email you as soon as it's on its way. No action needed."
+          }
         />
       </Shell>
     );

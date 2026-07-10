@@ -22,7 +22,7 @@ export async function GET() {
 
 const AddSchema = z.object({
   token: z.string().min(1),
-  format: z.enum(["softcover", "hardcover"]),
+  format: z.enum(["board", "softcover", "hardcover"]),
 });
 
 /** POST /api/cart — add a finished book (by preview token) to the cart. */

@@ -30,7 +30,7 @@ import { generateStory } from '../story';
 import { BUILTIN_STYLES } from '../styles';
 import type { CharacterSheet, Story, StyleDef } from '../types';
 
-const MAX_RETRIES_PER_SPREAD = 2;
+const MAX_RETRIES_PER_SPREAD = Number(process.env.WFSC_MAX_RETRIES ?? 3);
 /** Low-credit Replicate accounts allow a burst of only 5 prediction creates. */
 const SPREAD_CONCURRENCY = Number(process.env.WFSC_SPREAD_CONCURRENCY ?? 3);
 
@@ -91,6 +91,8 @@ interface CliConfig {
   styleReferencePaths?: string[];
   spreadCount?: number;
   greeting?: string;
+  greetingFrom?: string;
+  targetAge?: number;
   fontPairing?: BookData['fontPairing'];
 }
 
@@ -127,6 +129,7 @@ async function main() {
       memoryText: config.memoryText,
       people: config.people.map((p) => ({ name: p.name, role: p.role, photoUrls: [] })),
       spreadCount: config.spreadCount,
+      targetAge: config.targetAge,
     });
     await writeFile(storyPath, JSON.stringify(story, null, 2));
     console.log(`  "${story.title}" — ${story.spreads.length} spreads`);
@@ -176,7 +179,7 @@ async function main() {
           style,
         });
         lastUrl = imageUrl;
-        const verdict = await judgeSpreadSafe(imageUrl, characters, style.stylePrompt);
+        const verdict = await judgeSpreadSafe(imageUrl, characters, style.stylePrompt, undefined, job.prompt);
         console.log(
           `  ${job.isCover ? 'cover' : `spread ${job.index}`}: score ${verdict.score}${verdict.pass ? ' ✓' : ` ✗ (${verdict.notes})`}`,
         );
@@ -188,9 +191,12 @@ async function main() {
   });
 
   // 4. Upscale + download --------------------------------------------------------
-  console.log('▸ Upscaling to print resolution…');
+  // Samples skip the (slow) print upscale — web display uses working-res and
+  // the app pipeline upscales for print separately (task: sample PDFs).
+  const skipUpscale = Boolean(process.env.WFSC_SKIP_UPSCALE);
+  console.log(skipUpscale ? '▸ Downloading working-res (skip upscale)…' : '▸ Upscaling to print resolution…');
   const upscaled = await mapWithConcurrency(results, SPREAD_CONCURRENCY, async (r) => {
-      const { imageUrl } = await upscaleImage(r.imageUrl);
+      const { imageUrl } = skipUpscale ? { imageUrl: r.imageUrl } : await upscaleImage(r.imageUrl);
       const file = join(outDir, 'spreads', r.isCover ? 'cover.png' : `spread-${String(r.index).padStart(2, '0')}.png`);
       await download(imageUrl, file);
       return { ...r, printImageUrl: imageUrl, localPath: file };
@@ -215,6 +221,7 @@ async function main() {
     id: 'cli',
     title: story.title,
     greeting: config.greeting ?? null,
+    greetingFrom: config.greetingFrom ?? null,
     fontPairing: config.fontPairing ?? 'storybook',
     styleId: config.styleId,
     spreads,
@@ -223,18 +230,27 @@ async function main() {
     peopleNames: config.people.map((p) => p.name),
   };
 
-  const puppeteer = await import('puppeteer-core');
-  const executablePath =
-    process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-  const browser = await puppeteer.launch({ executablePath, headless: true });
-  try {
-    const pdfBytes = await renderInteriorPdf(browser, book);
-    await writeFile(join(outDir, 'book-interior.pdf'), pdfBytes);
-  } finally {
-    await browser.close();
+  // The puppeteer/Chrome PDF render is the heaviest step; skip it for bulk
+  // sample generation (print PDFs are produced separately by the app pipeline).
+  if (process.env.WFSC_SKIP_PDF) {
+    console.log('▸ Skipping local PDF render (WFSC_SKIP_PDF set)');
+  } else {
+    const puppeteer = await import('puppeteer-core');
+    const executablePath =
+      process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+    const browser = await puppeteer.launch({ executablePath, headless: true });
+    try {
+      const pdfBytes = await renderInteriorPdf(browser, book);
+      await writeFile(join(outDir, 'book-interior.pdf'), pdfBytes);
+    } finally {
+      await browser.close();
+    }
   }
 
-  await writeFile(join(outDir, 'book.json'), JSON.stringify(book, null, 2));
+  await writeFile(
+    join(outDir, 'book.json'),
+    JSON.stringify({ ...book, greetingFrom: config.greetingFrom ?? null }, null, 2),
+  );
   console.log(`✓ Done → ${outDir}`);
 }
 

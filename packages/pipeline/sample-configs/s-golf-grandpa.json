@@ -1,0 +1,14 @@
+{
+  "memoryText": "Theo is five, and on Saturday he went to the golf course with Grandpa to play a Very Important Game. Theo wore tiny golf shoes and carried a club almost as tall as he was. The green stretched out like a huge world, and Grandpa taught him a very serious first swing. The ball went somewhere extremely silly, into a bush, which made them both laugh. They took a break in the golf cart for snacks and secrets, then Grandpa helped Theo line up the big putt. The ball rolled, and rolled, and dropped into the hole with a satisfying plop, and they did a victory dance right there on the green. As the sun got low they packed up together. Grandpa said trophies are nice, but days like this are the real prize.",
+  "people": [
+    { "name": "Theo", "role": "child", "appearance": "a 5-year-old boy with sandy blond hair, fair skin, freckles across his nose, wearing a little argyle vest, a white polo, and a green flat cap" },
+    { "name": "Grandpa", "role": "grandpa", "appearance": "a man in his late 60s with silver hair and a neat white moustache, fair skin, wearing a mustard-yellow cardigan and a matching flat cap" }
+  ],
+  "styleId": "flat-vector",
+  "styleReferencePaths": ["../style-refs/flat-vector/park.png", "../style-refs/flat-vector/cozy.png"],
+  "spreadCount": 12,
+  "targetAge": 5,
+  "greeting": "For Theo, my favourite teammate on the greatest green in the whole wide world.",
+  "greetingFrom": "Grandpa",
+  "fontPairing": "storybook"
+}

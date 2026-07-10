@@ -42,7 +42,11 @@ for (const row of existing ?? []) {
   console.log(`- replaced existing sample ${row.id}`);
 }
 
-const coverUrl = await upload(join(dir, 'spreads', 'cover.png'), `samples/${slug}/cover.png`);
+// Unique storage prefix per book. Category slug alone collides when a category
+// has more than one sample (a later import would overwrite an earlier one's
+// images), so key on the unique template id, falling back to the slug.
+const storageKey = templateId ?? slug;
+const coverUrl = await upload(join(dir, 'spreads', 'cover.png'), `samples/${storageKey}/cover.png`);
 
 const { data: created, error: bookErr } = await db
   .from('books')
@@ -51,6 +55,7 @@ const { data: created, error: bookErr } = await db
     status: 'approved',
     title: book.title,
     greeting: book.greeting,
+    greeting_from: book.greetingFrom ?? null,
     style_id: book.styleId,
     template_id: templateId ?? null,
     font_pairing: book.fontPairing ?? 'storybook',
@@ -65,7 +70,7 @@ const spreadFiles = (await readdir(join(dir, 'spreads'))).filter((f) => f.starts
 for (const spread of book.spreads) {
   const file = spreadFiles.find((f) => f === `spread-${String(spread.position).padStart(2, '0')}.png`);
   const imageUrl = file
-    ? await upload(join(dir, 'spreads', file), `samples/${slug}/${file}`)
+    ? await upload(join(dir, 'spreads', file), `samples/${storageKey}/${file}`)
     : null;
   const { error } = await db.from('book_spreads').insert({
     book_id: created.id,

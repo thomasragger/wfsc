@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { FONT_PAIRINGS, fontStylesheetUrl } from "@wfsc/book-engine";
+import { FONT_PAIRINGS, SCRIPT_FONT, fontStylesheetUrl } from "@wfsc/book-engine";
 
 import { Sparkle } from "@/components/decor";
 import { ButtonLink } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import type { BookPayload, SpreadPayload } from "@/lib/book-payload";
 export type FlipPage =
   | { kind: "cover" }
   | { kind: "title"; title: string; styleName?: string | null }
-  | { kind: "dedication"; text: string }
+  | { kind: "dedication"; text: string; from?: string | null }
   | { kind: "spread"; spread: SpreadPayload }
   | { kind: "locked"; morePages: number; variant: number };
 
@@ -51,6 +51,12 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
   const bodyFont = {
     fontFamily: `'${pairing.body.family}', sans-serif`,
     fontWeight: pairing.body.weight,
+  };
+  // The personalized dedication (Widmung) is always set in the handwritten
+  // script face, like a note penned inside a gift.
+  const scriptFont = {
+    fontFamily: `'${SCRIPT_FONT.family}', cursive`,
+    fontWeight: SCRIPT_FONT.weight,
   };
 
   const clamped = Math.min(index, pages.length - 1);
@@ -95,29 +101,40 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
       return (
         <div className="flex h-full flex-col items-center justify-center gap-5 text-center">
           <CoverImage src={book.coverImageUrl} alt="Book cover" size="lg" priority />
-          <h2 className="font-display text-2xl font-extrabold text-ink sm:text-3xl">
-            {book.title ?? "Your storybook"}
-          </h2>
+          {/* When the title is illustrated onto the cover, don't repeat it. */}
+          {book.coverHasTitle ? null : (
+            <h2 className="font-display text-2xl font-extrabold text-ink sm:text-3xl">
+              {book.title ?? "Your storybook"}
+            </h2>
+          )}
         </div>
       );
     }
     if (p.kind === "title") {
       return (
         <PageFrame>
-          <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-cream px-[8%] text-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Warm Fuzzy Story Club" className="h-16 w-auto sm:h-20" />
-            <h2 className="font-display text-[clamp(1.2rem,3vw,2rem)] font-extrabold leading-tight text-ink" style={displayFont}>
-              {p.title}
-            </h2>
-            {p.styleName ? (
-              <p className="text-[clamp(0.7rem,1.6vw,0.9rem)] text-ink-soft">
-                Illustrated in the {p.styleName} style
+          <div className="grid h-full grid-cols-2">
+            {/* verso: publisher imprint */}
+            <div className="flex flex-col items-center justify-between bg-cream px-[12%] py-[14%] text-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="Warm Fuzzy Story Club" className="h-9 w-auto opacity-90 sm:h-11" />
+              <span className="font-display text-lg text-marigold" aria-hidden="true">❦</span>
+              <p className="text-[clamp(0.5rem,1.2vw,0.68rem)] font-semibold uppercase tracking-[0.18em] text-ink/40">
+                A Warm Fuzzy Story Club book
               </p>
-            ) : null}
-            <p className="mt-2 text-[clamp(0.6rem,1.4vw,0.8rem)] font-semibold uppercase tracking-[0.15em] text-ink/40">
-              A Warm Fuzzy Story Club book
-            </p>
+            </div>
+            {/* recto: title */}
+            <div className="flex flex-col items-center justify-center gap-3 bg-cream px-[10%] text-center">
+              <h2 className="font-display text-[clamp(1.3rem,3.4vw,2.4rem)] font-extrabold leading-tight text-ink" style={displayFont}>
+                {p.title}
+              </h2>
+              {p.styleName ? (
+                <p className="text-[clamp(0.62rem,1.5vw,0.85rem)] italic text-ink-soft" style={bodyFont}>
+                  Illustrated in the {p.styleName} style
+                </p>
+              ) : null}
+              <Sparkle className="mt-1 text-marigold" size={18} />
+            </div>
           </div>
         </PageFrame>
       );
@@ -125,15 +142,34 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
     if (p.kind === "dedication") {
       return (
         <PageFrame>
-          <div className="flex h-full w-full items-center justify-center bg-cream p-[9%] text-center" style={bodyFont}>
-            <div>
-              <Sparkle className="mx-auto mb-4 text-marigold" size={20} />
-              <p className="whitespace-pre-line text-[clamp(0.95rem,2.6vw,1.4rem)] italic leading-relaxed text-ink">
+          <div className="grid h-full grid-cols-2">
+            {/* verso: quiet decorative page */}
+            <div className="flex items-center justify-center bg-cream">
+              <div className="flex flex-col items-center gap-2 text-marigold/70" aria-hidden="true">
+                <Sparkle size={16} />
+                <span className="font-display text-2xl">❦</span>
+                <Sparkle size={12} />
+              </div>
+            </div>
+            {/* recto: dedication + who it's from */}
+            <div className="flex flex-col items-center justify-center bg-cream px-[11%] text-center" style={bodyFont}>
+              <p className="text-[clamp(0.55rem,1.3vw,0.72rem)] font-semibold uppercase tracking-[0.2em] text-ink/35">
+                Dedication
+              </p>
+              <p
+                className="mt-4 whitespace-pre-line text-[clamp(1.15rem,3.2vw,1.8rem)] leading-snug text-ink"
+                style={scriptFont}
+              >
                 {p.text}
               </p>
-              <p className="mt-5 font-display text-base text-ink-soft" style={displayFont} aria-hidden="true">
-                ❦
-              </p>
+              {p.from ? (
+                <p
+                  className="mt-4 text-[clamp(1.05rem,2.8vw,1.5rem)] text-ink-soft"
+                  style={scriptFont}
+                >
+                  Love, {p.from}
+                </p>
+              ) : null}
             </div>
           </div>
         </PageFrame>

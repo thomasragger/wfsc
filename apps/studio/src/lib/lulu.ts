@@ -144,3 +144,14 @@ export async function createPrintJob(opts: {
 export async function getPrintJob(id: number): Promise<LuluPrintJob> {
   return api<LuluPrintJob>(`/print-jobs/${id}/`);
 }
+
+/**
+ * Cancel a print job (only possible before it enters production — Lulu
+ * rejects later cancellations; callers must alert ops on failure).
+ */
+export async function cancelPrintJob(id: number): Promise<void> {
+  await api(`/print-jobs/${id}/status/`, {
+    method: 'PUT',
+    body: JSON.stringify({ name: 'CANCELED' }),
+  });
+}

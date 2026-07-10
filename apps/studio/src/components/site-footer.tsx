@@ -1,17 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { Doodle } from "@/components/decor";
 import type { AudienceCategory, OccasionCategory } from "@/lib/categories";
 
 /** Marketing footer — internal links + a peek at the category axes. */
-export function SiteFooter({
+export async function SiteFooter({
   audience,
   occasions,
 }: {
   audience: AudienceCategory[];
   occasions: OccasionCategory[];
 }) {
+  const t = await getTranslations("footer");
   return (
     <footer className="relative mt-20 overflow-hidden border-t border-ink/5 bg-white/50 backdrop-blur-sm">
       <Doodle src="cloud.png" size={44} className="animate-float absolute right-[8%] top-4 opacity-70" />
@@ -22,16 +24,18 @@ export function SiteFooter({
             <Image src="/logo.png" alt="" width={30} height={36} />
             <p className="font-display font-extrabold text-ink">Warm Fuzzy Story Club</p>
           </div>
-          <p className="mt-3 text-sm text-ink-soft">Turning memories into art for a lifetime.</p>
+          <p className="mt-3 text-sm text-ink-soft">{t("tagline")}</p>
         </div>
 
-        <FooterCol title="Explore">
-          <FooterLink href="/create">Write your story</FooterLink>
-          <FooterLink href="/books">Our books</FooterLink>
-          <FooterLink href="/samples">Sample books</FooterLink>
+        <FooterCol title={t("explore")}>
+          <FooterLink href="/create">{t("writeYourStory")}</FooterLink>
+          <FooterLink href="/books">{t("ourBooks")}</FooterLink>
+          <FooterLink href="/for/places">{t("placesYouLove")}</FooterLink>
+          <FooterLink href="/samples">{t("sampleBooks")}</FooterLink>
+          <FooterLink href="/artists">{t("ourArtists")}</FooterLink>
         </FooterCol>
 
-        <FooterCol title="Who it's for">
+        <FooterCol title={t("whoItsFor")}>
           {audience.slice(0, 6).map((c) => (
             <FooterLink key={c.id} href={`/for/${c.id}`}>
               {c.name}
@@ -39,7 +43,7 @@ export function SiteFooter({
           ))}
         </FooterCol>
 
-        <FooterCol title="Occasions">
+        <FooterCol title={t("occasions")}>
           {occasions.slice(0, 6).map((c) => (
             <FooterLink key={c.id} href={`/occasions/${c.id}`}>
               {c.name}

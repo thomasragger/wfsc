@@ -79,6 +79,9 @@ function baseCss(book: BookData): string {
       font-size: 30pt; line-height: 1.7; color: #4a3f39;
       transform: rotate(-4deg);
     }
+    .greeting-from {
+      margin-top: 18pt; font-size: 26pt; color: #6b5f57;
+    }
     .inset-illustration-page {
       position: absolute; inset: 0;
       display: flex; align-items: center; justify-content: center;
@@ -234,9 +237,12 @@ export function renderTitlePage(book: BookData, forPrint = false): string {
 /** Personalized dedication (Widmung): script font, gently tilted. */
 export function renderDedicationPage(book: BookData): string {
   if (!book.greeting) return doc(book, `<div class="page"></div>`);
+  const from = book.greetingFrom?.trim()
+    ? `<p class="greeting-from">Love, ${escapeHtml(book.greetingFrom.trim())}</p>`
+    : '';
   return doc(
     book,
-    `<div class="page"><div class="text-block greeting">${textToParagraphs(book.greeting)}</div></div>`,
+    `<div class="page"><div class="text-block greeting">${textToParagraphs(book.greeting)}${from}</div></div>`,
   );
 }
 

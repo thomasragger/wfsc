@@ -1,16 +1,22 @@
 import { NextResponse } from "next/server";
 
+import {
+  UPLOADS_BUCKET,
+  canonicalStorageUrl,
+  ensurePrivateBucket,
+  signUrl,
+} from "@/lib/storage";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const runtime = "nodejs";
 
-const BUCKET = "uploads";
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
 /**
  * POST /api/uploads — multipart upload of a customer photo.
- * Stores the file in the public 'uploads' bucket (created on first use) and
- * returns its public URL.
+ * Stores the file in the PRIVATE 'uploads' bucket and returns a signed URL.
+ * The signed URL doubles as the wizard's preview <img> src; on book creation
+ * the server normalizes it back to the canonical (unsigned) form for storage.
  */
 export async function POST(request: Request) {
   try {
@@ -26,22 +32,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Image is too large (max 10 MB)" }, { status: 400 });
     }
 
-    const db = supabaseAdmin();
-    // Create-if-missing; ignore the "already exists" error on subsequent calls.
-    await db.storage.createBucket(BUCKET, { public: true }).catch(() => undefined);
+    await ensurePrivateBucket(UPLOADS_BUCKET);
 
     const ext =
       (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
     const path = `photos/${crypto.randomUUID()}.${ext}`;
     const bytes = Buffer.from(await file.arrayBuffer());
 
-    const { error } = await db.storage
-      .from(BUCKET)
+    const { error } = await supabaseAdmin()
+      .storage.from(UPLOADS_BUCKET)
       .upload(path, bytes, { contentType: file.type, upsert: false });
     if (error) throw new Error(error.message);
 
-    const { data } = db.storage.from(BUCKET).getPublicUrl(path);
-    return NextResponse.json({ url: data.publicUrl });
+    const url = await signUrl(canonicalStorageUrl(UPLOADS_BUCKET, path));
+    return NextResponse.json({ url });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Upload failed" },

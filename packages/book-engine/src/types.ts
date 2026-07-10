@@ -22,6 +22,7 @@ export interface BookData {
   id: string;
   title: string;
   greeting: string | null;
+  greetingFrom?: string | null;
   fontPairing: FontPairingId;
   styleId: string;
   spreads: SpreadData[];

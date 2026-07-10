@@ -3,8 +3,9 @@ import { z } from "zod";
 
 import { FONT_PAIRINGS, type FontPairingId } from "@wfsc/book-engine";
 
-import { EDITABLE_BOOK_STATUSES } from "@/lib/book-payload";
+import { EDITABLE_BOOK_STATUSES, type BookStatus } from "@/lib/book-payload";
 import { fetchBookBundle } from "@/lib/books";
+import { deleteBookData } from "@/lib/deletion";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -24,6 +25,46 @@ export async function GET(_request: Request, { params }: Params) {
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to load book" },
+      { status: 500 },
+    );
+  }
+}
+
+/** Statuses where an order is actively being produced — deletion would break
+ *  fulfillment, so the customer has to wait (or cancel via support). */
+const DELETE_BLOCKED_STATUSES: BookStatus[] = [
+  "purchased",
+  "generating",
+  "ready_for_review",
+  "approved",
+  "submitted_to_print",
+];
+
+/**
+ * DELETE /api/books/[token] — GDPR erasure: removes the book, its people,
+ * spreads, and every stored asset (photos, character sheets, renders, PDFs).
+ */
+export async function DELETE(_request: Request, { params }: Params) {
+  try {
+    const { token } = await params;
+    const bundle = await fetchBookBundle(token);
+    if (!bundle) {
+      return NextResponse.json({ error: "Book not found" }, { status: 404 });
+    }
+    if (DELETE_BLOCKED_STATUSES.includes(bundle.book.status)) {
+      return NextResponse.json(
+        {
+          error:
+            "This book has an order in progress and can't be deleted right now. Contact hello@warmfuzzystoryclub.com and we'll take care of it.",
+        },
+        { status: 409 },
+      );
+    }
+    await deleteBookData(bundle.book.id);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to delete book" },
       { status: 500 },
     );
   }

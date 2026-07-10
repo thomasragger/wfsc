@@ -8,6 +8,7 @@ import type {
   SpreadPayload,
   StylePayload,
 } from "@/lib/book-payload";
+import { signUrls } from "@/lib/storage";
 import { supabaseAdmin } from "@/lib/supabase";
 
 /** Raw `books` row as read by the service client (server-only). */
@@ -23,6 +24,8 @@ export interface BookRow {
   format: BookFormat | null;
   font_pairing: string;
   greeting: string | null;
+  greeting_from: string | null;
+  cover_has_title: boolean | null;
   page_count: number;
   cover_image_url: string | null;
   approved_at: string | null;
@@ -62,7 +65,7 @@ export interface BookBundle {
 }
 
 const BOOK_COLUMNS =
-  "id, access_token, email, status, title, memory_text, template_id, style_id, format, font_pairing, greeting, page_count, cover_image_url, approved_at, created_at";
+  "id, access_token, email, status, title, memory_text, template_id, style_id, format, font_pairing, greeting, greeting_from, cover_has_title, page_count, cover_image_url, approved_at, created_at";
 
 /**
  * Load a book (with people, spreads, style) by its access token.
@@ -105,25 +108,36 @@ export async function fetchBookBundle(token: string): Promise<BookBundle | null>
 
   return {
     book,
-    payload: serializeBook(book, people, spreads, style),
+    payload: await serializeBook(book, people, spreads, style),
   };
 }
 
-function serializeBook(
+async function serializeBook(
   book: BookRow,
   people: PersonRow[],
   spreads: SpreadRow[],
   style: StyleRow | null,
-): BookPayload {
+): Promise<BookPayload> {
   const fontPairing: FontPairingId =
     book.font_pairing in FONT_PAIRINGS ? (book.font_pairing as FontPairingId) : "storybook";
+
+  // Customer assets live in private buckets; sign everything the client will
+  // render in one batch. Order: cover, per-person photos+sheet, spread images.
+  const toSign: (string | null)[] = [book.cover_image_url];
+  for (const p of people) toSign.push(...(p.photo_urls ?? []), p.character_sheet_url);
+  for (const s of spreads) toSign.push(s.image_url);
+  const signed = await signUrls(toSign);
+  let cursor = 0;
+  const next = () => signed[cursor++];
+
+  const coverImageUrl = next();
 
   const peoplePayload: PersonPayload[] = people.map((p) => ({
     id: p.id,
     name: p.name,
     role: p.role,
-    photoUrls: p.photo_urls ?? [],
-    characterSheetUrl: p.character_sheet_url,
+    photoUrls: (p.photo_urls ?? []).map(() => next()).filter((u): u is string => !!u),
+    characterSheetUrl: next(),
     approved: p.approved,
   }));
 
@@ -133,7 +147,7 @@ function serializeBook(
     kind: (s.kind === "cover" || s.kind === "greeting" ? s.kind : "story") as SpreadKind,
     text: s.text,
     layout: (s.layout in LAYOUTS ? s.layout : "text-left") as LayoutId,
-    imageUrl: s.image_url,
+    imageUrl: next(),
     regenNote: s.regen_note,
   }));
 
@@ -151,10 +165,12 @@ function serializeBook(
     status: book.status,
     title: book.title,
     greeting: book.greeting,
+    greetingFrom: book.greeting_from,
+    coverHasTitle: book.cover_has_title ?? false,
     fontPairing,
     format: book.format,
     pageCount: book.page_count,
-    coverImageUrl: book.cover_image_url,
+    coverImageUrl,
     approvedAt: book.approved_at,
     createdAt: book.created_at,
     people: peoplePayload,

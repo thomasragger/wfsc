@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { fetchBookBundle } from "@/lib/books";
+import { variantForFormat } from "@/lib/cart";
 import { createCheckout } from "@/lib/shopify";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -10,7 +11,7 @@ export const runtime = "nodejs";
 type Params = { params: Promise<{ token: string }> };
 
 const CheckoutSchema = z.object({
-  format: z.enum(["softcover", "hardcover"]),
+  format: z.enum(["board", "softcover", "hardcover"]),
 });
 
 /**
@@ -22,7 +23,7 @@ export async function POST(request: Request, { params }: Params) {
     const { token } = await params;
     const parsed = CheckoutSchema.safeParse(await request.json());
     if (!parsed.success) {
-      return NextResponse.json({ error: "Pick softcover or hardcover" }, { status: 400 });
+      return NextResponse.json({ error: "Pick a book format" }, { status: 400 });
     }
     const { format } = parsed.data;
 
@@ -37,10 +38,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const variantId =
-      format === "softcover"
-        ? process.env.SHOPIFY_VARIANT_SOFTCOVER
-        : process.env.SHOPIFY_VARIANT_HARDCOVER;
+    const variantId = variantForFormat(format);
     if (!variantId) {
       return NextResponse.json(
         { error: `Shopify variant for ${format} is not configured` },

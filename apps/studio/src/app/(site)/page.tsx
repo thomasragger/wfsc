@@ -8,8 +8,11 @@ import { ButtonLink } from "@/components/ui/button";
 import { Carousel } from "@/components/ui/carousel";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { IconArrowRight, IconChevronDown } from "@/components/ui/icons";
 import { PhotoTile } from "@/components/ui/photo-tile";
 import { categoryArt } from "@/lib/category-art";
+import { loadAudiencePage } from "@/lib/categories";
+import { detectRegion, REGION_LABELS } from "@/lib/region";
 import { fetchSamples } from "@/lib/samples";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -160,8 +163,41 @@ const HERO_DOODLES = [
   { src: "sun.png", size: 36, side: "right" as const, x: "24%", top: "58%", duration: "48s", delay: "-42s" },
 ];
 
+const FAQ: { q: string; a: string }[] = [
+  {
+    q: "How does it actually work?",
+    a: "Tell us a real memory in a few sentences and who was there. We write a story from it, illustrate it in the art style you pick, and show you a free preview in minutes. Love it? We print a keepsake book and ship it to your door.",
+  },
+  {
+    q: "Will the characters really look like us?",
+    a: "Yes. Add a photo or two of each person and we hand-draw them into the book, matching their hairstyle, features and favourite outfit so they're recognizable on every page. Kids, parents, grandparents, even the family dog.",
+  },
+  {
+    q: "Is it a unique story, or a template with our name in it?",
+    a: "Completely unique. Nothing here is a fill-in-the-blank template. Your book is written from scratch around your memory, so no two are ever alike.",
+  },
+  {
+    q: "Can I set the story anywhere?",
+    a: "Anywhere you love: your own street, grandma's garden, a favourite holiday spot, or the other side of the world. Browse “Places you love” for ready-made ideas set in real cities.",
+  },
+  {
+    q: "Can I change things before it's printed?",
+    a: "Of course. You get to read the whole book and adjust the title, the personal dedication and the details before you approve it for print. Nothing prints until you're happy.",
+  },
+  {
+    q: "What does it cost, and what formats are there?",
+    a: "A chunky board book at €39 (made for ages 2–4), a softcover at €49, and a keepsake hardcover at €69. The free preview always comes first, so you only pay once you love it.",
+  },
+];
+
 export default async function HomePage() {
-  const [inspiration, samples] = await Promise.all([loadInspiration(), fetchSamples()]);
+  const region = await detectRegion();
+  const [inspiration, samples, places] = await Promise.all([
+    loadInspiration(),
+    fetchSamples(),
+    loadAudiencePage("places", region),
+  ]);
+  const placeTemplates = places?.templates ?? [];
 
   return (
     <div className="w-full">
@@ -226,7 +262,7 @@ export default async function HomePage() {
         </div>
 
         {/* Centered logo + CTA + tagline, exactly like the storefront hero */}
-        <div className="relative z-10 mx-auto flex min-h-[54vh] w-full max-w-6xl flex-col items-center justify-center px-4 py-16 text-center sm:min-h-[60vh]">
+        <div className="relative z-10 mx-auto flex min-h-[70vh] w-full max-w-6xl flex-col items-center justify-center px-4 py-14 text-center">
           <h1 className="m-0">
             <Image
               src="/logo.png"
@@ -237,14 +273,129 @@ export default async function HomePage() {
               className="h-auto w-56 drop-shadow-sm sm:w-72"
             />
           </h1>
-          <ButtonLink href="/create" size="lg" className="mt-10">
+          <p className="mt-10 max-w-xl font-display text-2xl font-extrabold leading-tight text-ink sm:mt-12 sm:text-3xl">
+            Any story. Anywhere. Anyone you love.
+          </p>
+          <p className="mt-3 max-w-md text-base text-ink-soft sm:text-lg">
+            A one-of-a-kind picture book, written from your own memory and starring
+            the real people in it. You choose the story, the place, and the cast.
+          </p>
+          <ButtonLink href="/create" size="lg" className="mt-8">
             Write your story
           </ButtonLink>
-          <p className="mt-6 font-display text-lg font-bold text-ink sm:text-xl">
-            Turn your favorite memory into art for a lifetime
-          </p>
         </div>
       </section>
+
+      {/* ---------------------------------------- What makes it yours (3 axes) */}
+      <section className="relative overflow-hidden py-16 sm:py-20">
+        {/* soft immersive band behind the trio */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-lavender/40 via-transparent to-transparent" aria-hidden="true" />
+        <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <Eyebrow className="mx-auto">Completely yours</Eyebrow>
+            <h2 className="mt-4 font-display text-4xl font-extrabold leading-tight text-ink sm:text-5xl">
+              Any story. Anywhere.
+              <br className="hidden sm:block" /> Anyone you love.
+            </h2>
+            <p className="mx-auto mt-4 max-w-md text-lg text-ink-soft">
+              Not a template with a name dropped in. Every book is written, illustrated,
+              and cast from scratch, around your family.
+            </p>
+          </div>
+
+          <div className="mt-20 grid gap-5 sm:grid-cols-3 sm:gap-6">
+            {[
+              {
+                mascot: "/mascots/story.png",
+                tint: "#efe9ff",
+                title: "Any story",
+                body: "Not a fill-in-the-blank template. We write your real memory into a story only your family has.",
+                href: "/create",
+                cta: "Start from a memory",
+              },
+              {
+                mascot: "/mascots/travel.png",
+                tint: "#e6f3fb",
+                title: "Anywhere you want",
+                body: "Set it in a place you both love: your own street, grandma's garden, or the other side of the world.",
+                href: "/for/places",
+                cta: "Places you love",
+              },
+              {
+                mascot: "/mascots/family.png",
+                tint: "#fce9ef",
+                title: "Anyone you love",
+                body: "Everyone looks like themselves, drawn from your photos. Kids, parents, grandparents, even the dog.",
+                href: "/samples",
+                cta: "See the cast",
+              },
+            ].map((axis) => (
+              <Link
+                key={axis.title}
+                href={axis.href}
+                className="tile-lift group relative flex flex-col items-center rounded-[2rem] px-6 pb-7 pt-14 text-center shadow-fuzzy ring-1 ring-ink/5"
+                style={{ backgroundColor: axis.tint }}
+              >
+                {/* mascot coin, popping over the top edge */}
+                <div className="-mt-16 mb-1 h-32 w-32 overflow-hidden rounded-full ring-[6px] ring-white shadow-polaroid transition-transform duration-300 group-hover:-translate-y-1 group-hover:rotate-3">
+                  <Image
+                    src={axis.mascot}
+                    alt=""
+                    width={256}
+                    height={256}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <h3 className="mt-4 font-display text-2xl font-extrabold text-ink">{axis.title}</h3>
+                <p className="mt-2 flex-1 text-[0.95rem] leading-relaxed text-ink/70">{axis.body}</p>
+                <span className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-white/80 px-4 py-2 text-sm font-bold text-coral shadow-sm ring-1 ring-white/60">
+                  {axis.cta}
+                  <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------- Places you love (region) */}
+      {placeTemplates.length > 0 ? (
+        <section className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <Eyebrow>Set it anywhere</Eyebrow>
+              <h2 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
+                Places you love
+              </h2>
+              <p className="mt-2 max-w-lg text-ink-soft">
+                Your story can happen anywhere. Here are a few favorites around{" "}
+                {REGION_LABELS[region]} to spark it.
+              </p>
+            </div>
+            <Link
+              href="/for/places"
+              className="group hidden shrink-0 items-center gap-1.5 text-sm font-bold text-coral sm:inline-flex"
+            >
+              See all places
+              <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+          <Carousel className="mt-6" ariaLabel="Story ideas set in real places" fullBleed>
+            {placeTemplates.map((tpl) => (
+              <BookTile
+                key={tpl.id}
+                href={`/create?template=${encodeURIComponent(tpl.id)}`}
+                image={tpl.previewImageUrl ?? tpl.exampleImageUrl}
+                hoverImage={tpl.mockupImageUrl}
+                title={tpl.title}
+                tagline={tpl.tagline}
+                size="md"
+                aspectClassName="aspect-square"
+              />
+            ))}
+          </Carousel>
+        </section>
+      ) : null}
 
       {/* --------------------------------------------- Category cards (theme) */}
       <section className="mx-auto w-full max-w-6xl px-4 pb-6 pt-14 sm:px-6">
@@ -409,6 +560,40 @@ export default async function HomePage() {
         <div className="mt-12 text-center">
           <ButtonLink href="/samples">Browse sample books</ButtonLink>
         </div>
+      </section>
+
+      {/* --------------------------------------------------------------- FAQ */}
+      <section className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="text-center">
+          <Eyebrow className="mx-auto">Good to know</Eyebrow>
+          <h2 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
+            Questions, answered
+          </h2>
+        </div>
+        <div className="mt-10 flex flex-col gap-3">
+          {FAQ.map((item) => (
+            <details
+              key={item.q}
+              className="group rounded-3xl bg-white/70 px-6 shadow-fuzzy ring-1 ring-ink/5 transition-colors open:bg-white"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 font-display text-lg font-bold text-ink [&::-webkit-details-marker]:hidden">
+                {item.q}
+                <IconChevronDown className="h-5 w-5 shrink-0 text-coral transition-transform duration-300 group-open:rotate-180" />
+              </summary>
+              <p className="pb-5 leading-relaxed text-ink-soft">{item.a}</p>
+            </details>
+          ))}
+        </div>
+        <p className="mt-8 text-center text-sm text-ink-soft">
+          Still curious?{" "}
+          <a
+            href="mailto:hello@warmfuzzystoryclub.com"
+            className="font-bold text-coral hover:underline"
+          >
+            Send us a note
+          </a>{" "}
+          and a real human will reply.
+        </p>
       </section>
 
       {/* ------------------------------------------------------- Closing CTA */}

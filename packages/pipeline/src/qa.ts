@@ -6,15 +6,16 @@ const PASS_THRESHOLD = Number(process.env.WFSC_QA_THRESHOLD ?? 70);
 
 /**
  * Vision-LLM QA: judge one generated spread against the character sheets and
- * style. Weighted identity 50 / outfit-continuity 30 / style 20 (per research,
- * vision-LLM judging outperforms embedding similarity for this task).
- * Uses forced tool output so the verdict is always parseable.
+ * style. Weighted identity 40 / scene-match 20 / outfit-continuity 20 /
+ * style 20 (per research, vision-LLM judging outperforms embedding similarity
+ * for this task). Uses forced tool output so the verdict is always parseable.
  */
 export async function judgeSpread(
   spreadImageUrl: string,
   characters: CharacterSheet[],
   stylePrompt: string,
   client?: Anthropic,
+  scenePrompt?: string,
 ): Promise<QaVerdict> {
   const anthropic = client ?? new Anthropic();
 
@@ -25,14 +26,16 @@ export async function judgeSpread(
 
 Characters expected in or near this scene:
 ${characters.map((c, i) => `- Reference image ${i + 1}: ${c.name} (${c.description})`).join('\n')}
-
+${scenePrompt ? `\nIntended scene (the illustration MUST depict this): ${scenePrompt}\n` : ''}
 Target style: ${stylePrompt}
 
-Score 0-100, weighted: character identity match 50%, outfit/feature continuity 30%, style adherence 20%. Not every character must appear in every scene; only penalize characters that appear but look wrong.
+Score 0-100, weighted: character identity match 40%, scene/story match 20%, outfit/feature continuity 20%, style adherence 20%. Not every character must appear in every scene; only penalize characters that appear but look wrong.
 HARD FAILURES (score < 40) — check each explicitly:
 - the same character appearing more than once in the scene (duplicates/clones)
-- anatomical errors: extra or missing limbs/fingers, three arms, two heads, merged bodies
+- anatomical errors: extra or missing limbs/fingers, three arms, two heads, merged bodies, wrong finger count
+- SCALE/PROPORTION errors: a character drawn far too small or too large for the scene, distorted body proportions, a person floating, or a character standing on top of a prop as if miniature
 - a character's hair length/color, age, or build clearly different from their sheet
+- the illustration clearly depicting a different scene than the intended scene above
 - extra unknown people with detailed faces
 - embedded text, lettering, or watermark
 
@@ -88,9 +91,10 @@ export async function judgeSpreadSafe(
   characters: CharacterSheet[],
   stylePrompt: string,
   client?: Anthropic,
+  scenePrompt?: string,
 ): Promise<QaVerdict> {
   try {
-    return await judgeSpread(spreadImageUrl, characters, stylePrompt, client);
+    return await judgeSpread(spreadImageUrl, characters, stylePrompt, client, scenePrompt);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return { score: PASS_THRESHOLD, pass: true, notes: `qa-error (auto-pass): ${message.slice(0, 120)}` };

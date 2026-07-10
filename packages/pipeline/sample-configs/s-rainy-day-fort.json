@@ -1,0 +1,14 @@
+{
+  "memoryText": "When the rain cancelled the whole outside world, Lena (seven) and her little brother Max (five) declared that they would build a KINGDOM instead. They gathered every cushion and blanket in the house, argued like proper royal engineers about where the throne room should go, and finally the wobbly, glorious fort stood tall with a sock tied to a broom for a flag. They smuggled in royal snacks, then had to defend the kingdom from the terrible Tickle Monster (who looked suspiciously like Dad). When the storm calmed they lay under the blanket roof with a flashlight, telling stories as golden evening light glowed through the walls. They were far too tired and too happy to take the kingdom down, so they agreed that even rulers need their rest, and left it standing overnight.",
+  "people": [
+    { "name": "Lena", "role": "child", "appearance": "a 7-year-old girl with wavy chestnut hair to her shoulders, fair skin, a gap-toothed grin, wearing a striped red jumper and a cardboard crown" },
+    { "name": "Max", "role": "sibling", "appearance": "a 5-year-old boy with short tousled chestnut hair, fair skin, round cheeks, wearing green pyjamas and a slightly crooked cardboard crown" }
+  ],
+  "styleId": "crayon",
+  "styleReferencePaths": ["../style-refs/crayon/cozy.png", "../style-refs/crayon/park.png"],
+  "spreadCount": 14,
+  "targetAge": 7,
+  "greeting": "For the rulers of the Rainy Day Kingdom, Lena and Max. Long may you reign, and never take the fort down too soon.",
+  "greetingFrom": "Mum & Dad",
+  "fontPairing": "storybook"
+}

@@ -27,27 +27,28 @@ export function SiteNav({
 
   return (
     <header className="sticky top-0 z-40 border-b border-ink/5 bg-cream/85 backdrop-blur-md">
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex items-center" aria-label="Warm Fuzzy Story Club home">
+      <div className="mx-auto grid h-14 w-full max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6">
+        <Link href="/" className="flex items-center justify-self-start" aria-label="Warm Fuzzy Story Club home">
           <Image
-            src="/logo.png"
+            src="/logo-landscape.png"
             alt="Warm Fuzzy Story Club"
-            width={38}
-            height={45}
+            width={1216}
+            height={527}
             priority
-            className="transition-transform duration-300 hover:-rotate-6"
+            className="h-7 w-auto transition-transform duration-300 hover:-rotate-2 sm:h-8"
           />
         </Link>
 
-        {/* Desktop nav */}
-        <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
+        {/* Desktop nav (centered) */}
+        <nav aria-label="Main" className="hidden items-center gap-1 justify-self-center md:flex">
           <NavLink href="/books">Our books</NavLink>
           <MegaItem label="Who it's for" items={audience.map((c) => ({ href: `/for/${c.id}`, label: c.name, sub: c.tagline }))} />
           <MegaItem label="Occasions" items={occasions.map((c) => ({ href: `/occasions/${c.id}`, label: c.name, sub: c.tagline }))} />
+          <NavLink href="/for/places">Places you love</NavLink>
           <NavLink href="/samples">Sample books</NavLink>
         </nav>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 justify-self-end">
           <Link
             href="/account"
             className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-ink/5"
@@ -56,7 +57,7 @@ export function SiteNav({
             <IconUser />
           </Link>
           <CartButton />
-          <ButtonLink href="/create" size="sm" className="ml-1 hidden sm:inline-flex sm:px-5">
+          <ButtonLink href="/create" size="sm" className="ml-1 hidden whitespace-nowrap sm:inline-flex sm:px-5">
             Write your story
           </ButtonLink>
           <button
@@ -81,6 +82,7 @@ export function SiteNav({
           >
             <MobileSection title="Browse">
               <MobileLink href="/books">Our books</MobileLink>
+              <MobileLink href="/for/places">Places you love</MobileLink>
               <MobileLink href="/samples">Sample books</MobileLink>
               <MobileLink href="/create">Write your story</MobileLink>
             </MobileSection>

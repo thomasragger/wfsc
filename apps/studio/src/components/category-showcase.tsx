@@ -21,6 +21,7 @@ export function CategoryShowcase({
   templates,
   backHref,
   backLabel,
+  regionSwitch,
 }: {
   title: string;
   tagline: string | null;
@@ -29,7 +30,12 @@ export function CategoryShowcase({
   templates: CategoryTemplate[];
   backHref?: string;
   backLabel?: string;
+  regionSwitch?: { current: "dach" | "us"; basePath: string };
 }) {
+  const REGION_TABS: { id: "dach" | "us"; label: string }[] = [
+    { id: "dach", label: "🇩🇪🇦🇹🇨🇭 DACH" },
+    { id: "us", label: "🇺🇸 USA" },
+  ];
   return (
     <div>
       <section
@@ -63,6 +69,23 @@ export function CategoryShowcase({
               ) : null}
               <h1 className="font-display text-4xl font-extrabold text-ink sm:text-5xl">{title}</h1>
               {tagline ? <p className="mx-auto mt-3 max-w-xl text-lg font-medium text-ink lg:mx-0">{tagline}</p> : null}
+              {regionSwitch ? (
+                <div className="mt-5 inline-flex rounded-full bg-white/80 p-1 shadow-sm ring-1 ring-white/60">
+                  {REGION_TABS.map((t) => (
+                    <Link
+                      key={t.id}
+                      href={`${regionSwitch.basePath}?region=${t.id}`}
+                      className={`rounded-full px-4 py-1.5 text-xs font-bold transition ${
+                        regionSwitch.current === t.id
+                          ? "bg-coral text-white shadow-sm"
+                          : "text-ink/70 hover:text-ink"
+                      }`}
+                    >
+                      {t.label}
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

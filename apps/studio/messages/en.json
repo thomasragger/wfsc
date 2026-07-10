@@ -1,0 +1,25 @@
+{
+  "footer": {
+    "tagline": "Turning memories into art for a lifetime.",
+    "explore": "Explore",
+    "writeYourStory": "Write your story",
+    "ourBooks": "Our books",
+    "placesYouLove": "Places you love",
+    "sampleBooks": "Sample books",
+    "ourArtists": "Our artists",
+    "whoItsFor": "Who it's for",
+    "occasions": "Occasions"
+  },
+  "samples": {
+    "metaTitle": "Sample books — Warm Fuzzy Story Club",
+    "metaDescription": "Flip through finished sample books, page by page.",
+    "eyebrow": "Real books, cover to cover",
+    "heading": "Flip through a sample book.",
+    "intro": "Every book here was made the same way yours will be — a family memory, a few photos, and a whole lot of warm fuzzies.",
+    "emptyTitle": "The first sample books are still at the printer's.",
+    "emptyBody": "Check back very soon — or skip the queue and make a book starring your own family.",
+    "emptyCta": "Write your story",
+    "closingTitle": "Ready to see your own family in one of these?",
+    "closingCta": "Make your own"
+  }
+}

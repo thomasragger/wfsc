@@ -21,4 +21,9 @@ api_version = "2026-07"
   uri = "/api/webhooks/shopify"
   topics = [ "orders/paid", "orders/cancelled", "refunds/create" ]
 
+  # Mandatory GDPR compliance webhooks (handled in api/webhooks/shopify/route.ts)
+  [[webhooks.subscriptions]]
+  uri = "/api/webhooks/shopify"
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+
 [build]

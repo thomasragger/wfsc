@@ -1,25 +1,28 @@
+import {
+  BOOK_ASSETS_BUCKET,
+  canonicalStorageUrl,
+  ensurePrivateBucket,
+} from './storage';
 import { supabaseAdmin } from './supabase';
 
-const RENDER_BUCKET = 'renders';
-
 /**
- * Copy a transient image URL (Replicate delivery URLs expire) into Supabase
- * Storage and return a permanent public URL. Idempotent per storage path.
+ * Copy a transient image URL (Replicate delivery URLs expire) into the
+ * PRIVATE book-assets bucket and return its canonical URL (an identifier —
+ * consumers sign it before serving or handing it to external fetchers).
+ * Idempotent per storage path.
  */
 export async function persistImage(sourceUrl: string, path: string): Promise<string> {
-  const db = supabaseAdmin();
-  await db.storage.createBucket(RENDER_BUCKET, { public: true }).catch(() => undefined);
+  await ensurePrivateBucket(BOOK_ASSETS_BUCKET);
 
   const res = await fetch(sourceUrl);
   if (!res.ok) throw new Error(`persistImage fetch failed ${res.status}: ${sourceUrl}`);
   const bytes = Buffer.from(await res.arrayBuffer());
   const contentType = res.headers.get('content-type') ?? 'image/png';
 
-  const { error } = await db.storage
-    .from(RENDER_BUCKET)
+  const { error } = await supabaseAdmin()
+    .storage.from(BOOK_ASSETS_BUCKET)
     .upload(path, bytes, { contentType, upsert: true });
   if (error) throw new Error(`persistImage upload failed: ${error.message}`);
 
-  const { data } = db.storage.from(RENDER_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return canonicalStorageUrl(BOOK_ASSETS_BUCKET, path);
 }

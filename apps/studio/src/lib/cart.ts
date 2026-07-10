@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 
+import type { BookFormat } from "@/lib/book-payload";
 import { cartFetch, type CartContents, type CartLine } from "@/lib/shopify";
+import { signUrl } from "@/lib/storage";
 import { supabaseAdmin } from "@/lib/supabase";
 
 /**
@@ -31,12 +33,13 @@ export async function clearCartId(): Promise<void> {
   (await cookies()).delete(CART_COOKIE);
 }
 
-export function variantForFormat(format: "softcover" | "hardcover"): string | null {
-  return (
-    (format === "softcover"
-      ? process.env.SHOPIFY_VARIANT_SOFTCOVER
-      : process.env.SHOPIFY_VARIANT_HARDCOVER) ?? null
-  );
+export function variantForFormat(format: BookFormat): string | null {
+  const byFormat: Record<BookFormat, string | undefined> = {
+    board: process.env.SHOPIFY_VARIANT_BOARD,
+    softcover: process.env.SHOPIFY_VARIANT_SOFTCOVER,
+    hardcover: process.env.SHOPIFY_VARIANT_HARDCOVER,
+  };
+  return byFormat[format] ?? null;
 }
 
 export interface EnrichedCartLine extends CartLine {
@@ -62,7 +65,8 @@ export async function enrichCart(cart: CartContents): Promise<EnrichedCart> {
       for (const b of data ?? []) {
         byId.set(b.id as string, {
           title: (b.title ?? null) as string | null,
-          image: ((b.mockup_image_url ?? b.cover_image_url) ?? null) as string | null,
+          // Covers live in a private bucket — sign for display.
+          image: await signUrl(((b.mockup_image_url ?? b.cover_image_url) ?? null) as string | null),
           token: (b.access_token ?? null) as string | null,
         });
       }

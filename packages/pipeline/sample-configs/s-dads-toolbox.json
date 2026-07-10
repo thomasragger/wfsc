@@ -1,0 +1,14 @@
+{
+  "memoryText": "Milo is three and he is Dad's tiny toolbox helper. When Dad found the wobbly kitchen chair that needed fixing, Milo spotted the big red toolbox and insisted on helping. Dad gave him a very important job holding a little wooden screwdriver, and they both put on serious faces to inspect the problem. There were a few wobbly, giggly mistakes, and a screw that rolled right under the fridge. Dad was patient and let Milo tighten the last bolt himself. In the end the chair stood proud and only wobbled a tiny bit, and it was covered in more of their fingerprints than anything else. Dad wiped the dust off Milo's nose and declared him official first assistant, forever.",
+  "people": [
+    { "name": "Milo", "role": "child", "appearance": "a 3-year-old boy with short curly black hair, warm brown skin, chubby cheeks, wearing oversized yellow safety goggles and blue dungarees over a red shirt" },
+    { "name": "Dad", "role": "dad", "appearance": "a man in his mid-30s with a short dark beard, brown skin, wearing a rolled-sleeve flannel shirt and a canvas tool apron" }
+  ],
+  "styleId": "crayon",
+  "styleReferencePaths": ["../style-refs/crayon/cozy.png", "../style-refs/crayon/park.png"],
+  "spreadCount": 10,
+  "targetAge": 3,
+  "greeting": "For my tiny toolbox helper, Milo. Nothing in the whole house is unfixable when we do it together.",
+  "greetingFrom": "Dad",
+  "fontPairing": "storybook"
+}

@@ -1,0 +1,14 @@
+{
+  "memoryText": "Every season, Amara (seven) visits Grandma's garden, and every season it teaches her something new. In spring their hands get muddy pressing tiny seeds into the dark soil, and Grandma shares a bit of garden wisdom about being patient with growing things. Summer brings sunshine and watering cans and beetles to watch marching along the leaves, and one morning a surprise: a fat orange pumpkin swelling under its leaves. In autumn they gather the harvest into wicker baskets and bake something warm from what they grew, the kitchen smelling of cinnamon. When winter comes and the soil sleeps under snow, they sit at the frosted window with cocoa and plan next year's garden on a scrap of paper. Amara understands, quietly, that Grandma's love grows just like the garden: slowly, faithfully, every single season.",
+  "people": [
+    { "name": "Amara", "role": "child", "appearance": "a 7-year-old girl with dark coiled hair in two puff buns, deep brown skin, bright eyes, wearing denim overalls over a mustard turtleneck and green rain boots" },
+    { "name": "Grandma", "role": "grandma", "appearance": "a woman in her late 60s with silver locs gathered in a bun, deep brown skin, gentle smile lines, wearing a floral apron over a warm rust cardigan and gardening gloves" }
+  ],
+  "styleId": "mid-century",
+  "styleReferencePaths": ["../style-refs/mid-century/park.png", "../style-refs/mid-century/cozy.png"],
+  "spreadCount": 14,
+  "targetAge": 7,
+  "greeting": "For Amara — you and this garden grew up together, one patient season at a time.",
+  "greetingFrom": "Grandma",
+  "fontPairing": "storybook"
+}

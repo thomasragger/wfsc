@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { inngest } from "@/inngest/client";
 import { fetchBookBundle } from "@/lib/books";
+import { regenCountForBook } from "@/lib/generation-jobs";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -42,6 +43,18 @@ export async function POST(request: Request, { params }: Params) {
     const spread = bundle.payload.spreads.find((s) => s.id === id);
     if (!spread) {
       return NextResponse.json({ error: "Spread not found" }, { status: 404 });
+    }
+
+    // Regenerations cost real money; cap the edit loop per book.
+    const maxRegens = Number(process.env.WFSC_MAX_REGENS_PER_BOOK ?? 15);
+    if (maxRegens > 0 && (await regenCountForBook(bundle.book.id)) >= maxRegens) {
+      return NextResponse.json(
+        {
+          error:
+            "You've reached the redraw limit for this book. Reply to any of our emails and we'll happily help with further tweaks.",
+        },
+        { status: 429 },
+      );
     }
 
     const db = supabaseAdmin();

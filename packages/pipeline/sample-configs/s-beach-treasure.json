@@ -1,0 +1,14 @@
+{
+  "memoryText": "Nora is three, and today she and Mama went to the beach at Warnemünde like two little pirates. They packed a bucket and a spade in Mama's straw bag, and when they saw the sea Nora shouted that it was the biggest blue treasure map in the world. They hunted for shells all morning, and Nora decided every single one was a jewel with its own story. They built a sandcastle fortress with a moat, and Mama put a seagull feather on top for a flag. A cheeky wave rushed up and soaked them both and they squealed and laughed. They ate melting ice cream, found a tiny crab who waved a claw, and stayed until the sun turned the water orange. Sandy, salty and sleepy, Nora said it was the best treasure day ever.",
+  "people": [
+    { "name": "Nora", "role": "child", "appearance": "a 3-year-old girl with light brown pigtails, round cheeks, big hazel eyes, wearing a turquoise swimsuit with a ruffle and a floppy sun hat" },
+    { "name": "Mama", "role": "mama", "appearance": "a woman in her early 30s with shoulder-length auburn hair, fair skin with freckles, wearing a coral linen sundress and round sunglasses pushed up on her head" }
+  ],
+  "styleId": "flat-vector",
+  "styleReferencePaths": ["../style-refs/flat-vector/sea.png", "../style-refs/flat-vector/park.png"],
+  "spreadCount": 10,
+  "targetAge": 3,
+  "greeting": "For Nora — may every day be a treasure hunt, and every little shell a story worth keeping.",
+  "greetingFrom": "Mama",
+  "fontPairing": "storybook"
+}

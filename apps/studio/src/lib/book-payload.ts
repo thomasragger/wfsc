@@ -14,13 +14,15 @@ export type BookStatus =
   | "preview_ready"
   | "purchased"
   | "generating"
+  | "generation_failed"
   | "ready_for_review"
   | "approved"
   | "submitted_to_print"
+  | "print_failed"
   | "shipped"
   | "cancelled";
 
-export type BookFormat = "softcover" | "hardcover";
+export type BookFormat = "board" | "softcover" | "hardcover";
 
 export type PersonRole =
   | "child"
@@ -74,6 +76,8 @@ export interface BookPayload {
   status: BookStatus;
   title: string | null;
   greeting: string | null;
+  greetingFrom: string | null;
+  coverHasTitle: boolean;
   fontPairing: FontPairingId;
   format: BookFormat | null;
   pageCount: number;

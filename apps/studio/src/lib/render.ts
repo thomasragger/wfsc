@@ -3,17 +3,22 @@ import { renderCoverPdf, renderInteriorPdf } from '@wfsc/book-engine/pdf';
 
 import { launchBrowser } from './browser';
 import { coverDimensions, spineFromCoverDimensions, type LuluCoverDimensions } from './lulu';
+import {
+  BOOK_ASSETS_BUCKET,
+  canonicalStorageUrl,
+  ensurePrivateBucket,
+  signUrls,
+} from './storage';
 import { supabaseAdmin } from './supabase';
-
-const PRINT_BUCKET = 'print';
 
 interface BookRow {
   id: string;
   title: string | null;
   greeting: string | null;
+  greeting_from?: string | null;
   font_pairing: string;
   style_id: string;
-  format: 'softcover' | 'hardcover' | null;
+  format: 'board' | 'softcover' | 'hardcover' | null;
   page_count: number;
   cover_image_url: string | null;
   cover_print_image_url: string | null;
@@ -29,50 +34,67 @@ interface SpreadRow {
   print_image_url: string | null;
 }
 
-export function toBookData(book: BookRow, spreads: SpreadRow[]): BookData {
+/**
+ * Build BookData with SIGNED image URLs: the headless browser rendering the
+ * PDF fetches images over HTTP, and customer assets live in private buckets.
+ */
+export async function toBookData(book: BookRow, spreads: SpreadRow[]): Promise<BookData> {
+  const [coverImageUrl, coverPrintImageUrl] = await signUrls([
+    book.cover_image_url,
+    book.cover_print_image_url,
+  ]);
+  const imageUrls = await signUrls(spreads.map((s) => s.image_url));
+  const printImageUrls = await signUrls(spreads.map((s) => s.print_image_url));
   return {
     id: book.id,
     title: book.title ?? 'Our Story',
     greeting: book.greeting,
+    greetingFrom: book.greeting_from ?? null,
     fontPairing: book.font_pairing as FontPairingId,
     styleId: book.style_id,
-    coverImageUrl: book.cover_image_url,
-    coverPrintImageUrl: book.cover_print_image_url,
+    coverImageUrl,
+    coverPrintImageUrl,
     spreads: spreads.map(
-      (s): SpreadData => ({
+      (s, i): SpreadData => ({
         id: s.id,
         position: s.position,
         kind: s.kind as SpreadData['kind'],
         text: s.text,
         layout: s.layout as SpreadData['layout'],
-        imageUrl: s.image_url,
-        printImageUrl: s.print_image_url,
+        imageUrl: imageUrls[i],
+        printImageUrl: printImageUrls[i],
       }),
     ),
   };
 }
 
 async function uploadPdf(path: string, bytes: Uint8Array): Promise<string> {
-  const db = supabaseAdmin();
-  await db.storage.createBucket(PRINT_BUCKET, { public: true }).catch(() => undefined);
-  const { error } = await db.storage
-    .from(PRINT_BUCKET)
+  await ensurePrivateBucket(BOOK_ASSETS_BUCKET);
+  const { error } = await supabaseAdmin()
+    .storage.from(BOOK_ASSETS_BUCKET)
     .upload(path, bytes, { contentType: 'application/pdf', upsert: true });
   if (error) throw new Error(`PDF upload failed: ${error.message}`);
-  const { data } = db.storage.from(PRINT_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return canonicalStorageUrl(BOOK_ASSETS_BUCKET, path);
 }
 
 /**
- * Render interior + cover PDFs for a book and upload them to public storage
- * (Lulu downloads them via source_url). Returns the public URLs.
+ * Render interior + cover PDFs for a book and upload them to PRIVATE storage.
+ * Returns canonical URLs (for the DB) and signed URLs (for Lulu's download).
  */
 export async function renderAndUploadPdfs(
   book: BookRow,
   spreads: SpreadRow[],
-): Promise<{ interiorUrl: string; coverUrl: string; coverDims: LuluCoverDimensions }> {
-  const bookData = toBookData(book, spreads);
-  const format = book.format ?? 'hardcover';
+): Promise<{
+  interiorUrl: string;
+  coverUrl: string;
+  signedInteriorUrl: string;
+  signedCoverUrl: string;
+  coverDims: LuluCoverDimensions;
+}> {
+  const bookData = await toBookData(book, spreads);
+  // Board books have no Lulu SKU (they're held for manual fulfillment); the
+  // trim is identical to the hardcover, so use its cover geometry for the PDF.
+  const format = book.format === 'board' || !book.format ? 'hardcover' : book.format;
   const dims = await coverDimensions(format, book.page_count);
 
   const browser = await launchBrowser();
@@ -85,10 +107,17 @@ export async function renderAndUploadPdfs(
     });
     const stamp = Date.now();
     const [interiorUrl, coverUrl] = await Promise.all([
-      uploadPdf(`${book.id}/interior-${stamp}.pdf`, interior),
-      uploadPdf(`${book.id}/cover-${stamp}.pdf`, cover),
+      uploadPdf(`books/${book.id}/print-pdfs/interior-${stamp}.pdf`, interior),
+      uploadPdf(`books/${book.id}/print-pdfs/cover-${stamp}.pdf`, cover),
     ]);
-    return { interiorUrl, coverUrl, coverDims: dims };
+    const [signedInteriorUrl, signedCoverUrl] = await signUrls([interiorUrl, coverUrl]);
+    return {
+      interiorUrl,
+      coverUrl,
+      signedInteriorUrl: signedInteriorUrl!,
+      signedCoverUrl: signedCoverUrl!,
+      coverDims: dims,
+    };
   } finally {
     await browser.close();
   }
