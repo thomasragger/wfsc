@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { CartView } from "@/components/cart";
 import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCart } from "@/lib/client-api";
 import type { EnrichedCart } from "@/lib/cart";
 
@@ -30,7 +31,18 @@ export default function CartPage() {
             <CartView cart={cart} onChange={setCart} />
           </div>
         ) : (
-          <div className="flex min-h-[16rem] items-center justify-center text-sm text-ink-soft">Loading…</div>
+          <div className="flex min-h-[16rem] flex-col gap-4 p-5" role="status" aria-label="Loading your cart">
+            {[0, 1].map((i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-20 w-20 shrink-0" rounded="rounded-xl" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="mt-2 h-3 w-1/3" />
+                </div>
+                <Skeleton className="h-5 w-14" />
+              </div>
+            ))}
+          </div>
         )}
       </Card>
 

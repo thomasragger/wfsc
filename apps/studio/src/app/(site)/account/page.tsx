@@ -121,7 +121,7 @@ export default async function AccountPage() {
             )}
           </section>
         </>
-      ) : (
+      ) : isCustomerAccountsConfigured() ? (
         <div className="mx-auto max-w-md py-10 text-center">
           <Eyebrow className="mx-auto">Your account</Eyebrow>
           <h1 className="mt-3 font-display text-3xl font-extrabold text-ink sm:text-4xl">
@@ -131,16 +131,25 @@ export default async function AccountPage() {
             Your account keeps every book you&rsquo;ve made and every order in one cozy place.
           </p>
           <Card className="mt-8 p-6">
-            {isCustomerAccountsConfigured() ? (
-              <ButtonLink href="/account/login" size="lg" className="w-full">
-                Sign in with Shopify
-              </ButtonLink>
-            ) : (
-              <p className="text-sm text-ink-soft">
-                Accounts aren&rsquo;t connected yet. Once the Shopify Customer Account API is set up,
-                sign-in will appear here.
-              </p>
-            )}
+            <ButtonLink href="/account/login" size="lg" className="w-full">
+              Sign in with Shopify
+            </ButtonLink>
+          </Card>
+        </div>
+      ) : (
+        <div className="mx-auto max-w-md py-10 text-center">
+          <Eyebrow className="mx-auto">Your books</Eyebrow>
+          <h1 className="mt-3 font-display text-3xl font-extrabold text-ink sm:text-4xl">
+            Your book lives in your inbox
+          </h1>
+          <p className="mt-3 text-ink-soft">
+            No account needed. When you create a book, we email you a private link to preview, edit,
+            and order it anytime. Keep that email safe and your story is always one click away.
+          </p>
+          <Card className="mt-8 p-6">
+            <ButtonLink href="/create" size="lg" className="w-full">
+              Start your book
+            </ButtonLink>
           </Card>
         </div>
       )}

@@ -17,6 +17,7 @@ import { PageTransition, StepTransition } from "@/components/ui/page-transition"
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { Skeleton, SkeletonGrid } from "@/components/ui/skeleton";
 import { StepProgress } from "@/components/ui/steps";
+import { Turnstile } from "@/components/ui/turnstile";
 import { PERSON_ROLES, type PersonRole } from "@/lib/book-payload";
 import {
   createBook,
@@ -86,6 +87,97 @@ function ageBandLabel(min: number | null, max: number | null): string | null {
   return `Ages ${min ?? 0}–${max ?? 8}`;
 }
 
+/* ----------------------------------------------------------- draft persistence */
+// The wizard is long and photo-heavy, so we snapshot progress to localStorage
+// and offer to resume it on the next visit. Uploaded photos already persist
+// server-side (their URLs are what we store here). Draft is keyed per entry
+// point (template / category / own-memory) so different starts don't collide.
+
+const DRAFT_VERSION = 2 as const;
+const DRAFT_PREFIX = "wfsc:wizard-draft";
+
+interface WizardDraft {
+  v: typeof DRAFT_VERSION;
+  step: number;
+  started: boolean;
+  memoryText: string;
+  title: string;
+  greeting: string;
+  greetingFrom: string;
+  targetAge: number | null;
+  styleId: string | null;
+  email: string;
+  people: { key: string; name: string; role: PersonRole; photoUrls: string[] }[];
+}
+
+function draftKey(templateId: string | null, categoryId: string | null): string {
+  if (templateId) return `${DRAFT_PREFIX}:t:${templateId}`;
+  if (categoryId) return `${DRAFT_PREFIX}:c:${categoryId}`;
+  return `${DRAFT_PREFIX}:own`;
+}
+
+/** Parse a stored draft, tolerating any schema drift by returning null. */
+function readDraft(key: string): WizardDraft | null {
+  if (typeof window === "undefined") return null;
+  let raw: string | null = null;
+  try {
+    raw = window.localStorage.getItem(key);
+  } catch {
+    return null; // storage disabled / private mode
+  }
+  if (!raw) return null;
+  try {
+    const d = JSON.parse(raw) as unknown;
+    if (!d || typeof d !== "object") return null;
+    const o = d as Record<string, unknown>;
+    if (o.v !== DRAFT_VERSION) return null;
+    const people = Array.isArray(o.people)
+      ? (o.people as unknown[]).flatMap((p) => {
+          if (!p || typeof p !== "object") return [];
+          const pr = p as Record<string, unknown>;
+          const photoUrls = Array.isArray(pr.photoUrls)
+            ? (pr.photoUrls as unknown[]).filter((u): u is string => typeof u === "string")
+            : [];
+          return [
+            {
+              key: typeof pr.key === "string" ? pr.key : crypto.randomUUID(),
+              name: typeof pr.name === "string" ? pr.name : "",
+              role: (typeof pr.role === "string" ? pr.role : "child") as PersonRole,
+              photoUrls,
+            },
+          ];
+        })
+      : [];
+    return {
+      v: DRAFT_VERSION,
+      step: typeof o.step === "number" ? o.step : 0,
+      started: o.started === true,
+      memoryText: typeof o.memoryText === "string" ? o.memoryText : "",
+      title: typeof o.title === "string" ? o.title : "",
+      greeting: typeof o.greeting === "string" ? o.greeting : "",
+      greetingFrom: typeof o.greetingFrom === "string" ? o.greetingFrom : "",
+      targetAge: typeof o.targetAge === "number" ? o.targetAge : null,
+      styleId: typeof o.styleId === "string" ? o.styleId : null,
+      email: typeof o.email === "string" ? o.email : "",
+      people,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Whether a draft holds enough real input to be worth resuming. */
+function draftIsResumable(d: WizardDraft): boolean {
+  return (
+    d.step > 0 ||
+    d.memoryText.trim().length > 0 ||
+    d.title.trim().length > 0 ||
+    d.greeting.trim().length > 0 ||
+    d.email.trim().length > 0 ||
+    d.people.some((p) => p.name.trim().length > 0 || p.photoUrls.length > 0)
+  );
+}
+
 export function CreateWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -111,10 +203,21 @@ export function CreateWizard() {
   const [error, setError] = useState<string | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
+  // Cloudflare Turnstile token (O5). Empty in dev (no site key): see below.
+  const [turnstileToken, setTurnstileToken] = useState("");
+
+  // Draft persistence: a snapshot detected on load waits for the user to
+  // resume or discard; saving is gated until that choice is made so we never
+  // clobber a stored draft before offering it.
+  const [pendingDraft, setPendingDraft] = useState<WizardDraft | null>(null);
+  const [draftHydrated, setDraftHydrated] = useState(false);
+
   // ?category= — offer that category's templates as pickable cards first.
   const [category, setCategory] = useState<CategorySummary | null>(null);
   const [categoryTemplates, setCategoryTemplates] = useState<TemplateSummary[] | null>(null);
   const [pickerDismissed, setPickerDismissed] = useState(false);
+
+  const storageKey = useMemo(() => draftKey(templateId, categoryId), [templateId, categoryId]);
 
   // Optional template preselect from ?template=
   useEffect(() => {
@@ -155,6 +258,87 @@ export function CreateWizard() {
       .then(setStyles)
       .catch((err: Error) => setStylesError(err.message));
   }, []);
+
+  // On load (per entry point): surface a resumable draft, otherwise unlock saving.
+  useEffect(() => {
+    const draft = readDraft(storageKey);
+    if (draft && draftIsResumable(draft)) {
+      setPendingDraft(draft);
+      setDraftHydrated(false);
+    } else {
+      setPendingDraft(null);
+      setDraftHydrated(true);
+    }
+  }, [storageKey]);
+
+  // Persist progress once the resume choice is settled (never before, so we
+  // don't overwrite a stored draft we haven't offered yet).
+  useEffect(() => {
+    if (!draftHydrated || typeof window === "undefined") return;
+    const draft: WizardDraft = {
+      v: DRAFT_VERSION,
+      step,
+      started,
+      memoryText,
+      title,
+      greeting,
+      greetingFrom,
+      targetAge,
+      styleId,
+      email,
+      people: people.map((p) => ({ key: p.key, name: p.name, role: p.role, photoUrls: p.photoUrls })),
+    };
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(draft));
+    } catch {
+      // storage full / disabled: non-fatal
+    }
+  }, [
+    draftHydrated,
+    storageKey,
+    step,
+    started,
+    memoryText,
+    title,
+    greeting,
+    greetingFrom,
+    targetAge,
+    styleId,
+    email,
+    people,
+  ]);
+
+  function clearDraft() {
+    try {
+      window.localStorage.removeItem(storageKey);
+    } catch {
+      // ignore
+    }
+  }
+
+  function resumeDraft() {
+    if (!pendingDraft) return;
+    const d = pendingDraft;
+    setStep(d.step);
+    setStarted(d.started);
+    setMemoryText(d.memoryText);
+    setTitle(d.title);
+    setGreeting(d.greeting);
+    setGreetingFrom(d.greetingFrom);
+    setTargetAge(d.targetAge);
+    if (d.styleId) setStyleId(d.styleId);
+    setEmail(d.email);
+    if (d.people.length > 0) setPeople(d.people.map((p) => ({ ...p, uploading: 0 })));
+    setPickerDismissed(true); // resume goes straight into the stepper, not the picker
+    setPendingDraft(null);
+    setDraftHydrated(true);
+  }
+
+  function discardDraft() {
+    clearDraft();
+    setPendingDraft(null);
+    setDraftHydrated(true);
+  }
 
   function pickTemplate(tpl: TemplateSummary) {
     setTemplate(tpl);
@@ -244,7 +428,9 @@ export function CreateWizard() {
         email: email.trim(),
         targetAge: targetAge ?? undefined,
         people: people.map((p) => ({ name: p.name.trim(), role: p.role, photoUrls: p.photoUrls })),
+        turnstileToken: turnstileToken || undefined,
       });
+      clearDraft(); // book created: drop the local draft so it doesn't resurface
       router.push(`/book/${token}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong — please try again");
@@ -253,6 +439,37 @@ export function CreateWizard() {
   }
 
   const selectedStyle = styles?.find((s) => s.id === styleId) ?? null;
+
+  // Only block submit on a token when Turnstile is actually configured. In dev
+  // the widget calls onVerify("") immediately and the server skips verification.
+  const turnstileRequired = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+
+  // ---------------------------------------------------------------- resume draft
+  if (pendingDraft && !draftHydrated) {
+    return (
+      <PageTransition>
+        <div ref={topRef} className="mx-auto max-w-md scroll-mt-24 text-center">
+          <Card className="p-8">
+            <Eyebrow className="mx-auto">Welcome back</Eyebrow>
+            <h1 className="mt-4 font-display text-2xl font-extrabold text-ink sm:text-3xl">
+              Continue where you left off?
+            </h1>
+            <p className="mt-3 text-sm text-ink-soft">
+              We saved your progress on this book. Pick up right where you stopped, or start fresh.
+            </p>
+            <div className="mt-7 flex flex-col gap-3">
+              <Button size="lg" className="w-full" onClick={resumeDraft}>
+                Continue my book
+              </Button>
+              <Button variant="ghost" size="lg" className="w-full" onClick={discardDraft}>
+                Start fresh
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </PageTransition>
+    );
+  }
 
   // ---------------------------------------------------------------- category picker
   const showPicker = !!categoryId && !templateId && !template && !pickerDismissed;
@@ -383,17 +600,24 @@ export function CreateWizard() {
             )}
 
             {step === 3 && (
-              <FinishStep
-                template={template}
-                title={title}
-                onTitleChange={setTitle}
-                greeting={greeting}
-                onGreetingChange={setGreeting}
-                greetingFrom={greetingFrom}
-                onGreetingFromChange={setGreetingFrom}
-                email={email}
-                onEmailChange={setEmail}
-              />
+              <>
+                <FinishStep
+                  template={template}
+                  title={title}
+                  onTitleChange={setTitle}
+                  greeting={greeting}
+                  onGreetingChange={setGreeting}
+                  greetingFrom={greetingFrom}
+                  onGreetingFromChange={setGreetingFrom}
+                  email={email}
+                  onEmailChange={setEmail}
+                />
+                {/* Abuse control (O5). No-ops in dev: renders nothing and
+                    reports an empty token, which the server accepts. */}
+                <div className="mt-5 flex justify-center">
+                  <Turnstile onVerify={setTurnstileToken} action="create-book" />
+                </div>
+              </>
             )}
           </StepTransition>
 
@@ -423,7 +647,7 @@ export function CreateWizard() {
               </Button>
             ) : (
               <Button
-                disabled={!canContinue}
+                disabled={!canContinue || (turnstileRequired && !turnstileToken)}
                 pending={submitting}
                 pendingLabel="Creating your preview…"
                 onClick={() => void submit()}
@@ -565,17 +789,19 @@ function StyleStep({
       ) : null}
 
       {styles ? (
-        <Carousel ariaLabel="Illustration style" itemGap="gap-4">
-          {styles.map((style) => (
-            <StyleCard
-              key={style.id}
-              style={style}
-              selected={styleId === style.id}
-              recommended={recommendedId === style.id}
-              onSelect={() => onSelect(style.id)}
-            />
-          ))}
-        </Carousel>
+        <div role="radiogroup" aria-label="Illustration style">
+          <Carousel ariaLabel="Illustration style" itemGap="gap-4">
+            {styles.map((style) => (
+              <StyleCard
+                key={style.id}
+                style={style}
+                selected={styleId === style.id}
+                recommended={recommendedId === style.id}
+                onSelect={() => onSelect(style.id)}
+              />
+            ))}
+          </Carousel>
+        </div>
       ) : null}
     </section>
   );
