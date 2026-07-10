@@ -15,6 +15,8 @@ import { categoryArt } from "@/lib/category-art";
 import { loadAudiencePage } from "@/lib/categories";
 import { detectRegion, REGION_LABELS } from "@/lib/region";
 import { fetchSamples } from "@/lib/samples";
+import { resolveLocale } from "@/i18n/request";
+import { localizeRow } from "@/lib/i18n-content";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -43,20 +45,21 @@ async function loadInspiration(): Promise<{
 } | null> {
   try {
     const db = supabaseAdmin();
+    const locale = await resolveLocale();
     const [catRes, tplRes] = await Promise.all([
       db
         .from("template_categories")
-        .select("id, name, tagline, sort_order")
+        .select("id, name, tagline, sort_order, translations")
         .order("sort_order", { ascending: true }),
       db
         .from("story_templates")
-        .select("id, category_id, title, tagline, example_image_url, preview_image_url, mockup_image_url, sort_order")
+        .select("id, category_id, title, tagline, example_image_url, preview_image_url, mockup_image_url, sort_order, translations")
         .eq("is_active", true)
         .order("sort_order", { ascending: true }),
     ]);
     if (catRes.error || tplRes.error) return null;
-    const categories = (catRes.data ?? []) as CategoryRow[];
-    const templates = (tplRes.data ?? []) as TemplateRow[];
+    const categories = (catRes.data ?? []).map((row) => localizeRow(row, locale)) as CategoryRow[];
+    const templates = (tplRes.data ?? []).map((row) => localizeRow(row, locale)) as TemplateRow[];
     if (categories.length === 0) return null;
     return { categories, templates };
   } catch {
