@@ -34,7 +34,7 @@ export function ProductCard({
   priority?: boolean;
 }) {
   const className =
-    "tile-lift group flex w-full flex-col overflow-hidden rounded-3xl bg-white text-left shadow-fuzzy ring-1 ring-ink/5";
+    "tile-lift group flex h-full w-full flex-col overflow-hidden rounded-3xl bg-white text-left shadow-fuzzy ring-1 ring-ink/5";
   const body = (
     <>
       <div className="relative aspect-square w-full overflow-hidden bg-cream">
@@ -61,7 +61,9 @@ export function ProductCard({
         ) : null}
       </div>
       <div className="flex flex-1 flex-col p-4 text-left sm:p-5">
-        <p className="font-display text-[0.95rem] font-extrabold leading-snug text-ink">{title}</p>
+        {/* Reserve two title lines so 1- and 2-line headlines occupy identical
+            space and every card in a row shares the same internal geometry. */}
+        <p className="line-clamp-2 min-h-[2.6rem] font-display text-[0.95rem] font-extrabold leading-snug text-ink">{title}</p>
         {subtitle ? (
           <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-ink-soft">{subtitle}</p>
         ) : null}
