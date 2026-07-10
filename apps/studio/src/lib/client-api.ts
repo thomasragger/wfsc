@@ -51,6 +51,8 @@ export interface CreateBookInput {
   /** Reader age (midpoint of the chosen band, e.g. 0-2 -> 1). */
   targetAge?: number;
   people: { name: string; role: PersonRole; photoUrls: string[] }[];
+  /** Cloudflare Turnstile token (O5); empty/omitted in dev, verified server-side. */
+  turnstileToken?: string;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {

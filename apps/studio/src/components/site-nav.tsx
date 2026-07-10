@@ -19,9 +19,16 @@ import type { AudienceCategory, OccasionCategory } from "@/lib/categories";
 export function SiteNav({
   audience,
   occasions,
+  accountsEnabled = false,
 }: {
   audience: AudienceCategory[];
   occasions: OccasionCategory[];
+  /**
+   * Whether Shopify customer accounts are configured. The account link stays
+   * hidden until both SHOPIFY_CUSTOMER_ACCOUNT_* vars are set (computed on the
+   * server and passed in, since those are not public env vars).
+   */
+  accountsEnabled?: boolean;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -49,13 +56,15 @@ export function SiteNav({
         </nav>
 
         <div className="flex items-center gap-1 justify-self-end">
-          <Link
-            href="/account"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-ink/5"
-            aria-label="Your account"
-          >
-            <IconUser />
-          </Link>
+          {accountsEnabled ? (
+            <Link
+              href="/account"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-ink/5"
+              aria-label="Your account"
+            >
+              <IconUser />
+            </Link>
+          ) : null}
           <CartButton />
           <ButtonLink href="/create" size="sm" className="ml-1 hidden whitespace-nowrap sm:inline-flex sm:px-5">
             Write your story

@@ -1,6 +1,7 @@
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 import { loadNavCategories } from "@/lib/categories";
+import { isCustomerAccountsConfigured } from "@/lib/shopify-customer";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export default async function SiteLayout({
         Just launched: Create your personalized storybook
       </p>
 
-      <SiteNav audience={audience} occasions={occasions} />
+      <SiteNav audience={audience} occasions={occasions} accountsEnabled={isCustomerAccountsConfigured()} />
 
       <main id="main-content" className="flex flex-1 flex-col">{children}</main>
 

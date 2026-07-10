@@ -6,9 +6,9 @@ import { supabaseAdmin } from "@/lib/supabase";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Our artists — Warm Fuzzy Story Club",
+  title: "Our styles — Warm Fuzzy Story Club",
   description:
-    "Every WFSC art style is a real illustrator's world. Meet the styles, and the artists behind them.",
+    "Explore the illustration styles your storybook can be drawn in, from soft watercolor to bold cut-paper. Every look is crafted, never a generic filter.",
 };
 
 /** Customer-facing blurb per style (the DB style_prompt is model-only). */
@@ -28,7 +28,7 @@ interface StyleRow {
   reference_image_urls: string[] | null;
 }
 
-export default async function ArtistsPage() {
+export default async function StylesPage() {
   let styles: StyleRow[] = [];
   try {
     const { data } = await supabaseAdmin()
@@ -43,14 +43,14 @@ export default async function ArtistsPage() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
       <header className="mx-auto max-w-2xl text-center">
-        <Eyebrow className="mx-auto">Real hands, real craft</Eyebrow>
+        <Eyebrow className="mx-auto">Real craft, not a filter</Eyebrow>
         <h1 className="mt-4 font-display text-4xl font-extrabold text-ink sm:text-5xl">
-          The artists behind the styles
+          The styles your story can wear
         </h1>
         <p className="mx-auto mt-4 text-ink-soft">
-          Every look on Warm Fuzzy Story Club begins with a real illustrator&apos;s world, not a
-          generic filter. We&apos;re partnering with working artists to bring their signature craft
-          to your family&apos;s story. Their names and studios are coming soon.
+          Every book is illustrated in one of these signature looks, cover to cover. Each style has
+          its own colour, texture and mood, so you can match the feeling of your memory. Pick one in
+          the first step of the wizard, and change your mind anytime.
         </p>
       </header>
 
@@ -81,18 +81,6 @@ export default async function ArtistsPage() {
                 <p className="mt-1.5 text-sm text-ink-soft">
                   {STYLE_COPY[style.id] ?? "A signature Warm Fuzzy Story Club look."}
                 </p>
-                {/* Placeholder artist slot — filled once a partnership is live. */}
-                <div className="mt-4 flex items-center gap-3 rounded-2xl bg-lavender/50 p-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-base shadow-sm">
-                    🎨
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-ink">Artist reveal coming soon</p>
-                    <p className="text-[0.7rem] text-ink-soft">
-                      In collaboration with a working illustrator.
-                    </p>
-                  </div>
-                </div>
               </div>
             </article>
           );
@@ -102,13 +90,19 @@ export default async function ArtistsPage() {
       <section className="mt-16 rounded-3xl bg-marigold/15 p-8 text-center">
         <p className="font-display text-xl font-extrabold text-ink">Are you an illustrator?</p>
         <p className="mx-auto mt-2 max-w-md text-sm text-ink-soft">
-          We&apos;d love to feature your style and pay you for every book made in it. Tell us about
-          your work.
+          We&apos;re always looking to grow the family of styles, and we pay artists for their craft.
+          If you&apos;d love to see your work become storybooks, tell us about it.
         </p>
         <ButtonLink href="mailto:hello@warmfuzzystoryclub.com?subject=Artist%20collaboration" size="lg" className="mt-5">
           Get in touch
         </ButtonLink>
       </section>
+
+      <div className="mt-12 text-center">
+        <ButtonLink href="/create" size="lg">
+          Start your story
+        </ButtonLink>
+      </div>
     </div>
   );
 }
