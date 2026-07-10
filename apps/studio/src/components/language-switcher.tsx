@@ -7,6 +7,7 @@ import { LOCALES, type Locale } from "@/i18n/config";
 import { usePathname, useRouter } from "@/i18n/navigation";
 
 const LABELS: Record<Locale, string> = { en: "English", de: "Deutsch" };
+const COMPACT_LABELS: Record<Locale, string> = { en: "EN", de: "DE" };
 
 /**
  * Explicit language choice (LAUNCH-PLAN.md O11): navigates to the *same*
@@ -16,7 +17,7 @@ const LABELS: Record<Locale, string> = { en: "English", de: "Deutsch" };
  * equivalent: Shopify checkout collects the address and Lulu auto-routes
  * EU/US production.
  */
-export function LanguageSwitcher({ current }: { current: string }) {
+export function LanguageSwitcher({ current, compact = false }: { current: string; compact?: boolean }) {
   const router = useRouter();
   const pathname = usePathname(); // locale-stripped current path
   const searchParams = useSearchParams();
@@ -50,13 +51,13 @@ export function LanguageSwitcher({ current }: { current: string }) {
           onClick={() => choose(locale)}
           aria-pressed={locale === current}
           disabled={isPending}
-          className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
+          className={`rounded-full ${compact ? "px-2 py-0.5 text-[11px]" : "px-3 py-1 text-xs"} font-bold transition-colors ${
             locale === current
               ? "bg-coral text-white"
               : "text-ink-soft hover:text-coral"
           }`}
         >
-          {LABELS[locale]}
+          {compact ? COMPACT_LABELS[locale] : LABELS[locale]}
         </button>
       ))}
     </div>

@@ -247,7 +247,7 @@ export default async function HomePage() {
         </div>
 
         {/* Centered logo + CTA + tagline, exactly like the storefront hero */}
-        <div className="relative z-10 mx-auto flex min-h-[52vh] w-full max-w-7xl flex-col items-center justify-center px-4 py-10 text-center">
+        <div className="relative z-10 mx-auto flex min-h-[44vh] w-full max-w-7xl flex-col items-center justify-center px-4 py-8 text-center">
           <h1 className="m-0">
             <Image
               src="/logo.png"
@@ -255,13 +255,13 @@ export default async function HomePage() {
               width={300}
               height={355}
               priority
-              className="h-auto w-56 drop-shadow-sm sm:w-72"
+              className="h-auto w-44 drop-shadow-sm sm:w-56"
             />
           </h1>
           {/* Keep each sentence intact so it never wraps mid-phrase; breaks fall
               between sentences, so the last one drops to its own line on narrow
               screens (and stays on one line when it fits). Locale-agnostic. */}
-          <p className="mt-10 max-w-xl text-balance font-display text-2xl font-extrabold leading-tight text-ink sm:mt-12 sm:text-3xl">
+          <p className="mt-8 max-w-xl text-balance font-display text-xl font-extrabold leading-tight text-ink sm:mt-9 sm:text-2xl">
             {t("heroTagline")
               .split(". ")
               .map((part, i, arr) => (i < arr.length - 1 ? `${part}.` : part))
@@ -297,7 +297,10 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="mt-20 grid gap-5 sm:grid-cols-3 sm:gap-6">
+          {/* Mobile: a swipeable snap carousel (peek of the next card invites
+              the drag); sm+: the three-up grid. pt keeps the popping mascot
+              coins unclipped inside the scroll container. */}
+          <div className="-mx-4 mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pt-14 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:mt-20 sm:grid sm:snap-none sm:grid-cols-3 sm:gap-6 sm:overflow-visible sm:px-0 sm:pt-0">
             {[
               { mascot: "/mascots/story.png", tint: "#efe9ff", href: "/create" },
               { mascot: "/mascots/travel.png", tint: "#e6f3fb", href: "/for/places" },
@@ -306,7 +309,7 @@ export default async function HomePage() {
               <Link
                 key={axis.title}
                 href={axis.href}
-                className="tile-lift group relative flex flex-col items-center rounded-[2rem] px-6 pb-7 pt-14 text-center shadow-fuzzy ring-1 ring-ink/5"
+                className="tile-lift group relative flex w-[82%] shrink-0 snap-center flex-col items-center rounded-[2rem] px-6 pb-7 pt-14 text-center shadow-fuzzy ring-1 ring-ink/5 sm:w-auto sm:shrink"
                 style={{ backgroundColor: axis.tint }}
               >
                 {/* mascot coin, popping over the top edge */}
@@ -321,7 +324,7 @@ export default async function HomePage() {
                 </div>
                 <h3 className="mt-4 font-display text-2xl font-extrabold text-ink">{axis.title}</h3>
                 <p className="mt-2 flex-1 text-[0.95rem] leading-relaxed text-ink/70">{axis.body}</p>
-                <span className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-white/80 px-4 py-2 text-sm font-bold text-coral shadow-sm ring-1 ring-white/60">
+                <span className="mt-6 inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-white/80 px-4 py-2 text-sm font-bold text-coral shadow-sm ring-1 ring-white/60">
                   {axis.cta}
                   <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </span>

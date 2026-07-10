@@ -1,8 +1,9 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import Image from "next/image";
 
 import { Link } from "@/i18n/navigation";
 import { IconArrowLeft } from "@/components/ui/icons";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 /**
  * Focused creator chrome for /create and /book/*: small logo, a quiet way
@@ -14,7 +15,7 @@ export default async function StudioLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const t = await getTranslations("studioChrome");
+  const [t, locale] = await Promise.all([getTranslations("studioChrome"), getLocale()]);
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-ink/5 bg-cream/85 backdrop-blur-md">
@@ -36,6 +37,8 @@ export default async function StudioLayout({
               {t("badge")}
             </span>
           </Link>
+          <div className="flex items-center gap-2">
+          <LanguageSwitcher current={locale} compact />
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 rounded-full border border-ink/15 bg-white/70 px-4 py-2 text-xs font-bold text-ink shadow-sm transition hover:bg-white hover:shadow"
@@ -44,6 +47,7 @@ export default async function StudioLayout({
             <span className="hidden sm:inline">{t("backToSite")}</span>
             <span className="sm:hidden">{t("back")}</span>
           </Link>
+          </div>
         </div>
       </header>
 

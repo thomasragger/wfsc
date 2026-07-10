@@ -259,7 +259,7 @@
     },
     "ctaTitle": "Jede Familie hat eine Geschichte, die es wert ist, bewahrt zu werden.",
     "ctaButton": "Schreib deine Geschichte",
-    "cardCta": "Mit dieser Geschichte starten"
+    "cardCta": "Geschichte starten"
   },
   "sampleViewer": {
     "defaultTitle": "Dein Bilderbuch",
@@ -779,7 +779,7 @@
     "pickerTitleCategory": "Eine Geschichte, nach der sie jeden Abend fragen.",
     "pickerTitleDefault": "Mit einer Geschichtsidee starten",
     "pickerTaglineFallback": "Wähle eine Idee zum Starten und mach sie dann ganz zu deiner.",
-    "pickerCardCta": "Mit dieser Geschichte starten",
+    "pickerCardCta": "Geschichte starten",
     "pickerOwnMemory": "Stattdessen mit deiner eigenen Erinnerung starten",
     "back": "Zurück",
     "continue": "Weiter",

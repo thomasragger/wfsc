@@ -78,7 +78,7 @@ export function ProductCard({
         {/* Button-styled CTA (a span: the whole card is the interactive
             element, so no nested link/button). Soft at rest, solid on hover. */}
         <span className="mt-auto flex w-full pt-3">
-          <span className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-coral/10 px-4 py-2 font-display text-sm font-bold text-coral transition-colors group-hover:bg-coral group-hover:text-white">
+          <span className="inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-coral/10 px-3 py-2 font-display text-sm font-bold text-coral transition-colors group-hover:bg-coral group-hover:text-white">
             {ctaLabel}
             <IconArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </span>

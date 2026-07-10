@@ -1,11 +1,12 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
 import { useState } from "react";
 
 import { Link } from "@/i18n/navigation";
 import { CartButton } from "@/components/cart";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { ButtonLink } from "@/components/ui/button";
 import { IconChevronDown, IconClose, IconMenu, IconUser } from "@/components/ui/icons";
 import type { AudienceCategory, OccasionCategory } from "@/lib/categories";
@@ -33,6 +34,7 @@ export function SiteNav({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const t = useTranslations("nav");
+  const locale = useLocale();
 
   return (
     <header className="sticky top-0 z-40 border-b border-ink/5 bg-cream/85 backdrop-blur-md">
@@ -58,6 +60,9 @@ export function SiteNav({
         </nav>
 
         <div className="flex items-center gap-1 justify-self-end">
+          <span className="mr-1 hidden md:inline-flex">
+            <LanguageSwitcher current={locale} compact />
+          </span>
           {accountsEnabled ? (
             <Link
               href="/account"
@@ -91,6 +96,9 @@ export function SiteNav({
             className="mx-auto max-h-[calc(100vh-3.5rem)] w-full max-w-7xl space-y-6 overflow-y-auto px-5 py-6"
             onClick={() => setMobileOpen(false)}
           >
+            <div onClick={(e) => e.stopPropagation()}>
+              <LanguageSwitcher current={locale} />
+            </div>
             <MobileSection title={t("browse")}>
               <MobileLink href="/books">{t("ourBooks")}</MobileLink>
               <MobileLink href="/for/places">{t("placesYouLove")}</MobileLink>
