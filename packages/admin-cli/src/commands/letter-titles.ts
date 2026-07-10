@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Command } from '../lib/command.ts';
 import type { ParsedArgs } from '../lib/args.ts';
+import { flagStr } from '../lib/args.ts';
 import { createDb, createReplicate } from '../lib/clients.ts';
 import { toUrl, fetchBytes, toJpeg, upload } from '../lib/images.ts';
 import { uploadMockupRefs } from '../lib/mockups.ts';
@@ -24,9 +25,18 @@ function colorInstruction(styleId: string): { key: string; text: string } {
   };
 }
 
-async function run(_args: ParsedArgs): Promise<void> {
+async function run(args: ParsedArgs): Promise<void> {
   ensureStateDirs();
-  const PROGRESS = join(stateDir, 'letter-template-titles.json');
+  // --locale de: letter the TRANSLATED title onto the title-less original and
+  // store the result inside translations.<locale> (preview_image_url /
+  // mockup_image_url). localizeRow overlays those fields for that locale, so
+  // localized covers reach every catalog surface with no site-code change.
+  // Default (en) keeps the original behavior of writing the base columns.
+  const locale = flagStr(args, 'locale', 'en');
+  const PROGRESS = join(
+    stateDir,
+    locale === 'en' ? 'letter-template-titles.json' : `letter-template-titles.${locale}.json`,
+  );
   const db = createDb();
   const replicate = createReplicate();
   await db.storage.createBucket('renders', { public: true }).catch(() => undefined);
@@ -44,12 +54,24 @@ async function run(_args: ParsedArgs): Promise<void> {
 
   const { data: templates, error } = await db
     .from('story_templates')
-    .select('id, title, preview_image_url, suggested_style_id')
+    .select('id, title, preview_image_url, suggested_style_id, translations')
     .not('preview_image_url', 'is', null)
     .order('sort_order');
   if (error) throw error;
-  const rows = (templates ?? []) as { id: string; title: string; preview_image_url: string; suggested_style_id: string }[];
-  console.log(`▸ lettering titles onto ${rows.length} templates…`);
+  type TplRow = {
+    id: string;
+    title: string;
+    preview_image_url: string;
+    suggested_style_id: string;
+    translations: Record<string, Record<string, string>> | null;
+  };
+  let rows = (templates ?? []) as TplRow[];
+  if (locale !== 'en') {
+    // Only rows that actually have a translated title, lettered with it.
+    rows = rows.filter((t) => t.translations?.[locale]?.title?.trim());
+  }
+  const titleFor = (t: TplRow) => (locale === 'en' ? t.title : t.translations![locale].title);
+  console.log(`▸ lettering ${locale} titles onto ${rows.length} templates…`);
 
   // The canonical title-LESS preview so re-runs letter clean art, not the DB
   // column we overwrite. Originals live at template-previews/{id}.{jpg,png}.
@@ -62,9 +84,27 @@ async function run(_args: ParsedArgs): Promise<void> {
     return t.preview_image_url;
   }
 
+  const suffix = locale === 'en' ? '' : `.${locale}`;
+
+  /** en: write the base columns; other locales: merge into translations.<locale>. */
+  async function persistUrl(t: TplRow, field: 'preview_image_url' | 'mockup_image_url', url: string) {
+    if (locale === 'en') {
+      await db.from('story_templates').update({ [field]: url }).eq('id', t.id);
+      return;
+    }
+    const merged = {
+      ...(t.translations ?? {}),
+      [locale]: { ...(t.translations?.[locale] ?? {}), [field]: url },
+    };
+    const { error: upErr } = await db.from('story_templates').update({ translations: merged }).eq('id', t.id);
+    if (upErr) throw new Error(upErr.message);
+    t.translations = merged;
+  }
+
   for (const t of rows) {
     const st = (progress.done[t.id] ??= {});
     const color = colorInstruction(t.suggested_style_id);
+    const title = titleFor(t);
     try {
       if (!st.titledPreview || st.colorRule !== color.key) {
         const src = await originalPreviewUrl(t);
@@ -72,17 +112,17 @@ async function run(_args: ParsedArgs): Promise<void> {
           `Add the book title to this children's picture-book cover, integrated naturally into the illustration as though it were painted as part of the scene, NOT as a caption sitting in a blank band. ` +
           `Render it as large hand-lettering in the SAME art medium and texture as the artwork, arranged across the top of the composition but overlapping and interacting with the scene: let sky, clouds, foliage, stars or other background elements weave around and behind the letters, and add a few small decorative flourishes (doodles, swirls, a hand-drawn underline) that tie the lettering into the picture so the whole cover reads as one artwork. ` +
           `${color.text} ` +
-          `The title MUST read EXACTLY, spelled letter-for-letter: "${t.title}", do not invent, rename, shorten, translate, or add any other words. ` +
+          `The title MUST read EXACTLY, spelled letter-for-letter including any umlauts or accents: "${title}", do not invent, rename, shorten, translate, or add any other words. ` +
           `Keep the characters, colours, framing and overall composition intact; only add the integrated title lettering, and keep it clearly legible.`;
         const out = await replicate.run('google/nano-banana-pro', {
           input: { prompt, image_input: [src], aspect_ratio: '1:1', output_format: 'png' },
         });
-        const jpeg = await toJpeg(await fetchBytes(toUrl(out)), `tt-prev-${t.id}`, 900);
-        const pub = await upload(db, 'renders', `template-previews-titled/${t.id}.jpg`, jpeg, 'image/jpeg');
+        const jpeg = await toJpeg(await fetchBytes(toUrl(out)), `tt-prev-${t.id}${suffix}`, 900);
+        const pub = await upload(db, 'renders', `template-previews-titled/${t.id}${suffix}.jpg`, jpeg, 'image/jpeg');
         st.titledPreview = pub;
         st.colorRule = color.key;
         st.mockup = null;
-        await db.from('story_templates').update({ preview_image_url: pub }).eq('id', t.id);
+        await persistUrl(t, 'preview_image_url', pub);
         await saveProgress();
         console.log(`  ✓ ${t.id} titled preview (${color.key}, ${(jpeg.length / 1024).toFixed(0)}KB)`);
       }
@@ -93,15 +133,15 @@ async function run(_args: ParsedArgs): Promise<void> {
         const out = await replicate.run('google/nano-banana-pro', {
           input: { prompt, image_input: [st.titledPreview, ...mockupRefUrls], aspect_ratio: '1:1', output_format: 'png' },
         });
-        const jpeg = await toJpeg(await fetchBytes(toUrl(out)), `tt-mock-${t.id}`, 800);
-        const pub = await upload(db, 'renders', `template-mockups-titled/${t.id}.jpg`, jpeg, 'image/jpeg');
+        const jpeg = await toJpeg(await fetchBytes(toUrl(out)), `tt-mock-${t.id}${suffix}`, 800);
+        const pub = await upload(db, 'renders', `template-mockups-titled/${t.id}${suffix}.jpg`, jpeg, 'image/jpeg');
         st.mockup = pub;
-        await db.from('story_templates').update({ mockup_image_url: pub }).eq('id', t.id);
+        await persistUrl(t, 'mockup_image_url', pub);
         await saveProgress();
         console.log(`  ✓ ${t.id} mockup (${(jpeg.length / 1024).toFixed(0)}KB)`);
       }
     } catch (err) {
-      console.log(`  ✗ ${t.id} (${t.title}): ${String(err).slice(0, 140)}`);
+      console.log(`  ✗ ${t.id} (${title}): ${String(err).slice(0, 140)}`);
     }
   }
   console.log('Done lettering template titles.');
@@ -110,6 +150,6 @@ async function run(_args: ParsedArgs): Promise<void> {
 export const letterTitles: Command = {
   name: 'letter-titles',
   summary: 'Letter each template title onto its preview and rebuild the 3D mockup (resumable).',
-  usage: 'letter-titles',
+  usage: 'letter-titles [--locale de]  (non-en letters the translated title into translations.<locale>)',
   run,
 };
