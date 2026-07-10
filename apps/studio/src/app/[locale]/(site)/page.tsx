@@ -247,7 +247,7 @@ export default async function HomePage() {
         </div>
 
         {/* Centered logo + CTA + tagline, exactly like the storefront hero */}
-        <div className="relative z-10 mx-auto flex min-h-[44vh] w-full max-w-7xl flex-col items-center justify-center px-4 py-8 text-center">
+        <div className="relative z-10 mx-auto flex min-h-[52vh] w-full max-w-7xl flex-col items-center justify-center px-4 py-8 text-center">
           <h1 className="m-0">
             <Image
               src="/logo.png"
