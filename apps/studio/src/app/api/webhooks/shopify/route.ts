@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { inngest } from '@/inngest/client';
+import { captureServer } from '@/lib/analytics';
 import { bookIdsForEmail, deleteBookData } from '@/lib/deletion';
 import { cancelPrintJob } from '@/lib/lulu';
 import { opsAlert } from '@/lib/ops-alert';
@@ -124,6 +125,12 @@ export async function POST(request: Request) {
       await inngest.send({
         name: 'book/purchased',
         data: { bookId, shopifyOrderId: payload.id },
+      });
+
+      // Funnel: purchase completed (server-side, keyed on book id). Only the
+      // book format is recorded, never customer/order PII.
+      await captureServer('purchase_completed', bookId, {
+        format: detectFormat(payload, bookId),
       });
     }
   } else if (topic === 'orders/cancelled' || topic === 'refunds/create') {

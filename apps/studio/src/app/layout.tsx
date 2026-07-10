@@ -5,6 +5,7 @@ import { Baloo_2, Quicksand } from "next/font/google";
 import "./globals.css";
 
 import { ScallopDefs } from "@/components/decor";
+import { PostHogProvider } from "@/components/posthog-provider";
 
 const baloo = Baloo_2({
   variable: "--font-baloo",
@@ -40,7 +41,9 @@ export default async function RootLayout({
     <html lang={locale} className={`${baloo.variable} ${quicksand.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <ScallopDefs />
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <PostHogProvider>{children}</PostHogProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

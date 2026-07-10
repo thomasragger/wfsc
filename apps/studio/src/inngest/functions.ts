@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs';
 import {
   describeCharacter,
   generateCharacterSheet,
@@ -29,6 +30,19 @@ import { inngest } from './client';
 
 const PREVIEW_SPREADS = 2; // free preview: cover + first N spreads
 const MAX_RETRIES = 2;
+
+/**
+ * Report an Inngest function failure to Sentry with book context. Background
+ * function failures aren't HTTP request errors, so onRequestError never sees
+ * them: capture them explicitly here. Tags carry ids only, never PII.
+ */
+function captureInngestFailure(
+  fn: string,
+  error: unknown,
+  tags: Record<string, string | undefined>,
+): void {
+  Sentry.captureException(error, { tags: { inngest_function: fn, ...tags } });
+}
 
 async function loadStyle(styleId: string): Promise<StyleDef> {
   const { data, error } = await supabaseAdmin()
@@ -144,8 +158,9 @@ export const generatePreview = inngest.createFunction(
     retries: 2,
     // When all retries are exhausted, flip the book to a terminal failed
     // state so the UI can show an error + retry instead of spinning forever.
-    onFailure: async ({ event }) => {
+    onFailure: async ({ event, error }) => {
       const bookId = event?.data?.event?.data?.bookId;
+      captureInngestFailure('generate-preview', error, { book_id: bookId });
       if (!bookId) return;
       await supabaseAdmin().from('books').update({ status: 'preview_failed' }).eq('id', bookId);
     },
@@ -318,6 +333,7 @@ export const generateFullBook = inngest.createFunction(
     // state, tell the customer it's delayed, and page ops.
     onFailure: async ({ event, error }) => {
       const bookId = event?.data?.event?.data?.bookId;
+      captureInngestFailure('generate-full-book', error, { book_id: bookId });
       if (!bookId) return;
       const db = supabaseAdmin();
       await db.from('books').update({ status: 'generation_failed' }).eq('id', bookId);
@@ -475,6 +491,10 @@ export const regenerateSpread = inngest.createFunction(
     // trust, so page ops.
     onFailure: async ({ event, error }) => {
       const data = event?.data?.event?.data;
+      captureInngestFailure('regenerate-spread', error, {
+        book_id: data?.bookId,
+        spread_id: data?.spreadId,
+      });
       await opsAlert(
         'Spread regeneration failed',
         `book=${data?.bookId} spread=${data?.spreadId}\n${error?.message ?? 'retries exhausted'}\nThe previous image is still in place; re-send book/spread.regenerate after fixing.`,
@@ -540,6 +560,7 @@ export const submitToPrint = inngest.createFunction(
     retries: 3,
     onFailure: async ({ event, error }) => {
       const bookId = event?.data?.event?.data?.bookId;
+      captureInngestFailure('submit-to-print', error, { book_id: bookId });
       if (!bookId) return;
       await supabaseAdmin().from('books').update({ status: 'print_failed' }).eq('id', bookId);
       await opsAlert(
@@ -690,6 +711,7 @@ export const retentionPurge = inngest.createFunction(
           return true;
         } catch (err) {
           console.error(`retention purge failed for ${bookId}`, err);
+          captureInngestFailure('retention-purge', err, { book_id: bookId });
           return false;
         }
       });

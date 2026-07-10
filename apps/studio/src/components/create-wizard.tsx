@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { usePostHog } from "posthog-js/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ArtPlaceholder, Sparkle } from "@/components/decor";
 import { Alert } from "@/components/ui/alert";
@@ -111,6 +112,17 @@ export function CreateWizard() {
   const [error, setError] = useState<string | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
+  // PostHog funnel tracking. No-ops when analytics is unconfigured (dev). Never
+  // sends PII: only step indices/names and upload success/fail — no photos,
+  // names, email or memory text.
+  const posthog = usePostHog();
+  const track = useCallback(
+    (event: string, props?: Record<string, string | number | boolean>) => {
+      if (process.env.NEXT_PUBLIC_POSTHOG_KEY) posthog?.capture(event, props);
+    },
+    [posthog],
+  );
+
   // ?category= — offer that category's templates as pickable cards first.
   const [category, setCategory] = useState<CategorySummary | null>(null);
   const [categoryTemplates, setCategoryTemplates] = useState<TemplateSummary[] | null>(null);
@@ -156,6 +168,30 @@ export function CreateWizard() {
       .catch((err: Error) => setStylesError(err.message));
   }, []);
 
+  // Funnel: fire "step entered" whenever a stepper step first becomes visible.
+  // Gated on the stepper actually being on screen (not the picker/hero/loading
+  // screens) and deduped so re-renders don't double-count.
+  const lastEnteredStep = useRef<number | null>(null);
+  useEffect(() => {
+    const showPicker = !!categoryId && !templateId && !template && !pickerDismissed;
+    const showTemplateLoading = !!templateId && !template && !templateFailed;
+    const showHero = !!template && !started;
+    const inStepper = !showPicker && !showTemplateLoading && !showHero;
+    if (!inStepper) return;
+    if (lastEnteredStep.current === step) return;
+    lastEnteredStep.current = step;
+    track("wizard_step_entered", { step, step_name: STEPS[step] });
+  }, [
+    step,
+    started,
+    template,
+    templateFailed,
+    pickerDismissed,
+    categoryId,
+    templateId,
+    track,
+  ]);
+
   function pickTemplate(tpl: TemplateSummary) {
     setTemplate(tpl);
     if (tpl.suggestedStyleId) setStyleId((current) => current ?? tpl.suggestedStyleId);
@@ -193,6 +229,7 @@ export function CreateWizard() {
   }, [step, styleId, memoryText, people, uploadsInFlight, email]);
 
   function goTo(next: number) {
+    if (next > step) track("wizard_step_completed", { step, step_name: STEPS[step] });
     setError(null);
     setDirection(next > step ? "forward" : "back");
     setStep(next);
@@ -220,11 +257,13 @@ export function CreateWizard() {
               : p,
           ),
         );
+        track("photo_upload_succeeded");
       } catch (err) {
         setPeople((prev) =>
           prev.map((p) => (p.key === person.key ? { ...p, uploading: p.uploading - 1 } : p)),
         );
         setError(err instanceof Error ? err.message : "Upload failed");
+        track("photo_upload_failed");
       }
     }
   }
@@ -233,6 +272,10 @@ export function CreateWizard() {
     if (!styleId || submitting) return;
     setSubmitting(true);
     setError(null);
+    track("wizard_step_completed", {
+      step: STEPS.length - 1,
+      step_name: STEPS[STEPS.length - 1],
+    });
     try {
       const token = await createBook({
         memoryText: memoryText.trim(),

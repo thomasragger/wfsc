@@ -1,9 +1,35 @@
 /**
  * Transactional email via Resend's REST API (no SDK). Degrades to console
  * logging when RESEND_API_KEY is unset so dev/preview environments never
- * crash on missing config.
+ * crash on missing config. In production the boot-time assertion below makes
+ * missing config a hard startup failure instead.
  */
 const FROM = process.env.EMAIL_FROM ?? 'Warm Fuzzy Story Club <hello@warmfuzzystoryclub.com>';
+
+const IS_PROD = process.env.NODE_ENV === 'production';
+// `next build` runs with NODE_ENV=production; don't fail the build for env that
+// only needs to exist at runtime. The check runs at server boot (first import).
+const IS_BUILD_PHASE = process.env.NEXT_PHASE === 'phase-production-build';
+
+/**
+ * Boot-time assertion: in production, email must be fully configured or the
+ * process must not come up. Missing RESEND_API_KEY or STUDIO_URL used to fail
+ * silently (a console.warn per send / a stale Vercel fallback URL); now it
+ * fails loudly at startup. Dev/preview keep degrading gracefully.
+ */
+function assertEmailEnv(): void {
+  if (!IS_PROD || IS_BUILD_PHASE) return;
+  const missing: string[] = [];
+  if (!process.env.RESEND_API_KEY) missing.push('RESEND_API_KEY');
+  if (!process.env.STUDIO_URL) missing.push('STUDIO_URL');
+  if (missing.length > 0) {
+    throw new Error(
+      `[email] Missing required production environment variable(s): ${missing.join(', ')}. ` +
+        'Set them in the deployment environment before starting the app.',
+    );
+  }
+}
+assertEmailEnv();
 
 export async function sendEmail(opts: {
   to: string;
@@ -12,6 +38,8 @@ export async function sendEmail(opts: {
 }): Promise<void> {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
+    // Only reachable in non-prod: the boot assertion guarantees the key in
+    // production. Log and no-op so dev/preview never crash.
     console.warn(`[email skipped: RESEND_API_KEY unset] to=${opts.to} subject="${opts.subject}"`);
     return;
   }
@@ -23,7 +51,14 @@ export async function sendEmail(opts: {
   if (!res.ok) throw new Error(`Resend failed ${res.status}: ${await res.text()}`);
 }
 
-const studioUrl = () => process.env.STUDIO_URL ?? 'https://wfsc-studio.vercel.app';
+const studioUrl = (): string => {
+  const url = process.env.STUDIO_URL;
+  if (url) return url;
+  // Prod is guaranteed to have STUDIO_URL by the boot assertion; this throw is
+  // a defensive belt-and-braces. Dev falls back to localhost only.
+  if (IS_PROD) throw new Error('[email] STUDIO_URL is required in production');
+  return 'http://localhost:3000';
+};
 
 /** "Your book is ready to review" — sent when the full book finishes generating. */
 export function reviewReadyEmail(book: { title: string | null; access_token: string }): {

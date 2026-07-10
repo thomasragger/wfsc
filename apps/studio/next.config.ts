@@ -20,6 +20,11 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,
   widenClientFileUpload: true,
+  // Upload source maps for readable stack traces, then delete them from the
+  // client bundle so they never ship publicly.
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
   tunnelRoute: "/monitoring", // dodge ad-blockers
   silent: !process.env.CI,
 });

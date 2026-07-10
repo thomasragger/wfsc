@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { inngest } from "@/inngest/client";
+import { captureServer } from "@/lib/analytics";
 import { fetchBookBundle } from "@/lib/books";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -33,6 +34,9 @@ export async function POST(_request: Request, { params }: Params) {
     if (error) throw new Error(error.message);
 
     await inngest.send({ name: "book/approved", data: { bookId: bundle.book.id } });
+
+    // Funnel: customer approved the book (keyed on book id, no PII).
+    await captureServer("book_approved", bundle.book.id);
 
     return NextResponse.json({ ok: true });
   } catch (err) {
