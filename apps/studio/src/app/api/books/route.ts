@@ -6,8 +6,15 @@ import { inngest } from "@/inngest/client";
 import { PERSON_ROLES, type PersonRole } from "@/lib/book-payload";
 import { previewSpendTodayUsd } from "@/lib/generation-jobs";
 import { opsAlert } from "@/lib/ops-alert";
+import {
+  RATE_LIMIT_COPY,
+  checkRateLimit,
+  getClientIp,
+  rateLimitResponse,
+} from "@/lib/rate-limit";
 import { UPLOADS_BUCKET, canonicalStorageUrl, parseStorageUrl } from "@/lib/storage";
 import { supabaseAdmin } from "@/lib/supabase";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
 
@@ -20,6 +27,9 @@ const CreateBookSchema = z.object({
   templateId: z.string().trim().max(100).optional(),
   styleId: z.string().trim().min(1).max(100),
   email: z.string().trim().email(),
+  // Cloudflare Turnstile token from the wizard Finish step. Optional in the
+  // schema so dev (no Turnstile configured) works; enforced below when set.
+  turnstileToken: z.string().max(4000).nullish(),
   people: z
     .array(
       z.object({
@@ -50,6 +60,26 @@ export async function POST(request: Request) {
       );
     }
     const input = parsed.data;
+
+    // Abuse control: rate limit per IP and per email before any paid work.
+    const ip = getClientIp(request);
+    const ipLimit = await checkRateLimit("books-ip", ip);
+    if (!ipLimit.ok) {
+      return rateLimitResponse(RATE_LIMIT_COPY.books, ipLimit.retryAfter);
+    }
+    const emailKey = input.email.trim().toLowerCase();
+    const emailLimit = await checkRateLimit("books-email", emailKey);
+    if (!emailLimit.ok) {
+      return rateLimitResponse(RATE_LIMIT_COPY.books, emailLimit.retryAfter);
+    }
+
+    // Human verification (Cloudflare Turnstile). Skipped in dev when unset.
+    if (!(await verifyTurnstile(input.turnstileToken, ip))) {
+      return NextResponse.json(
+        { error: "We couldn't confirm you're human. Please refresh the page and try again." },
+        { status: 400 },
+      );
+    }
 
     // Free previews cost real money (story + character sheets + images).
     // A daily budget caps the worst case; 0 disables the guard.
