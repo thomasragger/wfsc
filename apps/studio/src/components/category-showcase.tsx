@@ -3,8 +3,8 @@ import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { Doodle } from "@/components/decor";
-import { BookTile } from "@/components/ui/book-tile";
 import { ButtonLink } from "@/components/ui/button";
+import { ProductCard } from "@/components/ui/product-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconArrowLeft } from "@/components/ui/icons";
 import type { CategoryTemplate } from "@/lib/categories";
@@ -95,17 +95,16 @@ export async function CategoryShowcase({
 
       <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
         {templates.length > 0 ? (
-          <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 sm:gap-x-8">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
             {templates.map((tpl) => (
-              <BookTile
+              <ProductCard
                 key={tpl.id}
                 href={`/create?template=${encodeURIComponent(tpl.id)}`}
                 image={tpl.mockupImageUrl ?? tpl.previewImageUrl ?? tpl.exampleImageUrl}
                 hoverImage={tpl.mockupImageUrl ? tpl.previewImageUrl : null}
                 title={tpl.title}
-                tagline={tpl.tagline}
-                size="fill"
-                aspectClassName="aspect-square"
+                subtitle={tpl.tagline}
+                ctaLabel={t("cardCta")}
               />
             ))}
           </div>

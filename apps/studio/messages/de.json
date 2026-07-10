@@ -32,7 +32,8 @@
     "allSamples": "Alle Beispielbücher",
     "detailFallbackTitle": "Ein Beispielbuch",
     "illustratedIn": "Illustriert im {style}-Stil",
-    "moreTitle": "Noch mehr Bücher zum Durchblättern"
+    "moreTitle": "Noch mehr Bücher zum Durchblättern",
+    "cardCta": "Durchblättern"
   },
   "bookHub": {
     "defaultTitle": "Dein Bilderbuch",
@@ -256,7 +257,8 @@
       "action": "Mit deiner eigenen Erinnerung starten"
     },
     "ctaTitle": "Jede Familie hat eine Geschichte, die es wert ist, bewahrt zu werden.",
-    "ctaButton": "Schreib deine Geschichte"
+    "ctaButton": "Schreib deine Geschichte",
+    "cardCta": "Mit dieser Geschichte starten"
   },
   "sampleViewer": {
     "defaultTitle": "Dein Bilderbuch",

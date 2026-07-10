@@ -642,8 +642,12 @@ export function CreateWizard() {
           </StepTransition>
 
           {error ? <Alert className="mt-5">{error}</Alert> : null}
+        </Card>
 
-          <div className="mt-8 flex items-center justify-between gap-3">
+        {/* Step navigation: sticky at the viewport bottom so Continue is
+            never hidden below the fold, whatever the step's height. */}
+        <div className="sticky bottom-0 z-30 -mx-4 mt-4 border-t border-ink/10 bg-cream/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+          <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
             {step > 0 ? (
               <Button variant="ghost" onClick={() => goTo(step - 1)}>
                 {t("back")}
@@ -676,7 +680,7 @@ export function CreateWizard() {
               </Button>
             )}
           </div>
-        </Card>
+        </div>
       </div>
     </PageTransition>
   );
@@ -1068,59 +1072,27 @@ function CastStep({
         </p>
       </header>
 
-      <div className="flex flex-col gap-4">
-        {people.map((person, idx) => (
-          <div key={person.key} className="rounded-2xl border-2 border-ink/10 bg-white p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <p className="font-display text-sm font-bold text-ink-soft">{t("castPerson", { n: idx + 1 })}</p>
-              {people.length > 1 ? (
-                <button
-                  type="button"
-                  className="text-xs font-semibold text-coral hover:underline"
-                  onClick={() => onRemove(person.key)}
-                >
-                  {t("castRemove")}
-                </button>
-              ) : null}
-            </div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <Field label={t("castName")} htmlFor={`name-${person.key}`}>
-                <TextInput
-                  id={`name-${person.key}`}
-                  placeholder={t("castNamePlaceholder")}
-                  value={person.name}
-                  maxLength={80}
-                  onChange={(e) => onUpdate(person.key, { name: e.target.value })}
-                />
-              </Field>
-              <Field label={t("castRole")} htmlFor={`role-${person.key}`}>
-                <Select
-                  id={`role-${person.key}`}
-                  value={person.role}
-                  onChange={(e) => onUpdate(person.key, { role: e.target.value as PersonRole })}
-                >
-                  {PERSON_ROLES.map((role) => (
-                    <option key={role} value={role}>
-                      {roleLabels[role]}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center gap-3">
+      {/* Compact, app-like rows: photos | name | role | remove, one line on
+          desktop so several people fit on a laptop screen without scrolling. */}
+      <div className="flex flex-col gap-3">
+        {people.map((person) => (
+          <div
+            key={person.key}
+            className="flex flex-col gap-3 rounded-2xl border-2 border-ink/10 bg-white p-3 sm:flex-row sm:items-center sm:p-3.5"
+          >
+            <div className="flex items-center gap-2">
               {person.photoUrls.map((url) => (
-                <div key={url} className="group relative">
+                <div key={url} className="group relative shrink-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={url}
                     alt={t("castPhotoAlt", { name: person.name || t("castPhotoAltFallback") })}
-                    className="h-20 w-20 rounded-xl object-cover shadow-fuzzy"
+                    className="h-14 w-14 rounded-xl object-cover shadow-fuzzy"
                   />
                   <button
                     type="button"
                     aria-label={t("castRemovePhoto")}
-                    className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-ink text-xs text-cream opacity-90 hover:bg-coral"
+                    className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-ink text-[10px] text-cream opacity-90 hover:bg-coral"
                     onClick={() =>
                       onUpdate(person.key, { photoUrls: person.photoUrls.filter((u) => u !== url) })
                     }
@@ -1130,12 +1102,12 @@ function CastStep({
                 </div>
               ))}
               {Array.from({ length: person.uploading }).map((_, i) => (
-                <Skeleton key={`up-${i}`} className="h-20 w-20" rounded="rounded-xl" />
+                <Skeleton key={`up-${i}`} className="h-14 w-14 shrink-0" rounded="rounded-xl" />
               ))}
               {person.photoUrls.length + person.uploading < 3 ? (
-                <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-ink/20 text-ink-soft transition-colors hover:border-marigold hover:text-ink">
-                  <span className="text-xl leading-none">+</span>
-                  <span className="text-[10px] font-semibold">{t("castAddPhoto")}</span>
+                <label className="flex h-14 w-14 shrink-0 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-ink/20 text-ink-soft transition-colors hover:border-marigold hover:text-ink">
+                  <span className="text-lg leading-none">+</span>
+                  <span className="text-[9px] font-semibold">{t("castAddPhoto")}</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -1149,6 +1121,40 @@ function CastStep({
                 </label>
               ) : null}
             </div>
+
+            <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_9.5rem]">
+              <TextInput
+                id={`name-${person.key}`}
+                aria-label={t("castName")}
+                placeholder={t("castNamePlaceholder")}
+                value={person.name}
+                maxLength={80}
+                onChange={(e) => onUpdate(person.key, { name: e.target.value })}
+              />
+              <Select
+                id={`role-${person.key}`}
+                aria-label={t("castRole")}
+                value={person.role}
+                onChange={(e) => onUpdate(person.key, { role: e.target.value as PersonRole })}
+              >
+                {PERSON_ROLES.map((role) => (
+                  <option key={role} value={role}>
+                    {roleLabels[role]}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            {people.length > 1 ? (
+              <button
+                type="button"
+                aria-label={t("castRemove")}
+                className="self-end text-xs font-semibold text-coral hover:underline sm:self-center"
+                onClick={() => onRemove(person.key)}
+              >
+                {t("castRemove")}
+              </button>
+            ) : null}
           </div>
         ))}
       </div>

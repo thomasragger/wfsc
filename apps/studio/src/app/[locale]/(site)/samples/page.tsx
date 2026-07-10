@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
 import { Doodle } from "@/components/decor";
-import { BookTile } from "@/components/ui/book-tile";
+import { ProductCard } from "@/components/ui/product-card";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Eyebrow } from "@/components/ui/eyebrow";
@@ -39,18 +39,17 @@ export default async function SamplesPage() {
         />
       ) : (
         // One fuller grid reads better than one-book-per-category rows.
-        <div className="mt-14 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 sm:gap-x-8">
+        <div className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
           {samples.map((sample) => {
             const art = categoryArt(sample.categoryId ?? "kids", sample.categoryName ?? "Kids");
             return (
-              <BookTile
+              <ProductCard
                 key={sample.token}
                 href={`/samples/${encodeURIComponent(sample.token)}`}
                 image={sample.mockupImageUrl ?? sample.coverImageUrl ?? `/categories/${art.photo}.jpg`}
-                title={sample.title ?? "A sample story"}
-                category={sample.categoryName}
-                size="fill"
-                aspectClassName="aspect-square"
+                title={sample.title ?? t("detailFallbackTitle")}
+                subtitle={sample.categoryName}
+                ctaLabel={t("cardCta")}
               />
             );
           })}

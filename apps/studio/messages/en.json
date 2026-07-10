@@ -31,7 +31,8 @@
     "allSamples": "All sample books",
     "detailFallbackTitle": "A sample storybook",
     "illustratedIn": "Illustrated in the {style} style",
-    "moreTitle": "More books to flip through"
+    "moreTitle": "More books to flip through",
+    "cardCta": "Flip through"
   },
   "bookHub": {
     "defaultTitle": "Your storybook",
@@ -255,7 +256,8 @@
       "action": "Start from your own memory"
     },
     "ctaTitle": "Every family has a story worth keeping.",
-    "ctaButton": "Write your story"
+    "ctaButton": "Write your story",
+    "cardCta": "Start from this story"
   },
   "sampleViewer": {
     "defaultTitle": "Your storybook",

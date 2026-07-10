@@ -7,7 +7,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconArrowLeft } from "@/components/ui/icons";
 import { PageTransition } from "@/components/ui/page-transition";
-import { BookTile } from "@/components/ui/book-tile";
+import { ProductCard } from "@/components/ui/product-card";
 import { fetchSampleBundle, fetchSamples } from "@/lib/samples";
 
 export const dynamic = "force-dynamic";
@@ -112,16 +112,15 @@ export default async function SampleBookPage({
         {related.length > 0 ? (
           <section className="mt-16">
             <h2 className="font-display text-2xl font-extrabold text-ink">{t("moreTitle")}</h2>
-            <div className="mt-6 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3">
+            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5">
               {related.map((s) => (
-                <BookTile
+                <ProductCard
                   key={s.token}
                   href={`/samples/${encodeURIComponent(s.token)}`}
                   image={s.mockupImageUrl ?? s.coverImageUrl}
                   title={s.title ?? t("detailFallbackTitle")}
-                  category={s.categoryName}
-                  size="fill"
-                  aspectClassName="aspect-square"
+                  subtitle={s.categoryName}
+                  ctaLabel={t("cardCta")}
                 />
               ))}
             </div>
