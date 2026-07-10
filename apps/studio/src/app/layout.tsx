@@ -5,6 +5,7 @@ import { Baloo_2, Quicksand } from "next/font/google";
 import "./globals.css";
 
 import { ScallopDefs } from "@/components/decor";
+import { PostHogProvider } from "@/components/posthog-provider";
 
 const baloo = Baloo_2({
   variable: "--font-baloo",
@@ -78,7 +79,9 @@ export default async function RootLayout({
           Skip to content
         </a>
         <ScallopDefs />
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <PostHogProvider>{children}</PostHogProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { resolveLocale } from "@/i18n/request";
 import { inngest } from "@/inngest/client";
+import { captureServer } from "@/lib/analytics";
 import { PERSON_ROLES, type PersonRole } from "@/lib/book-payload";
 import { previewSpendTodayUsd } from "@/lib/generation-jobs";
 import { opsAlert } from "@/lib/ops-alert";
@@ -164,6 +165,14 @@ export async function POST(request: Request) {
     } catch (err) {
       console.error("inngest send failed for book/preview.requested", err);
     }
+
+    // Funnel: book created (server-side, keyed on book id). No PII in props.
+    await captureServer("book_created", book.id as string, {
+      has_template: Boolean(input.templateId),
+      style_id: input.styleId,
+      people_count: people.length,
+      target_age: input.targetAge ?? null,
+    });
 
     return NextResponse.json({ token: book.access_token as string }, { status: 201 });
   } catch (err) {

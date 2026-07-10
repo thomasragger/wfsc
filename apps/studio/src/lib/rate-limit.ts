@@ -1,97 +1,38 @@
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
 
+import { supabaseAdmin } from "@/lib/supabase";
+
 /**
- * Per-client rate limiting (workstream O5, per docs/rate-limit-spec.md).
+ * Per-client rate limiting (workstream O5, per docs/rate-limit-spec.md),
+ * backed by Postgres instead of Upstash to keep the service count down:
+ * fixed-window counters in the `rate_limits` table via the atomic
+ * `rate_limit_hit` RPC (migration 0013). At our request rates (single-digit
+ * hits per client per hour on the guarded endpoints) Postgres is more than
+ * enough; revisit Redis only if sustained abuse ever makes DB load visible.
  *
- * Sliding-window limits backed by Upstash Redis, enforced inside each route
- * handler (not middleware) so a limit can key on the request body (email,
- * book token) as well as the client IP.
+ * Enforced inside each route handler (not middleware) so a limit can key on
+ * the request body (email, book token) as well as the client IP.
  *
- * Degradation: if the Upstash env vars are absent (local dev) the limiters are
- * disabled and every check passes, with a one-time console note. A transient
- * Redis error also fails open so a Redis outage never blocks a real customer.
+ * Degradation: any database error fails open so an infrastructure problem
+ * never blocks a real customer. The daily preview budget and per-book
+ * lifetime caps remain independent backstops.
  */
 
-const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL;
-const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
-
-let warnedDisabled = false;
-
-/** Lazily-built shared Redis client, or null when Upstash is not configured. */
-const redis: Redis | null = (() => {
-  if (!REDIS_URL || !REDIS_TOKEN) {
-    return null;
-  }
-  return new Redis({ url: REDIS_URL, token: REDIS_TOKEN });
-})();
-
-function warnOnce(): void {
-  if (warnedDisabled) return;
-  warnedDisabled = true;
-  console.warn(
-    "[rate-limit] UPSTASH_REDIS_REST_URL / _TOKEN not set. Rate limiting is disabled (fail open). Configure Upstash to enforce limits in production.",
-  );
-}
-
-/** The distinct limits from the spec. */
+/** The distinct limits from the spec: max hits per fixed window. */
 export type RateLimitKind = "books-ip" | "books-email" | "uploads-ip" | "regenerate-book";
 
-const limiterCache = new Map<RateLimitKind, Ratelimit>();
-
-function limiterFor(kind: RateLimitKind): Ratelimit | null {
-  if (!redis) {
-    warnOnce();
-    return null;
-  }
-  const cached = limiterCache.get(kind);
-  if (cached) return cached;
-
-  let limiter: Ratelimit;
-  switch (kind) {
-    case "books-ip":
-      // Each create triggers paid preview generation.
-      limiter = new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(3, "1 h"),
-        prefix: "wfsc:books:ip",
-        analytics: false,
-      });
-      break;
-    case "books-email":
-      // Stops a single caller rotating IPs.
-      limiter = new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(5, "1 d"),
-        prefix: "wfsc:books:email",
-        analytics: false,
-      });
-      break;
-    case "uploads-ip":
-      limiter = new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(30, "1 h"),
-        prefix: "wfsc:uploads:ip",
-        analytics: false,
-      });
-      break;
-    case "regenerate-book":
-      // Complements the lifetime WFSC_MAX_REGENS_PER_BOOK cap.
-      limiter = new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(10, "1 d"),
-        prefix: "wfsc:regen:book",
-        analytics: false,
-      });
-      break;
-  }
-  limiterCache.set(kind, limiter);
-  return limiter;
-}
+const LIMITS: Record<RateLimitKind, { windowSeconds: number; max: number }> = {
+  // Each create triggers paid preview generation.
+  "books-ip": { windowSeconds: 60 * 60, max: 3 },
+  // Stops a single caller rotating IPs.
+  "books-email": { windowSeconds: 24 * 60 * 60, max: 5 },
+  "uploads-ip": { windowSeconds: 60 * 60, max: 30 },
+  // Complements the lifetime WFSC_MAX_REGENS_PER_BOOK cap.
+  "regenerate-book": { windowSeconds: 24 * 60 * 60, max: 10 },
+};
 
 export interface RateLimitResult {
-  /** true when the request is allowed (or limiting is disabled). */
+  /** true when the request is allowed (or limiting failed open). */
   ok: boolean;
   /** Seconds until the window frees up (0 when allowed). */
   retryAfter: number;
@@ -114,19 +55,26 @@ export function getClientIp(request: Request): string {
 }
 
 /**
- * Consume one token from the given limit. Fails open (ok: true) when limiting
- * is disabled or Redis errors, so infrastructure problems never block a book.
+ * Consume one token from the given limit. Fails open (ok: true) when the
+ * database errors, so infrastructure problems never block a book.
  */
 export async function checkRateLimit(
   kind: RateLimitKind,
   identifier: string,
 ): Promise<RateLimitResult> {
-  const limiter = limiterFor(kind);
-  if (!limiter) return { ok: true, retryAfter: 0 };
+  const { windowSeconds, max } = LIMITS[kind];
   try {
-    const { success, reset } = await limiter.limit(identifier);
-    const retryAfter = Math.max(0, Math.ceil((reset - Date.now()) / 1000));
-    return { ok: success, retryAfter };
+    const { data, error } = await supabaseAdmin().rpc("rate_limit_hit", {
+      p_key: `${kind}:${identifier}`,
+      p_window_seconds: windowSeconds,
+      p_max: max,
+    });
+    if (error) throw new Error(error.message);
+    const row = (Array.isArray(data) ? data[0] : data) as
+      | { allowed: boolean; retry_after: number }
+      | undefined;
+    if (!row) throw new Error("rate_limit_hit returned no row");
+    return { ok: row.allowed, retryAfter: row.allowed ? 0 : row.retry_after };
   } catch (err) {
     console.error(`[rate-limit] check failed for ${kind}, failing open`, err);
     return { ok: true, retryAfter: 0 };

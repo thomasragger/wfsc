@@ -1,6 +1,7 @@
 import { BookHub } from "@/components/book-hub";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { captureServer } from "@/lib/analytics";
 import { fetchBookBundle, type BookBundle } from "@/lib/books";
 
 export const dynamic = "force-dynamic";
@@ -45,6 +46,15 @@ export default async function BookPage({
         />
       </div>
     );
+  }
+
+  // Funnel: distinguish the free-preview view from the paid review view
+  // (keyed on book id, no PII). Fired on each server render of the page.
+  const status = bundle.book.status;
+  if (status === "preview_ready") {
+    await captureServer("preview_viewed", bundle.book.id, { status });
+  } else if (status === "ready_for_review") {
+    await captureServer("review_page_opened", bundle.book.id, { status });
   }
 
   return <BookHub token={token} initial={bundle.payload} />;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { captureServer } from "@/lib/analytics";
 import { fetchBookBundle } from "@/lib/books";
 import { variantForFormat } from "@/lib/cart";
 import { createCheckout } from "@/lib/shopify";
@@ -49,6 +50,9 @@ export async function POST(request: Request, { params }: Params) {
     const db = supabaseAdmin();
     const { error } = await db.from("books").update({ format }).eq("id", bundle.book.id);
     if (error) throw new Error(error.message);
+
+    // Funnel: checkout started (keyed on book id, no PII).
+    await captureServer("checkout_started", bundle.book.id, { format });
 
     const { checkoutUrl } = await createCheckout({
       variantId,
