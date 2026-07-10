@@ -21,6 +21,7 @@ import { shopifyBoard } from './commands/shopify-board.ts';
 import { luluSetup } from './commands/lulu-setup.ts';
 import { codegenStyles } from './commands/codegen-styles.ts';
 import { translate } from './commands/translate.ts';
+import { sendTestEmails } from './commands/send-test-emails.ts';
 
 // Grouped for the help output. Order within a group is workflow order.
 const GROUPS: { title: string; commands: Command[] }[] = [
@@ -39,6 +40,10 @@ const GROUPS: { title: string; commands: Command[] }[] = [
   {
     title: 'Commerce',
     commands: [shopifySetup, shopifyBoard, syncShopify, luluSetup],
+  },
+  {
+    title: 'Ops',
+    commands: [sendTestEmails],
   },
 ];
 
