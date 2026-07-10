@@ -574,7 +574,7 @@ export function CreateWizard() {
   }
 
   // ---------------------------------------------------------------- stepper
-  // The back action is shared by the rail (lg+) and the portaled bottom bar
+  // The back action is shared by the rail (lg+) and the inline mobile nav
   // (<lg): step 0 with a template goes back to the hero, otherwise to the
   // previous step. Rendered fresh in each place so both stay in sync.
   const backButton = (variant: "ghost", className: string) =>
@@ -614,8 +614,7 @@ export function CreateWizard() {
 
   return (
     <PageTransition>
-      {/* pb clears the fixed bottom navigation bar on <lg (the rail replaces it on lg+). */}
-      <div ref={topRef} className="scroll-mt-24 pb-20 lg:pb-4">
+      <div ref={topRef} className="scroll-mt-24 pb-4">
         {/* Horizontal progress only on <lg; the rail carries it on lg+. */}
         <StepProgress steps={stepLabels} current={step} className="mb-6 lg:hidden" />
 
@@ -684,7 +683,7 @@ export function CreateWizard() {
           </div>
 
           {/* Right rail (lg+ only): step list + actions + trust note. On <lg the
-              portaled BottomBar below carries the actions instead. */}
+              inline nav under the step card carries the actions instead. */}
           <aside className="hidden lg:block">
             <div className="lg:sticky lg:top-24">
               <Card className="p-5">
@@ -742,54 +741,20 @@ export function CreateWizard() {
           </aside>
         </div>
 
-        {/* Step navigation on <lg: portaled full-width bar pinned to the viewport
-            bottom so Continue is never hidden, whatever the step's height. Hidden
-            on lg+ where the rail replaces it. */}
-        <span className="lg:hidden">
-          <BottomBar>
-            <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
-              {step > 0 ? (
-                <Button variant="ghost" onClick={() => goTo(step - 1)}>
-                  {t("back")}
-                </Button>
-              ) : template ? (
-                <Button variant="ghost" onClick={() => setStarted(false)}>
-                  {t("back")}
-                </Button>
-              ) : (
-                <span />
-              )}
-              {step < STEPS.length - 1 ? (
-                <Button
-                  variant="secondary"
-                  disabled={!canContinue}
-                  pending={step === 2 && uploadsInFlight}
-                  pendingLabel={t("uploadingPhotos")}
-                  onClick={() => goTo(step + 1)}
-                >
-                  {t("continue")}
-                </Button>
-              ) : (
-                <Button
-                  disabled={!canContinue || (turnstileRequired && !turnstileToken)}
-                  pending={submitting}
-                  pendingLabel={t("creatingPreview")}
-                  onClick={() => void submit()}
-                >
-                  {t("createPreview")}
-                </Button>
-              )}
-            </div>
-            {/* Micro-footer folded into the bar (the studio has no separate footer). */}
-            <nav className="mx-auto mt-2 flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-semibold text-ink-soft/80">
-              {(["about", "contact", "imprint", "privacy", "terms", "returns"] as const).map((k) => (
-                <Link key={k} href={`/${k === "about" ? "about" : k}`} className="hover:text-coral">
-                  {tChrome(k)}
-                </Link>
-              ))}
-            </nav>
-          </BottomBar>
-        </span>
+        {/* Step navigation on <lg: inline under the step card (the rail carries
+            the actions on lg+). */}
+        <div className="mt-5 flex items-center justify-between gap-3 lg:hidden">
+          {backButton("ghost", "") ?? <span />}
+          {forwardButton("")}
+        </div>
+        {/* Micro-footer legal links on <lg (the studio has no separate footer). */}
+        <nav className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-semibold text-ink-soft/80 lg:hidden">
+          {(["about", "contact", "imprint", "privacy", "terms", "returns"] as const).map((k) => (
+            <Link key={k} href={`/${k === "about" ? "about" : k}`} className="hover:text-coral">
+              {tChrome(k)}
+            </Link>
+          ))}
+        </nav>
       </div>
     </PageTransition>
   );
@@ -1088,22 +1053,14 @@ function StoryStep({
 
       <div className={hasBeats ? "grid gap-6 lg:grid-cols-2 lg:items-start" : ""}>
         {/* Left: the memory input + age — always up top. The memory field is
-            dressed as a page in a diary: a paper card with faint ruled lines,
-            the label/hint styled as a diary prompt. Still a real <textarea>. */}
+            dressed as a page in a diary: a flat paper card with faint ruled
+            lines. The step header above is the prompt; still a real <textarea>. */}
         <div className="flex flex-col gap-5">
-          <Card className="bg-white p-5 sm:p-6">
-            <label
-              htmlFor="memory"
-              className="block font-display text-lg font-extrabold text-ink"
-            >
-              {template ? t("memoryLabelTemplate") : t("memoryLabelOwn")}
-            </label>
-            <p className="mt-1 text-sm italic leading-relaxed text-ink-soft">
-              {template ? t("memoryHintTemplate") : t("memoryHintOwn", { prompt: memoryPrompts[1] })}
-            </p>
+          <Card className="bg-white p-5 shadow-none ring-1 ring-ink/10 sm:p-6">
             <textarea
               id="memory"
-              className="mt-4 block min-h-48 w-full resize-y border-transparent bg-transparent p-0 font-body text-[1.05rem] leading-8 text-ink placeholder:text-ink-soft/50 focus:outline-none focus:ring-0"
+              aria-label={template ? t("memoryLabelTemplate") : t("memoryLabelOwn")}
+              className="block min-h-48 w-full resize-y border-transparent bg-transparent p-0 font-body text-[1.05rem] leading-8 text-ink placeholder:text-ink-soft/50 focus:outline-none focus:ring-0"
               style={{
                 backgroundImage:
                   "repeating-linear-gradient(to bottom, transparent 0, transparent calc(2rem - 1px), rgb(118 30 11 / 0.1) calc(2rem - 1px), rgb(118 30 11 / 0.1) 2rem)",
@@ -1437,12 +1394,13 @@ function FinishStep({
           </Field>
         </div>
 
-        {/* Live previews of the two printed front-matter pages. */}
-        <div className="flex flex-col gap-4">
+        {/* Live previews of the two printed front-matter pages, side by side
+            like an open book so the step stays compact. */}
+        <div>
           <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
             {t("finishPreviewLabel")}
           </p>
-
+          <div className="mt-3 grid grid-cols-2 gap-3">
           {/* Title page */}
           <FinishPreviewPage caption={tFlip("titlePage")}>
             <div className="flex h-full flex-col items-center justify-center gap-2 px-[12%] pb-[14%] text-center">
@@ -1481,6 +1439,7 @@ function FinishStep({
               ) : null}
             </div>
           </FinishPreviewPage>
+          </div>
         </div>
       </div>
 
