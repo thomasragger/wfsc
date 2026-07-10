@@ -16,7 +16,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageTransition } from "@/components/ui/page-transition";
-import { ProgressiveImage } from "@/components/ui/progressive-image";
+import { CoverArt } from "@/components/ui/cover-art";
 import type { BookFormat, BookPayload, BookStatus, PersonPayload } from "@/lib/book-payload";
 import {
   addBookToCart,
@@ -388,86 +388,81 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
             unlock card as the sticky rail. */}
         <div className="grid gap-6 lg:grid-cols-[minmax(0,34rem)_20rem] lg:items-start lg:justify-center lg:gap-8">
           <div className="mx-auto w-full min-w-0 max-w-[min(34rem,70vh)] lg:mx-0">
-            <button
-              type="button"
+            <CoverArt
+              src={coverImageUrl}
+              alt={book.title ?? t("defaultTitle")}
+              title={!book.coverHasTitle ? (book.title ?? t("defaultTitle")) : null}
+              titleStyle={{
+                fontFamily: `'${FONT_PAIRINGS[book.fontPairing].display.family}', sans-serif`,
+                fontWeight: FONT_PAIRINGS[book.fontPairing].display.weight,
+              }}
+              pill={t("preview.readBook")}
               onClick={() => setReaderOpen(true)}
-              aria-label={t("preview.readBook")}
-              className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-lavender shadow-polaroid ring-8 ring-white transition-transform hover:scale-[1.01]"
-            >
-              {coverImageUrl ? (
-                <ProgressiveImage
-                  src={coverImageUrl}
-                  alt={book.title ?? t("defaultTitle")}
-                  priority
-                  className="h-full w-full"
-                  imgClassName="h-full w-full object-cover"
-                />
-              ) : (
-                <ArtPlaceholder />
-              )}
-              {!book.coverHasTitle && book.title ? (
-                <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-ink/55 to-transparent px-[6%] pb-[10%] pt-[5%]">
-                  <span
-                    className="block text-center text-[clamp(1.2rem,3vw,2rem)] font-extrabold leading-tight text-white drop-shadow-sm"
-                    style={{
-                      fontFamily: `'${FONT_PAIRINGS[book.fontPairing].display.family}', sans-serif`,
-                      fontWeight: FONT_PAIRINGS[book.fontPairing].display.weight,
-                    }}
-                  >
-                    {book.title}
-                  </span>
-                </div>
-              ) : null}
-              <span className="absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-ink/50 to-transparent pb-5 pt-10">
-                <span className="rounded-full bg-white px-5 py-2.5 font-display text-sm font-bold text-ink shadow-fuzzy transition-colors group-hover:bg-marigold">
-                  {t("preview.readBook")}
-                </span>
-              </span>
-            </button>
+              priority
+            />
 
             {book.people.length > 0 ? (
-              <Card className="mt-8 p-6">
+              <section className="mt-8">
                 <h2 className="font-display text-lg font-extrabold text-ink">{t("preview.castTitle")}</h2>
-                <p className="mt-1 text-sm text-ink-soft">
-                  {t("preview.castBody")}
-                </p>
-                <ul className="mt-5 grid grid-cols-2 gap-5 sm:grid-cols-3">
+                <p className="mt-1 text-sm text-ink-soft">{t("preview.castBody")}</p>
+                <div className="mt-4 flex flex-col gap-4">
                   {book.people.map((person) => {
                     const confirmed = confirmedPeople.has(person.id);
                     return (
-                      <li key={person.id} className="flex flex-col">
-                        <button
-                          type="button"
-                          className="group/av relative aspect-square w-full overflow-hidden rounded-2xl bg-lavender ring-2 ring-white disabled:cursor-default"
-                          disabled={!person.characterSheetUrl}
-                          aria-label={t("preview.viewUpClose", { name: person.name })}
-                          onClick={() => person.characterSheetUrl && setZoomed(person)}
-                        >
-                          {person.characterSheetUrl ? (
+                      <div
+                        key={person.id}
+                        className="rounded-3xl bg-white/70 p-4 shadow-fuzzy ring-1 ring-ink/5"
+                      >
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          {person.photoUrls[0] ? (
                             <>
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={person.characterSheetUrl}
-                                alt={t("preview.characterAlt", { name: person.name })}
-                                className="h-full w-full object-cover"
-                              />
-                              <span className="absolute inset-0 flex items-center justify-center bg-ink/0 text-xs font-bold text-transparent transition-colors group-hover/av:bg-ink/40 group-hover/av:text-white">
-                                {t("preview.view")}
+                              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-lavender">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={person.photoUrls[0]}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                              <span
+                                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-coral/15 text-sm text-coral"
+                                aria-hidden="true"
+                              >
+                                →
                               </span>
                             </>
-                          ) : (
-                            <ArtPlaceholder />
-                          )}
-                        </button>
-                        <div className="mt-2 flex items-center justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="truncate font-display text-sm font-bold text-ink">{person.name}</p>
-                            {person.role ? <p className="text-[11px] text-ink-soft">{person.role}</p> : null}
+                          ) : null}
+                          <button
+                            type="button"
+                            className="group/av relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-cream disabled:cursor-default"
+                            disabled={!person.characterSheetUrl}
+                            aria-label={t("preview.viewUpClose", { name: person.name })}
+                            onClick={() => person.characterSheetUrl && setZoomed(person)}
+                          >
+                            {person.characterSheetUrl ? (
+                              <>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={person.characterSheetUrl}
+                                  alt={t("preview.characterAlt", { name: person.name })}
+                                  className="h-full w-full object-contain"
+                                />
+                                <span className="absolute inset-0 flex items-center justify-center bg-ink/0 text-[10px] font-bold text-transparent transition-colors group-hover/av:bg-ink/40 group-hover/av:text-white">
+                                  {t("preview.view")}
+                                </span>
+                              </>
+                            ) : (
+                              <ArtPlaceholder />
+                            )}
+                          </button>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-display font-bold text-ink">{person.name}</p>
+                            {person.role ? <p className="text-xs text-ink-soft">{person.role}</p> : null}
                           </div>
                           <button
                             type="button"
                             aria-pressed={confirmed}
-                            className={`shrink-0 rounded-full px-3 py-1.5 font-display text-xs font-bold transition-colors ${
+                            className={`shrink-0 rounded-full px-3.5 py-2 font-display text-xs font-bold transition-colors ${
                               confirmed ? "bg-sage text-cream" : "bg-marigold text-ink hover:bg-marigold-deep"
                             }`}
                             onClick={() =>
@@ -482,11 +477,11 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                             {confirmed ? t("preview.looksRightYes") : t("preview.looksRight")}
                           </button>
                         </div>
-                      </li>
+                      </div>
                     );
                   })}
-                </ul>
-              </Card>
+                </div>
+              </section>
             ) : null}
 
           </div>

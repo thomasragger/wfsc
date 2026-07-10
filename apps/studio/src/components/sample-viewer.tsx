@@ -9,6 +9,7 @@ import { FONT_PAIRINGS } from "@wfsc/book-engine";
 import { Flipbook, type FlipPage } from "@/components/flipbook";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { IconArrowRight } from "@/components/ui/icons";
+import { CoverArt } from "@/components/ui/cover-art";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 import type { BookPayload } from "@/lib/book-payload";
 
@@ -55,41 +56,18 @@ export function SampleViewer({
       {/* Left — one shared content width so the cover and the cast cards
           align edge-to-edge. */}
       <div className="mx-auto w-full max-w-[min(34rem,70vh)] min-w-0 lg:mx-0">
-        <button
-          type="button"
+        <CoverArt
+          src={book.coverImageUrl}
+          alt={book.title ?? t("defaultTitle")}
+          title={!book.coverHasTitle ? (book.title ?? t("defaultTitle")) : null}
+          titleStyle={{
+            fontFamily: `'${pairing.display.family}', sans-serif`,
+            fontWeight: pairing.display.weight,
+          }}
+          pill={t("readBook")}
           onClick={() => setReaderOpen(true)}
-          aria-label={t("readBook")}
-          className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-lavender shadow-polaroid ring-8 ring-white transition-transform hover:scale-[1.01]"
-        >
-          {book.coverImageUrl ? (
-            <ProgressiveImage
-              src={book.coverImageUrl}
-              alt={book.title ?? t("defaultTitle")}
-              priority
-              className="h-full w-full"
-              imgClassName="h-full w-full object-cover"
-            />
-          ) : null}
-          {!book.coverHasTitle && book.title ? (
-            <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-ink/55 to-transparent px-[6%] pb-[10%] pt-[5%]">
-              <span
-                className="block text-center text-[clamp(1.2rem,3vw,2rem)] font-extrabold leading-tight text-white drop-shadow-sm"
-                style={{
-                  fontFamily: `'${pairing.display.family}', sans-serif`,
-                  fontWeight: pairing.display.weight,
-                }}
-              >
-                {book.title}
-              </span>
-            </div>
-          ) : null}
-          {/* Read affordance */}
-          <span className="absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-ink/50 to-transparent pb-5 pt-10">
-            <span className="rounded-full bg-white px-5 py-2.5 font-display text-sm font-bold text-ink shadow-fuzzy transition-colors group-hover:bg-marigold">
-              {t("readBook")}
-            </span>
-          </span>
-        </button>
+          priority
+        />
 
         {/* Cast transformation below the cover, same width as the cover */}
         {cast.length > 0 ? (
