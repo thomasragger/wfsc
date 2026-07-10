@@ -155,3 +155,22 @@ locale in `apps/studio/src/lib/i18n-content.ts`):
 
 Existing locales are preserved on write; only the target locale's object is
 merged. Default model is `claude-opus-4-8` (override with `--model`).
+
+#### O7 launch runbook step (must be run by a human against a real DB)
+
+The static UI strings and email copy are translated in the repo (`messages/de.json`,
+`lib/email.ts`). The catalog field translations are NOT: they live in Supabase and are
+filled by the command above, which needs the live database and the Anthropic API. It is
+deliberately not run from CI or agents.
+
+Before the German launch, run it against the target environment:
+
+```bash
+# staging first, verify, then production
+wfsc-admin translate --locale de --dry-run    # confirm the row list
+wfsc-admin translate --locale de              # write the de translations jsonb
+```
+
+This fills `translations->'de'` for `styles`, `template_categories`, `occasion_categories`,
+and `story_templates` so the catalog renders in German. Until it runs, catalog fields fall
+back to English per-key (UI chrome is already German).

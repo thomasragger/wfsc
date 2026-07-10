@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { Doodle } from "@/components/decor";
 import { HeroAnimatedBackground } from "@/components/ui/animated-bg";
@@ -163,41 +164,17 @@ const HERO_DOODLES = [
   { src: "sun.png", size: 36, side: "right" as const, x: "24%", top: "58%", duration: "48s", delay: "-42s" },
 ];
 
-const FAQ: { q: string; a: string }[] = [
-  {
-    q: "How does it actually work?",
-    a: "Tell us a real memory in a few sentences and who was there. We write a story from it, illustrate it in the art style you pick, and show you a free preview in minutes. Love it? We print a keepsake book and ship it to your door.",
-  },
-  {
-    q: "Will the characters really look like us?",
-    a: "Yes. Add a photo or two of each person and we hand-draw them into the book, matching their hairstyle, features and favourite outfit so they're recognizable on every page. Kids, parents, grandparents, even the family dog.",
-  },
-  {
-    q: "Is it a unique story, or a template with our name in it?",
-    a: "Completely unique. Nothing here is a fill-in-the-blank template. Your book is written from scratch around your memory, so no two are ever alike.",
-  },
-  {
-    q: "Can I set the story anywhere?",
-    a: "Anywhere you love: your own street, grandma's garden, a favourite holiday spot, or the other side of the world. Browse “Places you love” for ready-made ideas set in real cities.",
-  },
-  {
-    q: "Can I change things before it's printed?",
-    a: "Of course. You get to read the whole book and adjust the title, the personal dedication and the details before you approve it for print. Nothing prints until you're happy.",
-  },
-  {
-    q: "What does it cost, and what formats are there?",
-    a: "A chunky board book at €39 (made for ages 2–4), a softcover at €49, and a keepsake hardcover at €69. The free preview always comes first, so you only pay once you love it.",
-  },
-];
-
 export default async function HomePage() {
   const region = await detectRegion();
-  const [inspiration, samples, places] = await Promise.all([
+  const [inspiration, samples, places, t] = await Promise.all([
     loadInspiration(),
     fetchSamples(),
     loadAudiencePage("places", region),
+    getTranslations("home"),
   ]);
   const placeTemplates = places?.templates ?? [];
+  const axes = t.raw("axes") as { title: string; body: string; cta: string }[];
+  const faqs = t.raw("faqs") as { q: string; a: string }[];
 
   return (
     <div className="w-full">
@@ -266,7 +243,7 @@ export default async function HomePage() {
           <h1 className="m-0">
             <Image
               src="/logo.png"
-              alt="Warm Fuzzy Story Club"
+              alt={t("heroLogoAlt")}
               width={300}
               height={355}
               priority
@@ -274,14 +251,13 @@ export default async function HomePage() {
             />
           </h1>
           <p className="mt-10 max-w-xl font-display text-2xl font-extrabold leading-tight text-ink sm:mt-12 sm:text-3xl">
-            Any story. Anywhere. Anyone you love.
+            {t("heroTagline")}
           </p>
           <p className="mt-3 max-w-md text-base text-ink-soft sm:text-lg">
-            A one-of-a-kind picture book, written from your own memory and starring
-            the real people in it. You choose the story, the place, and the cast.
+            {t("heroSubtitle")}
           </p>
           <ButtonLink href="/create" size="lg" className="mt-8">
-            Write your story
+            {t("heroCta")}
           </ButtonLink>
         </div>
       </section>
@@ -292,44 +268,22 @@ export default async function HomePage() {
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-lavender/40 via-transparent to-transparent" aria-hidden="true" />
         <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <Eyebrow className="mx-auto">Completely yours</Eyebrow>
+            <Eyebrow className="mx-auto">{t("yoursEyebrow")}</Eyebrow>
             <h2 className="mt-4 font-display text-4xl font-extrabold leading-tight text-ink sm:text-5xl">
-              Any story. Anywhere.
-              <br className="hidden sm:block" /> Anyone you love.
+              {t("yoursHeadingLine1")}
+              <br className="hidden sm:block" /> {t("yoursHeadingLine2")}
             </h2>
             <p className="mx-auto mt-4 max-w-md text-lg text-ink-soft">
-              Not a template with a name dropped in. Every book is written, illustrated,
-              and cast from scratch, around your family.
+              {t("yoursIntro")}
             </p>
           </div>
 
           <div className="mt-20 grid gap-5 sm:grid-cols-3 sm:gap-6">
             {[
-              {
-                mascot: "/mascots/story.png",
-                tint: "#efe9ff",
-                title: "Any story",
-                body: "Not a fill-in-the-blank template. We write your real memory into a story only your family has.",
-                href: "/create",
-                cta: "Start from a memory",
-              },
-              {
-                mascot: "/mascots/travel.png",
-                tint: "#e6f3fb",
-                title: "Anywhere you want",
-                body: "Set it in a place you both love: your own street, grandma's garden, or the other side of the world.",
-                href: "/for/places",
-                cta: "Places you love",
-              },
-              {
-                mascot: "/mascots/family.png",
-                tint: "#fce9ef",
-                title: "Anyone you love",
-                body: "Everyone looks like themselves, drawn from your photos. Kids, parents, grandparents, even the dog.",
-                href: "/samples",
-                cta: "See the cast",
-              },
-            ].map((axis) => (
+              { mascot: "/mascots/story.png", tint: "#efe9ff", href: "/create" },
+              { mascot: "/mascots/travel.png", tint: "#e6f3fb", href: "/for/places" },
+              { mascot: "/mascots/family.png", tint: "#fce9ef", href: "/samples" },
+            ].map((axis, i) => ({ ...axis, ...axes[i] })).map((axis) => (
               <Link
                 key={axis.title}
                 href={axis.href}
@@ -363,24 +317,23 @@ export default async function HomePage() {
         <section className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <Eyebrow>Set it anywhere</Eyebrow>
+              <Eyebrow>{t("placesEyebrow")}</Eyebrow>
               <h2 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
-                Places you love
+                {t("placesHeading")}
               </h2>
               <p className="mt-2 max-w-lg text-ink-soft">
-                Your story can happen anywhere. Here are a few favorites around{" "}
-                {REGION_LABELS[region]} to spark it.
+                {t("placesIntro", { region: REGION_LABELS[region] })}
               </p>
             </div>
             <Link
               href="/for/places"
               className="group hidden shrink-0 items-center gap-1.5 text-sm font-bold text-coral sm:inline-flex"
             >
-              See all places
+              {t("placesSeeAll")}
               <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
-          <Carousel className="mt-6" ariaLabel="Story ideas set in real places" fullBleed>
+          <Carousel className="mt-6" ariaLabel={t("placesCarouselAria")} fullBleed>
             {placeTemplates.map((tpl) => (
               <BookTile
                 key={tpl.id}
@@ -400,10 +353,10 @@ export default async function HomePage() {
       {/* --------------------------------------------- Category cards (theme) */}
       <section className="mx-auto w-full max-w-6xl px-4 pb-6 pt-14 sm:px-6">
         <h2 className="font-display text-[1.7rem] font-bold text-ink sm:text-3xl">
-          Gifts for all your favorite people
+          {t("categoriesHeading")}
         </h2>
         {inspiration ? (
-          <Carousel className="mt-6" ariaLabel="Gift categories" fullBleed>
+          <Carousel className="mt-6" ariaLabel={t("categoriesCarouselAria")} fullBleed>
             {inspiration.categories.map((cat) => {
               const art = categoryArt(cat.id, cat.name);
               return (
@@ -421,9 +374,9 @@ export default async function HomePage() {
         ) : (
           <EmptyState
             className="mt-6"
-            title="Our gift categories are still being unpacked."
-            body="Come back in a moment — or start straight from your own memory."
-            action={<ButtonLink href="/create">Start from your own memory</ButtonLink>}
+            title={t("categoriesEmptyTitle")}
+            body={t("categoriesEmptyBody")}
+            action={<ButtonLink href="/create">{t("categoriesEmptyCta")}</ButtonLink>}
           />
         )}
       </section>
@@ -432,12 +385,12 @@ export default async function HomePage() {
       <section id="ideas" className="mx-auto w-full max-w-6xl scroll-mt-24 px-4 py-12 sm:px-6 sm:py-16">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <Eyebrow>Need a spark?</Eyebrow>
+            <Eyebrow>{t("ideasEyebrow")}</Eyebrow>
             <h2 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
-              Start from a story other families love.
+              {t("ideasHeading")}
             </h2>
             <p className="mt-2 max-w-lg text-ink-soft">
-              Pick an idea to begin, then make it entirely yours.
+              {t("ideasIntro")}
             </p>
           </div>
           <Doodle src="cloud.png" size={54} className="animate-float hidden sm:block" />
@@ -446,7 +399,7 @@ export default async function HomePage() {
         {inspiration && inspiration.templates.length > 0 ? (
           <div className="mt-10 flex flex-col gap-12">
             {inspiration.categories.map((cat) => {
-              const templates = inspiration.templates.filter((t) => t.category_id === cat.id);
+              const templates = inspiration.templates.filter((tpl) => tpl.category_id === cat.id);
               if (templates.length === 0) return null;
               const art = categoryArt(cat.id, cat.name);
               return (
@@ -469,7 +422,7 @@ export default async function HomePage() {
                       ) : null}
                     </div>
                   </div>
-                  <Carousel className="mt-5" ariaLabel={`${cat.name} story ideas`} itemGap="gap-6" fullBleed>
+                  <Carousel className="mt-5" ariaLabel={t("ideasCarouselAria", { name: cat.name })} itemGap="gap-6" fullBleed>
                     {templates.map((tpl) => (
                       <BookTile
                         key={tpl.id}
@@ -491,9 +444,9 @@ export default async function HomePage() {
           <EmptyState
             className="mt-10"
             doodle="sun.png"
-            title="Our story ideas are still being tucked in."
-            body="Every book here starts with your own memory anyway — days at the beach with grandma, dad's legendary pancakes, a little sister's first snow. Bring yours and we'll take it from there."
-            action={<ButtonLink href="/create">Start from your own memory</ButtonLink>}
+            title={t("ideasEmptyTitle")}
+            body={t("ideasEmptyBody")}
+            action={<ButtonLink href="/create">{t("ideasEmptyCta")}</ButtonLink>}
           />
         )}
       </section>
@@ -501,13 +454,12 @@ export default async function HomePage() {
       {/* ---------------------------------------- Flip through a finished book */}
       <section className="flip-wash relative overflow-hidden py-16 sm:py-20">
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
-          <Eyebrow className="mx-auto">See the real thing</Eyebrow>
+          <Eyebrow className="mx-auto">{t("flipEyebrow")}</Eyebrow>
           <h2 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
-            Flip through a finished book.
+            {t("flipHeading")}
           </h2>
           <p className="mx-auto mt-3 max-w-md text-ink-soft">
-            Every one of these is a real, complete sample book — page by page, the
-            same kind you&rsquo;ll hold in your hands.
+            {t("flipIntro")}
           </p>
         </div>
 
@@ -532,13 +484,13 @@ export default async function HomePage() {
                   >
                     <BookTileVisual
                       image={s.mockupImageUrl ?? s.coverImageUrl ?? `/categories/${art.photo}.jpg`}
-                      alt={s.title ?? "A sample story"}
+                      alt={s.title ?? t("sampleFallbackTitle")}
                       aspectClassName="aspect-square"
                       className="shadow-polaroid transition-transform duration-300 group-hover:-translate-y-1.5"
                     />
                     <div className="px-1 pt-4 text-center">
                       <p className="line-clamp-2 font-display text-sm font-extrabold leading-snug text-ink transition-colors group-hover:text-coral">
-                        {s.title ?? "A sample story"}
+                        {s.title ?? t("sampleFallbackTitle")}
                       </p>
                       {s.categoryName ? (
                         <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-coral/70">
@@ -553,25 +505,25 @@ export default async function HomePage() {
           </div>
         ) : (
           <p className="mt-8 text-center text-sm text-ink-soft">
-            The first sample books are at the printer&rsquo;s — check back very soon.
+            {t("flipEmpty")}
           </p>
         )}
 
         <div className="mt-12 text-center">
-          <ButtonLink href="/samples">Browse sample books</ButtonLink>
+          <ButtonLink href="/samples">{t("flipBrowseCta")}</ButtonLink>
         </div>
       </section>
 
       {/* --------------------------------------------------------------- FAQ */}
       <section className="mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
         <div className="text-center">
-          <Eyebrow className="mx-auto">Good to know</Eyebrow>
+          <Eyebrow className="mx-auto">{t("faqEyebrow")}</Eyebrow>
           <h2 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
-            Questions, answered
+            {t("faqHeading")}
           </h2>
         </div>
         <div className="mt-10 flex flex-col gap-3">
-          {FAQ.map((item) => (
+          {faqs.map((item) => (
             <details
               key={item.q}
               className="group rounded-3xl bg-white/70 px-6 shadow-fuzzy ring-1 ring-ink/5 transition-colors open:bg-white"
@@ -585,14 +537,14 @@ export default async function HomePage() {
           ))}
         </div>
         <p className="mt-8 text-center text-sm text-ink-soft">
-          Still curious?{" "}
+          {t("faqStillCuriousPrefix")}{" "}
           <a
             href="mailto:hello@warmfuzzystoryclub.com"
             className="font-bold text-coral hover:underline"
           >
-            Send us a note
+            {t("faqStillCuriousLink")}
           </a>{" "}
-          and a real human will reply.
+          {t("faqStillCuriousSuffix")}
         </p>
       </section>
 
@@ -605,13 +557,13 @@ export default async function HomePage() {
           <Doodle src="heart-small.png" size={30} className="animate-twinkle absolute bottom-12 right-[18%]" />
           <div className="relative z-10">
             <h2 className="mx-auto max-w-xl font-display text-3xl font-extrabold text-white sm:text-[2.6rem]">
-              Every family has a story worth keeping.
+              {t("closingHeading")}
             </h2>
             <p className="mx-auto mt-3 max-w-md text-white/90">
-              It takes about five minutes to tell us yours. The book lasts a lifetime.
+              {t("closingIntro")}
             </p>
             <ButtonLink href="/create" variant="secondary" size="lg" className="mt-8">
-              Write your story
+              {t("closingCta")}
             </ButtonLink>
           </div>
         </div>

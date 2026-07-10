@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -32,32 +33,14 @@ import {
 } from "@/lib/client-api";
 
 // One focused decision per screen (Typeform/Duolingo-style). The template
-// hero is a pre-step; these four are the stepper.
+// hero is a pre-step; these four are the stepper. STEPS drives internal logic
+// and stable (locale-independent) analytics step names; the displayed labels
+// come from the "steps" translation array.
 const STEPS = ["Style", "Your story", "The cast", "Finish"] as const;
 
-const ROLE_LABELS: Record<PersonRole, string> = {
-  child: "Child",
-  mama: "Mama",
-  papa: "Papa",
-  grandma: "Grandma",
-  grandpa: "Grandpa",
-  sibling: "Sibling",
-  friend: "Friend",
-  other: "Someone else",
-};
-
-/** "Who is it for?" bands; value is the midpoint sent as targetAge. */
-const AGE_BANDS = [
-  { label: "0–2 years", value: 1 },
-  { label: "3–5 years", value: 4 },
-  { label: "6–8 years", value: 7 },
-] as const;
-
-const MEMORY_PROMPTS = [
-  "The summer we built a den in grandpa's garden and refused to come inside, even for dinner…",
-  "Every Sunday, papa makes pancakes shaped like animals. Last week he attempted a giraffe…",
-  "The day Mia's training wheels came off, the whole street cheered…",
-];
+/** "Who is it for?" bands; value is the midpoint sent as targetAge. Labels
+ * come from the "ageBands" translation array (same order). */
+const AGE_BANDS = [{ value: 1 }, { value: 4 }, { value: 7 }] as const;
 
 interface PersonDraft {
   key: string;
@@ -71,21 +54,9 @@ function newPerson(role: PersonRole = "child"): PersonDraft {
   return { key: crypto.randomUUID(), name: "", role, photoUrls: [], uploading: 0 };
 }
 
-/** "Our Day at the Zoo" -> "day at the zoo" — for the memory-prompt scaffold. */
+/** "Our Day at the Zoo" -> "day at the zoo" for the memory-prompt scaffold. */
 function templateNoun(title: string): string {
   return title.replace(/^(our|the|a|an)\s+/i, "").toLowerCase();
-}
-
-function templatePlaceholder(tpl: TemplateSummary): string {
-  return (
-    `Tell us about YOUR ${templateNoun(tpl.title)} — who was there, how the day started, ` +
-    `the moment everyone still laughs about, and the little detail you never want to forget…`
-  );
-}
-
-function ageBandLabel(min: number | null, max: number | null): string | null {
-  if (min == null && max == null) return null;
-  return `Ages ${min ?? 0}–${max ?? 8}`;
 }
 
 /* ----------------------------------------------------------- draft persistence */
@@ -180,6 +151,8 @@ function draftIsResumable(d: WizardDraft): boolean {
 }
 
 export function CreateWizard() {
+  const t = useTranslations("wizard");
+  const stepLabels = t.raw("steps") as string[];
   const router = useRouter();
   const searchParams = useSearchParams();
   const templateId = searchParams.get("template");
@@ -446,7 +419,7 @@ export function CreateWizard() {
         setPeople((prev) =>
           prev.map((p) => (p.key === person.key ? { ...p, uploading: p.uploading - 1 } : p)),
         );
-        setError(err instanceof Error ? err.message : "Upload failed");
+        setError(err instanceof Error ? err.message : t("errorUploadFailed"));
         track("photo_upload_failed");
       }
     }
@@ -476,7 +449,7 @@ export function CreateWizard() {
       clearDraft(); // book created: drop the local draft so it doesn't resurface
       router.push(`/book/${token}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong — please try again");
+      setError(err instanceof Error ? err.message : t("errorGeneric"));
       setSubmitting(false);
     }
   }
@@ -493,19 +466,19 @@ export function CreateWizard() {
       <PageTransition>
         <div ref={topRef} className="mx-auto max-w-md scroll-mt-24 text-center">
           <Card className="p-8">
-            <Eyebrow className="mx-auto">Welcome back</Eyebrow>
+            <Eyebrow className="mx-auto">{t("resumeEyebrow")}</Eyebrow>
             <h1 className="mt-4 font-display text-2xl font-extrabold text-ink sm:text-3xl">
-              Continue where you left off?
+              {t("resumeTitle")}
             </h1>
             <p className="mt-3 text-sm text-ink-soft">
-              We saved your progress on this book. Pick up right where you stopped, or start fresh.
+              {t("resumeBody")}
             </p>
             <div className="mt-7 flex flex-col gap-3">
               <Button size="lg" className="w-full" onClick={resumeDraft}>
-                Continue my book
+                {t("resumeContinue")}
               </Button>
               <Button variant="ghost" size="lg" className="w-full" onClick={discardDraft}>
-                Start fresh
+                {t("resumeStartFresh")}
               </Button>
             </div>
           </Card>
@@ -522,13 +495,13 @@ export function CreateWizard() {
         <div ref={topRef} className="scroll-mt-24">
           <header className="text-center">
             <Eyebrow className="mx-auto">
-              {category ? `Stories for ${category.name}` : "Pick a story idea"}
+              {category ? t("pickerEyebrowCategory", { name: category.name }) : t("pickerEyebrowDefault")}
             </Eyebrow>
             <h1 className="mt-4 font-display text-3xl font-extrabold text-ink sm:text-4xl">
-              {category ? `A story they'll ask for every night.` : `Start from a story idea`}
+              {category ? t("pickerTitleCategory") : t("pickerTitleDefault")}
             </h1>
             <p className="mx-auto mt-2 max-w-md text-ink-soft">
-              {category?.tagline ?? "Pick an idea to begin, then make it entirely yours."}
+              {category?.tagline ?? t("pickerTaglineFallback")}
             </p>
           </header>
 
@@ -554,7 +527,7 @@ export function CreateWizard() {
                     </p>
                     {tpl.tagline ? <p className="mt-1 text-sm text-ink-soft">{tpl.tagline}</p> : null}
                     <span className="mt-4 inline-flex items-center gap-1.5 font-display text-sm font-bold text-coral">
-                      Start from this story <IconArrowRight />
+                      {t("pickerCardCta")} <IconArrowRight />
                     </span>
                   </div>
                 </button>
@@ -564,7 +537,7 @@ export function CreateWizard() {
 
           <div className="mt-8 text-center">
             <Button variant="ghost" onClick={() => setPickerDismissed(true)}>
-              Start from your own memory instead
+              {t("pickerOwnMemory")}
             </Button>
           </div>
         </div>
@@ -607,7 +580,7 @@ export function CreateWizard() {
   return (
     <PageTransition>
       <div ref={topRef} className="scroll-mt-24">
-        <StepProgress steps={STEPS} current={step} className="mb-8" />
+        <StepProgress steps={stepLabels} current={step} className="mb-8" />
 
         <Card className="overflow-hidden p-6 sm:p-10">
           <StepTransition stepKey={step} direction={direction}>
@@ -669,11 +642,11 @@ export function CreateWizard() {
           <div className="mt-8 flex items-center justify-between gap-3">
             {step > 0 ? (
               <Button variant="ghost" onClick={() => goTo(step - 1)}>
-                Back
+                {t("back")}
               </Button>
             ) : template ? (
               <Button variant="ghost" onClick={() => setStarted(false)}>
-                Back
+                {t("back")}
               </Button>
             ) : (
               <span />
@@ -683,19 +656,19 @@ export function CreateWizard() {
                 variant="secondary"
                 disabled={!canContinue}
                 pending={step === 2 && uploadsInFlight}
-                pendingLabel="Uploading photos…"
+                pendingLabel={t("uploadingPhotos")}
                 onClick={() => goTo(step + 1)}
               >
-                Continue
+                {t("continue")}
               </Button>
             ) : (
               <Button
                 disabled={!canContinue || (turnstileRequired && !turnstileToken)}
                 pending={submitting}
-                pendingLabel="Creating your preview…"
+                pendingLabel={t("creatingPreview")}
                 onClick={() => void submit()}
               >
-                Create my free preview
+                {t("createPreview")}
               </Button>
             )}
           </div>
@@ -718,10 +691,14 @@ function TemplateHero({
   onStart: () => void;
   onOwnMemory: () => void;
 }) {
+  const t = useTranslations("wizard");
   const beats = template.storyBeats.slice(0, 6);
-  const ages = ageBandLabel(template.ageMin, template.ageMax);
+  const ages =
+    template.ageMin == null && template.ageMax == null
+      ? null
+      : t("agesRange", { min: template.ageMin ?? 0, max: template.ageMax ?? 8 });
   return (
-    <section aria-label={`Story idea: ${template.title}`} className="grid gap-8 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
+    <section aria-label={t("heroAriaLabel", { title: template.title })} className="grid gap-8 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
       {/* The book, shown as the real object */}
       <div className="mx-auto w-full max-w-xs lg:sticky lg:top-24">
         <BookTileVisual
@@ -742,7 +719,7 @@ function TemplateHero({
       </div>
 
       <div>
-        <Eyebrow>Start from this story</Eyebrow>
+        <Eyebrow>{t("heroEyebrow")}</Eyebrow>
         <h1 className="mt-3 font-display text-3xl font-extrabold leading-tight text-ink sm:text-4xl">
           {template.title}
         </h1>
@@ -756,26 +733,26 @@ function TemplateHero({
         {style ? (
           <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1.5 text-xs font-bold text-ink-soft ring-1 ring-white">
             <Sparkle size={12} className="text-marigold" />
-            Illustrated in the {style.name} style · change it anytime
+            {t("heroStyleLine", { name: style.name })}
           </div>
         ) : null}
 
         <div className="mt-7 flex max-w-xs flex-col gap-3">
           <Button size="lg" className="w-full whitespace-nowrap" onClick={onStart}>
-            Make this book
+            {t("heroMakeThisBook")}
           </Button>
           <Button variant="ghost" size="lg" className="w-full whitespace-nowrap" onClick={onOwnMemory}>
-            Use my own memory
+            {t("heroUseOwnMemory")}
           </Button>
         </div>
         <p className="mt-3 text-xs text-ink-soft">
-          Free preview first — you only pay once you love it.
+          {t("heroFreePreview")}
         </p>
 
         {beats.length > 0 ? (
           <div className="mt-9">
             <p className="font-display text-sm font-extrabold uppercase tracking-wide text-ink/70">
-              How the story goes
+              {t("heroHowStoryGoes")}
             </p>
             <ol className="mt-3 flex flex-col gap-2.5">
               {beats.map((beat, i) => (
@@ -813,13 +790,13 @@ function StyleStep({
   selectedStyle: StyleSummary | null;
   recommendedId: string | null;
 }) {
+  const t = useTranslations("wizard");
   return (
     <section className="flex flex-col gap-5">
       <header>
-        <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">Choose your look</h1>
+        <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">{t("styleTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          Every page will be illustrated in the style you pick — hover to see it in action. You can
-          change it later.
+          {t("styleSubtitle")}
         </p>
       </header>
 
@@ -828,12 +805,12 @@ function StyleStep({
       ) : null}
 
       {stylesError ? (
-        <Alert>We couldn&rsquo;t load the illustration styles right now. Please refresh to try again.</Alert>
+        <Alert>{t("styleError")}</Alert>
       ) : null}
 
       {styles ? (
-        <div role="radiogroup" aria-label="Illustration style">
-          <Carousel ariaLabel="Illustration style" itemGap="gap-4">
+        <div role="radiogroup" aria-label={t("styleRadioLabel")}>
+          <Carousel ariaLabel={t("styleRadioLabel")} itemGap="gap-4">
             {styles.map((style) => (
               <StyleCard
                 key={style.id}
@@ -861,6 +838,7 @@ function StyleCard({
   recommended: boolean;
   onSelect: () => void;
 }) {
+  const t = useTranslations("wizard");
   const peeks = style.referenceImageUrls.slice(0, 3);
   const [hovered, setHovered] = useState(false);
   const [idx, setIdx] = useState(0);
@@ -896,7 +874,7 @@ function StyleCard({
         {style.previewImageUrl ? (
           <ProgressiveImage
             src={style.previewImageUrl}
-            alt={`${style.name} example`}
+            alt={t("styleCardAlt", { name: style.name })}
             className="h-full w-full"
             imgClassName="h-full w-full object-cover"
           />
@@ -918,7 +896,7 @@ function StyleCard({
       </div>
       {recommended ? (
         <span className="absolute left-3 top-3 rounded-full bg-marigold px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-ink shadow-sm">
-          Recommended
+          {t("styleRecommended")}
         </span>
       ) : null}
       <div className="flex items-start justify-between gap-2 p-4">
@@ -956,18 +934,19 @@ function StoryStep({
   targetAge: number | null;
   onAgeChange: (v: number | null) => void;
 }) {
+  const t = useTranslations("wizard");
+  const memoryPrompts = t.raw("memoryPrompts") as string[];
+  const ageBandLabels = t.raw("ageBands") as string[];
   const beats = template ? template.storyBeats.slice(0, 10) : [];
   const hasBeats = beats.length > 0;
   return (
     <section className="flex flex-col gap-6">
       <header>
         <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">
-          {template ? "Make it yours" : "Tell us your story"}
+          {template ? t("storyTitleTemplate") : t("storyTitleOwn")}
         </h1>
         <p className="mt-1 text-sm text-ink-soft">
-          {template
-            ? "Here's the shape of the story — add your real details and we'll weave them in."
-            : "Write it like you'd tell it at bedtime — the little details are what make the magic."}
+          {template ? t("storySubtitleTemplate") : t("storySubtitleOwn")}
         </p>
       </header>
 
@@ -975,18 +954,22 @@ function StoryStep({
         {/* Left: the memory input + age — always up top. */}
         <div className="flex flex-col gap-5">
           <Field
-            label={template ? "Your real memory" : "Your memory"}
+            label={template ? t("memoryLabelTemplate") : t("memoryLabelOwn")}
             htmlFor="memory"
             hint={
               template
-                ? "Names, places, the thing that made everyone laugh — the more real, the better."
-                : `Need a nudge? “${MEMORY_PROMPTS[1]}”`
+                ? t("memoryHintTemplate")
+                : t("memoryHintOwn", { prompt: memoryPrompts[1] })
             }
           >
             <TextArea
               id="memory"
               className="min-h-44 leading-relaxed"
-              placeholder={template ? templatePlaceholder(template) : MEMORY_PROMPTS[0]}
+              placeholder={
+                template
+                  ? t("memoryPlaceholderTemplate", { noun: templateNoun(template.title) })
+                  : memoryPrompts[0]
+              }
               value={memoryText}
               onChange={(e) => onMemoryChange(e.target.value)}
             />
@@ -994,18 +977,18 @@ function StoryStep({
 
           <div>
             <p className="mb-1.5 text-sm font-bold text-ink">
-              Who is it for?{" "}
-              <span className="font-normal text-ink-soft">(we&rsquo;ll tune the words to their age)</span>
+              {t("whoFor")}{" "}
+              <span className="font-normal text-ink-soft">{t("whoForHint")}</span>
             </p>
-            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Reader age">
-              {AGE_BANDS.map((band) => (
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("ageRadioLabel")}>
+              {AGE_BANDS.map((band, i) => (
                 <Chip
                   key={band.value}
                   role="radio"
                   selected={targetAge === band.value}
                   onClick={() => onAgeChange(targetAge === band.value ? null : band.value)}
                 >
-                  {band.label}
+                  {ageBandLabels[i]}
                 </Chip>
               ))}
             </div>
@@ -1016,7 +999,7 @@ function StoryStep({
         {hasBeats ? (
           <div className="rounded-2xl bg-gradient-to-br from-lavender/60 via-cream to-peach/50 p-5">
             <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
-              The journey your book will take
+              {t("storyJourney")}
             </p>
             <ol className="mt-3 flex flex-col gap-2">
               {beats.map((beat, i) => (
@@ -1053,12 +1036,14 @@ function CastStep({
   onUpdate: (key: string, patch: Partial<PersonDraft>) => void;
   onAddPhotos: (person: PersonDraft, files: FileList | null) => void;
 }) {
+  const t = useTranslations("wizard");
+  const roleLabels = t.raw("roles") as Record<PersonRole, string>;
   return (
     <section className="flex flex-col gap-5">
       <header>
-        <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">Who&rsquo;s in it?</h1>
+        <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">{t("castTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          Add up to four people, with 1&ndash;3 photos each. Clear, well-lit photos of their face work best.
+          {t("castSubtitle")}
         </p>
       </header>
 
@@ -1066,28 +1051,28 @@ function CastStep({
         {people.map((person, idx) => (
           <div key={person.key} className="rounded-2xl border-2 border-ink/10 bg-white p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3">
-              <p className="font-display text-sm font-bold text-ink-soft">Person {idx + 1}</p>
+              <p className="font-display text-sm font-bold text-ink-soft">{t("castPerson", { n: idx + 1 })}</p>
               {people.length > 1 ? (
                 <button
                   type="button"
                   className="text-xs font-semibold text-coral hover:underline"
                   onClick={() => onRemove(person.key)}
                 >
-                  Remove
+                  {t("castRemove")}
                 </button>
               ) : null}
             </div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <Field label="Name" htmlFor={`name-${person.key}`}>
+              <Field label={t("castName")} htmlFor={`name-${person.key}`}>
                 <TextInput
                   id={`name-${person.key}`}
-                  placeholder="Mia"
+                  placeholder={t("castNamePlaceholder")}
                   value={person.name}
                   maxLength={80}
                   onChange={(e) => onUpdate(person.key, { name: e.target.value })}
                 />
               </Field>
-              <Field label="Role in the story" htmlFor={`role-${person.key}`}>
+              <Field label={t("castRole")} htmlFor={`role-${person.key}`}>
                 <Select
                   id={`role-${person.key}`}
                   value={person.role}
@@ -1095,7 +1080,7 @@ function CastStep({
                 >
                   {PERSON_ROLES.map((role) => (
                     <option key={role} value={role}>
-                      {ROLE_LABELS[role]}
+                      {roleLabels[role]}
                     </option>
                   ))}
                 </Select>
@@ -1108,12 +1093,12 @@ function CastStep({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={url}
-                    alt={`Photo of ${person.name || "person"}`}
+                    alt={t("castPhotoAlt", { name: person.name || t("castPhotoAltFallback") })}
                     className="h-20 w-20 rounded-xl object-cover shadow-fuzzy"
                   />
                   <button
                     type="button"
-                    aria-label="Remove photo"
+                    aria-label={t("castRemovePhoto")}
                     className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-ink text-xs text-cream opacity-90 hover:bg-coral"
                     onClick={() =>
                       onUpdate(person.key, { photoUrls: person.photoUrls.filter((u) => u !== url) })
@@ -1129,7 +1114,7 @@ function CastStep({
               {person.photoUrls.length + person.uploading < 3 ? (
                 <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-ink/20 text-ink-soft transition-colors hover:border-marigold hover:text-ink">
                   <span className="text-xl leading-none">+</span>
-                  <span className="text-[10px] font-semibold">Add photo</span>
+                  <span className="text-[10px] font-semibold">{t("castAddPhoto")}</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -1149,7 +1134,7 @@ function CastStep({
 
       {people.length < 4 ? (
         <Button variant="ghost" size="sm" className="self-start" onClick={onAdd}>
-          + Add another person
+          {t("castAddPerson")}
         </Button>
       ) : null}
     </section>
@@ -1179,19 +1164,20 @@ function FinishStep({
   email: string;
   onEmailChange: (v: string) => void;
 }) {
+  const t = useTranslations("wizard");
   return (
     <section className="flex flex-col gap-5">
       <header>
-        <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">Almost there</h1>
+        <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">{t("finishTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          Add the finishing touches, then tell us where to send your free preview — usually ready in a few minutes.
+          {t("finishSubtitle")}
         </p>
       </header>
 
-      <Field label="Book title" htmlFor="title" optional>
+      <Field label={t("finishBookTitle")} htmlFor="title" optional>
         <TextInput
           id="title"
-          placeholder={template ? template.title : "We'll suggest one if you leave this empty"}
+          placeholder={template ? template.title : t("finishTitlePlaceholder")}
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
           maxLength={120}
@@ -1199,15 +1185,15 @@ function FinishStep({
       </Field>
 
       <Field
-        label="A personal note"
+        label={t("finishNote")}
         htmlFor="greeting"
         optional
-        hint="Printed on the dedication page at the front of the book — like a handwritten message inside a gift."
+        hint={t("finishNoteHint")}
       >
         <TextArea
           id="greeting"
           className="min-h-24 leading-relaxed"
-          placeholder="For Mia, who makes every ordinary day an adventure."
+          placeholder={t("finishNotePlaceholder")}
           value={greeting}
           onChange={(e) => onGreetingChange(e.target.value)}
           maxLength={600}
@@ -1215,25 +1201,25 @@ function FinishStep({
       </Field>
 
       <Field
-        label="Signed, from"
+        label={t("finishSignedFrom")}
         htmlFor="greeting-from"
         optional
-        hint="Shown under the note, e.g. “Love, Mum & Dad”."
+        hint={t("finishSignedFromHint")}
       >
         <TextInput
           id="greeting-from"
-          placeholder="Mum & Dad"
+          placeholder={t("finishSignedFromPlaceholder")}
           value={greetingFrom}
           onChange={(e) => onGreetingFromChange(e.target.value)}
           maxLength={80}
         />
       </Field>
 
-      <Field label="Your email" htmlFor="email">
+      <Field label={t("finishEmail")} htmlFor="email">
         <TextInput
           id="email"
           type="email"
-          placeholder="you@example.com"
+          placeholder={t("finishEmailPlaceholder")}
           value={email}
           onChange={(e) => onEmailChange(e.target.value)}
           autoComplete="email"
@@ -1241,14 +1227,9 @@ function FinishStep({
       </Field>
 
       <p className="rounded-2xl bg-lavender/60 p-4 text-xs leading-relaxed text-ink-soft">
-        By continuing you agree that we may use the story and photos you provided to create your book,
-        including processing them with trusted third-party AI partners (such as Anthropic and
-        Replicate) to write the story and generate the illustrations. Your source photos are deleted
-        30 days after your book is delivered, and your memory text is kept only while your book
-        exists. We use your email only for your preview link and order updates, never for newsletters
-        or sharing. See our{" "}
+        {t("finishConsent")}{" "}
         <a href="/privacy" className="font-semibold text-ink underline hover:text-coral">
-          privacy policy
+          {t("finishConsentLink")}
         </a>
         .
       </p>

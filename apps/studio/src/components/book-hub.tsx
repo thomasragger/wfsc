@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useTranslations } from "next-intl";
+
 import type { FontPairingId, LayoutId } from "@wfsc/book-engine";
 
 import { ArtPlaceholder } from "@/components/decor";
@@ -31,28 +33,17 @@ const SLOW_PREVIEW_MS = 4 * 60 * 1000;
 
 const POLLING_STATUSES: BookStatus[] = ["preview_generating", "purchased", "generating"];
 
-const FORMATS: { id: BookFormat; name: string; price: string; blurb: string }[] = [
-  {
-    id: "board",
-    name: "Board book",
-    price: "€39",
-    blurb: "Chunky, drop-proof pages — made for ages 2 to 4.",
-  },
-  {
-    id: "softcover",
-    name: "Softcover",
-    price: "€49",
-    blurb: "Light and lovely — perfect for little hands.",
-  },
-  {
-    id: "hardcover",
-    name: "Hardcover",
-    price: "€69",
-    blurb: "The keepsake edition, built for a thousand bedtimes.",
-  },
+// Human-readable name/blurb per format live in the "formats" namespace,
+// keyed by id; only the stable id + price stay in code.
+const FORMATS: { id: BookFormat; price: string }[] = [
+  { id: "board", price: "€39" },
+  { id: "softcover", price: "€49" },
+  { id: "hardcover", price: "€69" },
 ];
 
 export function BookHub({ token, initial }: { token: string; initial: BookPayload }) {
+  const t = useTranslations("bookHub");
+  const tf = useTranslations("formats");
   const [book, setBook] = useState(initial);
   const [error, setError] = useState<string | null>(null);
   const [pageIndex, setPageIndex] = useState(0);
@@ -96,7 +87,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
       setSlow(false);
       setBook((b) => ({ ...b, status: "preview_generating" }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't restart — please try again");
+      setError(err instanceof Error ? err.message : t("errors.restart"));
     } finally {
       setRetrying(false);
     }
@@ -122,7 +113,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
     const greetingSpread = book.spreads.find((s) => s.kind === "greeting");
     const dedication = book.greeting ?? greetingSpread?.text ?? null;
     return [
-      { kind: "title", title: book.title ?? "Your storybook", styleName: book.style?.name ?? null },
+      { kind: "title", title: book.title ?? t("defaultTitle"), styleName: book.style?.name ?? null },
       ...(dedication ? [{ kind: "dedication" as const, text: dedication, from: book.greetingFrom }] : []),
     ];
   }, [book.greeting, book.greetingFrom, book.title, book.style, book.spreads]);
@@ -167,7 +158,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
       await patchBook(token, { greeting });
     } catch (err) {
       setBook(prev);
-      setError(err instanceof Error ? err.message : "Couldn't save your dedication");
+      setError(err instanceof Error ? err.message : t("errors.saveDedication"));
       throw err;
     }
   }
@@ -193,7 +184,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
       await patchSpread(token, spreadId, { text });
     } catch (err) {
       setBook(prev);
-      setError(err instanceof Error ? err.message : "Couldn't save this page");
+      setError(err instanceof Error ? err.message : t("errors.savePage"));
       throw err;
     }
   }
@@ -220,7 +211,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
         spreads: b.spreads.map((s) => (s.id === spreadId ? { ...s, regenNote: note } : s)),
       }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't queue the redraw");
+      setError(err instanceof Error ? err.message : t("errors.queueRedraw"));
       throw err;
     }
   }
@@ -232,7 +223,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
       await addBookToCart(token, format);
       window.location.href = "/cart";
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't add to cart — please try again");
+      setError(err instanceof Error ? err.message : t("errors.addToCart"));
       setCheckingOut(false);
     }
   }
@@ -244,7 +235,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
       await approveBook(token);
       setBook((b) => ({ ...b, status: "approved", approvedAt: new Date().toISOString() }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Approval failed — please try again");
+      setError(err instanceof Error ? err.message : t("errors.approval"));
     } finally {
       setApproving(false);
       setConfirmApprove(false);
@@ -258,9 +249,9 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
       <Shell error={error}>
         <EmptyState
           doodle="sun.png"
-          title="This book is still a twinkle in our eye"
-          body="It looks like the story intake wasn't finished. Start again and it only takes about five minutes."
-          action={<ButtonLink href="/create">Start your book</ButtonLink>}
+          title={t("draft.title")}
+          body={t("draft.body")}
+          action={<ButtonLink href="/create">{t("draft.action")}</ButtonLink>}
         />
       </Shell>
     );
@@ -271,17 +262,16 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
       <Shell error={error}>
         <MagicHappening
           book={book}
-          title="The magic is happening…"
-          body="Our illustrators are sketching your characters and painting the first pages of your story. This usually takes a few minutes."
+          title={t("generating.title")}
+          body={t("generating.body")}
         />
         {slow ? (
           <div className="mx-auto mt-8 max-w-md text-center">
             <p className="text-sm text-ink-soft">
-              This is taking longer than usual. It&rsquo;s often still working
-              away — but you can nudge it to start over if it seems stuck.
+              {t("generating.slow")}
             </p>
             <Button className="mt-4" variant="secondary" onClick={handleRetry} disabled={retrying}>
-              {retrying ? "Restarting…" : "Restart the magic"}
+              {retrying ? t("generating.restarting") : t("generating.restart")}
             </Button>
           </div>
         ) : null}
@@ -294,11 +284,11 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
       <Shell error={error}>
         <EmptyState
           doodle="cloud.png"
-          title="Our illustrators hit a snag"
-          body="Something went wrong while painting your preview. Your story and photos are safe — give it another try and we'll pick up where we left off."
+          title={t("previewFailed.title")}
+          body={t("previewFailed.body")}
           action={
             <Button onClick={handleRetry} disabled={retrying}>
-              {retrying ? "Trying again…" : "Try again"}
+              {retrying ? t("previewFailed.retrying") : t("previewFailed.retry")}
             </Button>
           }
         />
@@ -311,8 +301,8 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
       <Shell error={error}>
         <MagicHappening
           book={book}
-          title="Your whole book is being illustrated"
-          body="Thank you for your order! Every page of your story is now being written and painted. We'll email you the moment it's ready for your review."
+          title={t("purchased.title")}
+          body={t("purchased.body")}
         />
       </Shell>
     );
@@ -323,11 +313,11 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
       <Shell error={error}>
         <EmptyState
           doodle="cloud.png"
-          title="We hit a snag — and we're on it"
+          title={t("failed.title")}
           body={
             book.status === "generation_failed"
-              ? "Something went wrong while illustrating your book. Our team has been notified and is already looking into it — your story, photos and order are safe, and we'll email you the moment it's ready. No action needed."
-              : "Something went wrong while sending your book to the printer. Our team has been notified and is on it — we'll email you as soon as it's on its way. No action needed."
+              ? t("failed.generation")
+              : t("failed.print")
           }
         />
       </Shell>
@@ -338,11 +328,11 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
     return (
       <Shell error={error}>
         <EmptyState
-          title="This order was cancelled"
-          body="Your story is safe with us. If this was a mistake or you'd like to pick up where you left off, just reply to any of our emails."
+          title={t("cancelled.title")}
+          body={t("cancelled.body")}
           action={
             <ButtonLink href="/create" variant="secondary">
-              Start a new book
+              {t("cancelled.action")}
             </ButtonLink>
           }
         />
@@ -360,7 +350,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
         <StatusTimeline book={book} />
         <div className="mt-12">
           <h2 className="mb-6 text-center font-display text-xl font-bold text-ink">
-            One more read-through?
+            {t("finished.readThrough")}
           </h2>
           <Flipbook book={viewBook} pages={pages} index={pageIndex} onIndexChange={setPageIndex} />
         </div>
@@ -376,13 +366,16 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
     return (
       <Shell error={error}>
         <div className="mb-6">
-          <p className="text-sm font-semibold text-coral">Your preview is ready!</p>
+          <p className="text-sm font-semibold text-coral">{t("preview.ready")}</p>
           <h1 className="mt-1 font-display text-3xl font-extrabold text-ink sm:text-4xl">
-            {book.title ?? "Your storybook"}
+            {book.title ?? t("defaultTitle")}
           </h1>
           {book.style ? (
             <p className="mt-1 text-sm text-ink-soft">
-              Illustrated in the <span className="font-semibold">{book.style.name}</span> style
+              {t.rich("styleCredit", {
+                style: book.style.name,
+                b: (chunks) => <span className="font-semibold">{chunks}</span>,
+              })}
             </p>
           ) : null}
         </div>
@@ -397,9 +390,9 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
           <aside className="flex flex-col gap-5 lg:sticky lg:top-24">
             {book.people.length > 0 ? (
               <Card className="p-5">
-                <h2 className="font-display text-base font-extrabold text-ink">Check your cast</h2>
+                <h2 className="font-display text-base font-extrabold text-ink">{t("preview.castTitle")}</h2>
                 <p className="mt-1 text-xs text-ink-soft">
-                  Confirm everyone looks like themselves before we illustrate the whole book.
+                  {t("preview.castBody")}
                 </p>
                 <ul className="mt-4 flex flex-col gap-2.5">
                   {book.people.map((person) => {
@@ -410,7 +403,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                           type="button"
                           className="group/av relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-lavender ring-2 ring-white disabled:cursor-default"
                           disabled={!person.characterSheetUrl}
-                          aria-label={`View ${person.name} up close`}
+                          aria-label={t("preview.viewUpClose", { name: person.name })}
                           onClick={() => person.characterSheetUrl && setZoomed(person)}
                         >
                           {person.characterSheetUrl ? (
@@ -418,11 +411,11 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={person.characterSheetUrl}
-                                alt={`${person.name} as a storybook character`}
+                                alt={t("preview.characterAlt", { name: person.name })}
                                 className="h-full w-full object-cover"
                               />
                               <span className="absolute inset-0 flex items-center justify-center bg-ink/0 text-[10px] font-bold text-transparent transition-colors group-hover/av:bg-ink/40 group-hover/av:text-white">
-                                View
+                                {t("preview.view")}
                               </span>
                             </>
                           ) : (
@@ -448,7 +441,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                             })
                           }
                         >
-                          {confirmed ? "Looks right ✓" : "Looks right?"}
+                          {confirmed ? t("preview.looksRightYes") : t("preview.looksRight")}
                         </button>
                       </li>
                     );
@@ -458,8 +451,8 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
             ) : null}
 
             <Card className="p-5" id="unlock">
-              <h2 className="font-display text-base font-extrabold text-ink">Make it a real book</h2>
-              <div className="mt-4 flex flex-col gap-3" role="radiogroup" aria-label="Book format">
+              <h2 className="font-display text-base font-extrabold text-ink">{t("preview.unlockTitle")}</h2>
+              <div className="mt-4 flex flex-col gap-3" role="radiogroup" aria-label={t("preview.formatGroupLabel")}>
                 {FORMATS.map((f) => {
                   const selected = format === f.id;
                   return (
@@ -474,10 +467,10 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                       }`}
                     >
                       <div className="flex items-baseline justify-between">
-                        <span className="font-display font-bold text-ink">{f.name}</span>
+                        <span className="font-display font-bold text-ink">{tf(`${f.id}.name`)}</span>
                         <span className="font-display text-lg font-extrabold text-coral">{f.price}</span>
                       </div>
-                      <p className="mt-0.5 text-xs text-ink-soft">{f.blurb}</p>
+                      <p className="mt-0.5 text-xs text-ink-soft">{tf(`${f.id}.blurb`)}</p>
                     </button>
                   );
                 })}
@@ -487,15 +480,15 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                 size="lg"
                 disabled={!allConfirmed}
                 pending={checkingOut}
-                pendingLabel="Taking you to checkout…"
+                pendingLabel={t("preview.checkoutPending")}
                 onClick={() => void checkout()}
               >
-                Create my book
+                {t("preview.createBook")}
               </Button>
               <p className="mt-2 text-center text-xs text-ink-soft">
                 {allConfirmed
-                  ? "Secure checkout · printed & shipped to your door"
-                  : "First confirm your cast so we illustrate the right people."}
+                  ? t("preview.secureNote")
+                  : t("preview.confirmCastFirst")}
               </p>
             </Card>
           </aside>
@@ -506,14 +499,14 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
             className="fixed inset-0 z-50 flex items-center justify-center p-6"
             role="dialog"
             aria-modal="true"
-            aria-label={`${zoomed.name} up close`}
+            aria-label={t("preview.personUpClose", { name: zoomed.name })}
             onClick={() => setZoomed(null)}
           >
             <div className="animate-fade-in absolute inset-0 bg-ink/50 backdrop-blur-sm" />
             <div className="animate-page-in relative w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
               <div className="overflow-hidden rounded-3xl bg-cream shadow-polaroid">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={zoomed.characterSheetUrl} alt={`${zoomed.name} as a storybook character`} className="w-full" />
+                <img src={zoomed.characterSheetUrl} alt={t("preview.characterAlt", { name: zoomed.name })} className="w-full" />
                 <div className="flex items-center justify-between gap-3 px-5 py-4">
                   <div>
                     <p className="font-display text-lg font-extrabold text-ink">{zoomed.name}</p>
@@ -524,7 +517,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                     className="rounded-full bg-ink/5 px-4 py-2 text-sm font-bold text-ink hover:bg-ink/10"
                     onClick={() => setZoomed(null)}
                   >
-                    Close
+                    {t("preview.close")}
                   </button>
                 </div>
               </div>
@@ -539,14 +532,17 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
   return (
     <Shell error={error}>
       <header className="mb-10 flex flex-col items-center text-center">
-        <CoverImage src={coverImageUrl} alt="Your book's cover" size="md" priority className="mb-7" />
-        <p className="text-sm font-semibold text-coral">Your book is ready for review</p>
+        <CoverImage src={coverImageUrl} alt={t("review.coverAlt")} size="md" priority className="mb-7" />
+        <p className="text-sm font-semibold text-coral">{t("review.ready")}</p>
         <h1 className="mt-1 font-display text-3xl font-bold text-ink sm:text-4xl">
-          {book.title ?? "Your storybook"}
+          {book.title ?? t("defaultTitle")}
         </h1>
         {book.style ? (
           <p className="mt-1 text-sm text-ink-soft">
-            Illustrated in the <span className="font-semibold">{book.style.name}</span> style
+            {t.rich("styleCredit", {
+              style: book.style.name,
+              b: (chunks) => <span className="font-semibold">{chunks}</span>,
+            })}
           </p>
         ) : null}
       </header>
@@ -571,28 +567,27 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
 
       <section className="mx-auto mt-12 max-w-3xl">
         <Card className="flex flex-col items-center gap-4 p-8 text-center">
-          <h2 className="font-display text-xl font-bold text-ink">Happy with every page?</h2>
+          <h2 className="font-display text-xl font-bold text-ink">{t("review.happyTitle")}</h2>
           {confirmApprove ? (
             <>
               <p className="max-w-md text-sm text-ink-soft">
-                Once you approve, we prepare the print files and send your book to press — no more
-                changes after this point.
+                {t("review.confirmBody")}
               </p>
               <div className="flex gap-3">
-                <Button pending={approving} pendingLabel="Approving…" onClick={() => void approve()}>
-                  Yes, print my book!
+                <Button pending={approving} pendingLabel={t("review.approving")} onClick={() => void approve()}>
+                  {t("review.printYes")}
                 </Button>
                 <Button variant="ghost" disabled={approving} onClick={() => setConfirmApprove(false)}>
-                  Keep editing
+                  {t("review.keepEditing")}
                 </Button>
               </div>
             </>
           ) : (
             <>
               <p className="max-w-md text-sm text-ink-soft">
-                Flip through every page, tweak anything you like, then send it to print.
+                {t("review.reviewBody")}
               </p>
-              <Button onClick={() => setConfirmApprove(true)}>Approve for printing</Button>
+              <Button onClick={() => setConfirmApprove(true)}>{t("review.approve")}</Button>
             </>
           )}
         </Card>

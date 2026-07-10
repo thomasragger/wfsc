@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 
+import { useTranslations } from "next-intl";
+
 import { Flipbook, type FlipPage } from "@/components/flipbook";
 import { ButtonLink } from "@/components/ui/button";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
@@ -18,6 +20,7 @@ export function SampleViewer({
   book: BookPayload;
   suggestedTemplateId: string | null;
 }) {
+  const t = useTranslations("sampleViewer");
   const [pageIndex, setPageIndex] = useState(0);
 
   const pages: FlipPage[] = useMemo(() => {
@@ -25,7 +28,7 @@ export function SampleViewer({
     const dedication = book.greeting ?? greetingSpread?.text ?? null;
     return [
       { kind: "cover" as const },
-      { kind: "title" as const, title: book.title ?? "Your storybook", styleName: book.style?.name ?? null },
+      { kind: "title" as const, title: book.title ?? t("defaultTitle"), styleName: book.style?.name ?? null },
       ...(dedication ? [{ kind: "dedication" as const, text: dedication, from: book.greetingFrom }] : []),
       ...book.spreads
         .filter((s) => s.kind !== "cover" && s.kind !== "greeting")
@@ -47,11 +50,10 @@ export function SampleViewer({
         <section className="mx-auto mt-16 max-w-4xl">
           <div className="text-center">
             <h2 className="font-display text-2xl font-extrabold text-ink">
-              From real people to storybook stars
+              {t("castTitle")}
             </h2>
             <p className="mx-auto mt-2 max-w-md text-sm text-ink-soft">
-              Every character starts as someone real. A photo becomes a hand-drawn
-              character sheet, then stars on every page.
+              {t("castBody")}
             </p>
           </div>
           <div className="mt-8 grid gap-5 sm:grid-cols-2">
@@ -66,14 +68,14 @@ export function SampleViewer({
                       {person.photoUrls[0] ? (
                         <ProgressiveImage
                           src={person.photoUrls[0]}
-                          alt={`${person.name}, the real photo`}
+                          alt={t("photoAlt", { name: person.name })}
                           className="h-full w-full"
                           imgClassName="h-full w-full object-cover"
                         />
                       ) : null}
                     </div>
                     <figcaption className="mt-1.5 text-[0.65rem] font-semibold uppercase tracking-wide text-ink/40">
-                      Their photo
+                      {t("theirPhoto")}
                     </figcaption>
                   </figure>
 
@@ -89,14 +91,14 @@ export function SampleViewer({
                       {person.characterSheetUrl ? (
                         <ProgressiveImage
                           src={person.characterSheetUrl}
-                          alt={`${person.name}'s character sheet`}
+                          alt={t("characterSheetAlt", { name: person.name })}
                           className="h-full w-full"
                           imgClassName="h-full w-full object-contain"
                         />
                       ) : null}
                     </div>
                     <figcaption className="mt-1.5 text-[0.65rem] font-semibold uppercase tracking-wide text-ink/40">
-                      Character sheet
+                      {t("characterSheet")}
                     </figcaption>
                   </figure>
                 </div>
@@ -111,15 +113,15 @@ export function SampleViewer({
 
       <div className="mx-auto mt-12 max-w-xl text-center">
         <p className="font-display text-xl font-extrabold text-ink">
-          Imagine your family in these pages.
+          {t("ctaTitle")}
         </p>
         <p className="mt-2 text-sm text-ink-soft">
           {suggestedTemplateId
-            ? "Start from this very story idea and make it entirely yours."
-            : "It takes about five minutes to tell us your memory."}
+            ? t("ctaBodyTemplate")
+            : t("ctaBodyDefault")}
         </p>
         <ButtonLink href={createHref} size="lg" className="mt-5">
-          Make your own
+          {t("ctaButton")}
         </ButtonLink>
       </div>
     </div>

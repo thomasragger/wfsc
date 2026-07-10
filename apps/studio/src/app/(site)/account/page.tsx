@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 
 import { BookTile } from "@/components/ui/book-tile";
@@ -10,7 +11,10 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Your account" };
+export async function generateMetadata() {
+  const t = await getTranslations("account");
+  return { title: t("metaTitle") };
+}
 
 interface SavedBook {
   token: string;
@@ -39,6 +43,7 @@ async function savedBooksFor(email: string): Promise<SavedBook[]> {
 }
 
 export default async function AccountPage() {
+  const t = await getTranslations("account");
   const token = await getCustomerToken();
   let profile: CustomerProfile | null = null;
   if (token) {
@@ -57,19 +62,19 @@ export default async function AccountPage() {
         <>
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <Eyebrow>Your account</Eyebrow>
+              <Eyebrow>{t("eyebrow")}</Eyebrow>
               <h1 className="mt-3 font-display text-4xl font-extrabold text-ink">
-                {profile.firstName ? `Hello, ${profile.firstName}` : "Welcome back"}
+                {profile.firstName ? t("helloName", { name: profile.firstName }) : t("welcomeBack")}
               </h1>
               {profile.email ? <p className="mt-1 text-ink-soft">{profile.email}</p> : null}
             </div>
             <Link href="/account/logout" className="text-sm font-semibold text-coral hover:underline">
-              Sign out
+              {t("signOut")}
             </Link>
           </div>
 
           <section className="mt-12">
-            <h2 className="font-display text-2xl font-extrabold text-ink">Your books</h2>
+            <h2 className="font-display text-2xl font-extrabold text-ink">{t("yourBooks")}</h2>
             {savedBooks.length > 0 ? (
               <div className="mt-6 grid grid-cols-2 justify-items-center gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
                 {savedBooks.map((b) => (
@@ -77,8 +82,8 @@ export default async function AccountPage() {
                     key={b.token}
                     href={`/book/${encodeURIComponent(b.token)}`}
                     image={b.image}
-                    title={b.title ?? "Your storybook"}
-                    category={b.status === "preview_ready" ? "Preview ready" : b.status.replace(/_/g, " ")}
+                    title={b.title ?? t("bookFallbackTitle")}
+                    category={b.status === "preview_ready" ? t("previewReady") : b.status.replace(/_/g, " ")}
                     size="md"
                     aspectClassName="aspect-square"
                   />
@@ -86,16 +91,16 @@ export default async function AccountPage() {
               </div>
             ) : (
               <p className="mt-3 text-ink-soft">
-                You haven&rsquo;t made a book yet.{" "}
+                {t("noBookYet")}{" "}
                 <Link href="/create" className="font-semibold text-coral hover:underline">
-                  Start your first one.
+                  {t("startFirst")}
                 </Link>
               </p>
             )}
           </section>
 
           <section className="mt-12">
-            <h2 className="font-display text-2xl font-extrabold text-ink">Order history</h2>
+            <h2 className="font-display text-2xl font-extrabold text-ink">{t("orderHistory")}</h2>
             {profile.orders.length > 0 ? (
               <ul className="mt-4 divide-y divide-ink/5 rounded-3xl border border-ink/5 bg-white">
                 {profile.orders.map((o) => (
@@ -117,38 +122,33 @@ export default async function AccountPage() {
                 ))}
               </ul>
             ) : (
-              <p className="mt-3 text-ink-soft">No orders yet.</p>
+              <p className="mt-3 text-ink-soft">{t("noOrders")}</p>
             )}
           </section>
         </>
       ) : isCustomerAccountsConfigured() ? (
         <div className="mx-auto max-w-md py-10 text-center">
-          <Eyebrow className="mx-auto">Your account</Eyebrow>
+          <Eyebrow className="mx-auto">{t("eyebrow")}</Eyebrow>
           <h1 className="mt-3 font-display text-3xl font-extrabold text-ink sm:text-4xl">
-            Sign in to see your books
+            {t("signInHeading")}
           </h1>
-          <p className="mt-3 text-ink-soft">
-            Your account keeps every book you&rsquo;ve made and every order in one cozy place.
-          </p>
+          <p className="mt-3 text-ink-soft">{t("signInBody")}</p>
           <Card className="mt-8 p-6">
             <ButtonLink href="/account/login" size="lg" className="w-full">
-              Sign in with Shopify
+              {t("signInCta")}
             </ButtonLink>
           </Card>
         </div>
       ) : (
         <div className="mx-auto max-w-md py-10 text-center">
-          <Eyebrow className="mx-auto">Your books</Eyebrow>
+          <Eyebrow className="mx-auto">{t("yourBooks")}</Eyebrow>
           <h1 className="mt-3 font-display text-3xl font-extrabold text-ink sm:text-4xl">
-            Your book lives in your inbox
+            {t("inboxHeading")}
           </h1>
-          <p className="mt-3 text-ink-soft">
-            No account needed. When you create a book, we email you a private link to preview, edit,
-            and order it anytime. Keep that email safe and your story is always one click away.
-          </p>
+          <p className="mt-3 text-ink-soft">{t("inboxBody")}</p>
           <Card className="mt-8 p-6">
             <ButtonLink href="/create" size="lg" className="w-full">
-              Start your book
+              {t("inboxCta")}
             </ButtonLink>
           </Card>
         </div>

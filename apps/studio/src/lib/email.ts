@@ -279,6 +279,12 @@ const FOOTER_EN = 'Warm Fuzzy Story Club. Every family has a story worth keeping
 const PRIVACY_EN =
   'This link is private to you. Anyone who has it can view your book, so share it with care.';
 
+// German equivalents (O7). du-Form, warm and plain-spoken.
+const FOOTER_DE =
+  'Warm Fuzzy Story Club. Jede Familie hat eine Geschichte, die es wert ist, bewahrt zu werden.';
+const PRIVACY_DE =
+  'Dieser Link ist privat und nur für dich. Wer ihn hat, kann dein Buch ansehen, teile ihn also mit Bedacht.';
+
 /** previewReady: the free preview finished generating. */
 export const previewReadyCopy: Record<string, LinkEmailCopy> = {
   en: {
@@ -292,6 +298,18 @@ export const previewReadyCopy: Record<string, LinkEmailCopy> = {
     cta: 'See your preview',
     privacy: PRIVACY_EN,
     footer: FOOTER_EN,
+  },
+  de: {
+    subject: 'Deine Vorschau von {title} ist fertig',
+    preheader: 'Die ersten Seiten sind illustriert und warten auf dich.',
+    heading: 'Komm, schau mal rein',
+    paragraphs: [
+      'Die ersten Seiten von {title} sind illustriert und bereit für dich.',
+      'Dein privater Link läuft nie ab, du kannst also jederzeit zurückkommen.',
+    ],
+    cta: 'Vorschau ansehen',
+    privacy: PRIVACY_DE,
+    footer: FOOTER_DE,
   },
 };
 
@@ -309,6 +327,18 @@ export const reviewReadyCopy: Record<string, LinkEmailCopy> = {
     privacy: PRIVACY_EN,
     footer: FOOTER_EN,
   },
+  de: {
+    subject: '{title} ist fertig für deine Durchsicht',
+    preheader: 'Dein Buch ist vollständig illustriert. Sieh es dir an und gib es zum Druck frei.',
+    heading: 'Dein Buch ist fertig',
+    paragraphs: [
+      '{title} ist vollständig geschrieben und illustriert. Lies es in Ruhe durch, und falls etwas noch nicht passt, kannst du Widmung, Schriften und Layouts anpassen.',
+      'Wenn alles genau richtig aussieht, gib es frei und wir schicken es in den Druck.',
+    ],
+    cta: 'Buch durchsehen',
+    privacy: PRIVACY_DE,
+    footer: FOOTER_DE,
+  },
 };
 
 /** printSubmitted: the print job has been submitted. */
@@ -322,6 +352,16 @@ export const printSubmittedCopy: Record<string, NoticeEmailCopy> = {
       'We will email you tracking details the moment your book ships.',
     ],
     footer: FOOTER_EN,
+  },
+  de: {
+    subject: '{title} ist auf dem Weg in die Druckerei',
+    preheader: 'Dein Buch wird gedruckt. Wir melden uns, sobald es verschickt wird.',
+    heading: 'Ab in den Druck',
+    paragraphs: [
+      '{title} ist in den Druck gegangen. Der Druck dauert normalerweise 3 bis 5 Werktage.',
+      'Sobald dein Buch verschickt wird, schicken wir dir die Sendungsverfolgung per E-Mail.',
+    ],
+    footer: FOOTER_DE,
   },
 };
 
@@ -337,6 +377,17 @@ export const generationDelayedCopy: Record<string, NoticeEmailCopy> = {
     ],
     contact: 'Questions in the meantime? Just reply to this email and a real person will help.',
     footer: FOOTER_EN,
+  },
+  de: {
+    subject: '{title} dauert ein bisschen länger',
+    preheader: 'Dein Buch braucht noch etwas Zeit. Wir kümmern uns darum, du musst nichts tun.',
+    heading: 'Noch ein bisschen Zeit',
+    paragraphs: [
+      '{title} braucht beim Illustrieren länger als sonst. Unser Team schaut es sich schon an, und du musst nichts weiter tun.',
+      'Wir melden uns per E-Mail, sobald es für deine Durchsicht bereit ist.',
+    ],
+    contact: 'Fragen in der Zwischenzeit? Antworte einfach auf diese E-Mail, und ein echter Mensch hilft dir.',
+    footer: FOOTER_DE,
   },
 };
 

@@ -1,5 +1,5 @@
 {
-  "_readme": "German catalog — filled in by workstream O7. Keys missing or empty here fall back to English per-key (see src/i18n/request.ts). Voice: warm, du-Form, plain-spoken; see the English source for tone.",
+  "_readme": "German catalog, filled in by workstream O7. Keys missing or empty here fall back to English per-key (see src/i18n/request.ts). Voice: warm, du-Form, plain-spoken; see the English source for tone. Legal namespaces (privacy/terms/returns) carry a _note and need lawyer sign-off before launch.",
   "footer": {
     "tagline": "Aus Erinnerungen wird Kunst fürs Leben.",
     "explore": "Entdecken",
@@ -9,18 +9,697 @@
     "sampleBooks": "Beispielbücher",
     "ourArtists": "Unsere Künstler:innen",
     "whoItsFor": "Für wen?",
-    "occasions": "Anlässe"
+    "occasions": "Anlässe",
+    "legal": "Rechtliches",
+    "aboutUs": "Über uns",
+    "contact": "Kontakt",
+    "imprint": "Impressum",
+    "privacy": "Datenschutz",
+    "terms": "AGB",
+    "returns": "Widerruf und Rückgabe"
   },
   "samples": {
     "metaTitle": "Beispielbücher",
     "metaDescription": "Blättere fertige Beispielbücher durch, Seite für Seite.",
     "eyebrow": "Echte Bücher, von vorn bis hinten",
     "heading": "Blättere durch ein Beispielbuch.",
-    "intro": "Jedes Buch hier ist genauso entstanden, wie deins entstehen wird — aus einer Familienerinnerung, ein paar Fotos und ganz viel Herzenswärme.",
+    "intro": "Jedes Buch hier ist genauso entstanden, wie deins entstehen wird: aus einer Familienerinnerung, ein paar Fotos und ganz viel Herzenswärme.",
     "emptyTitle": "Die ersten Beispielbücher sind noch in der Druckerei.",
-    "emptyBody": "Schau bald wieder vorbei — oder überspring die Warteschlange und mach ein Buch mit deiner eigenen Familie in der Hauptrolle.",
+    "emptyBody": "Schau bald wieder vorbei, oder überspring die Warteschlange und mach ein Buch mit deiner eigenen Familie in der Hauptrolle.",
     "emptyCta": "Erzähl deine Geschichte",
     "closingTitle": "Bereit, deine eigene Familie in so einem Buch zu sehen?",
     "closingCta": "Jetzt selbst gestalten"
+  },
+  "bookHub": {
+    "defaultTitle": "Dein Bilderbuch",
+    "styleCredit": "Illustriert im Stil <b>{style}</b>",
+    "errors": {
+      "restart": "Konnte nicht neu starten, bitte versuch es nochmal",
+      "saveDedication": "Konnte deine Widmung nicht speichern",
+      "savePage": "Konnte diese Seite nicht speichern",
+      "queueRedraw": "Konnte die Neuzeichnung nicht in die Warteschlange stellen",
+      "addToCart": "Konnte nicht in den Warenkorb legen, bitte versuch es nochmal",
+      "approval": "Freigabe fehlgeschlagen, bitte versuch es nochmal"
+    },
+    "draft": {
+      "title": "Dieses Buch ist noch ein Funkeln in unseren Augen",
+      "body": "Sieht aus, als wäre die Geschichten-Abfrage noch nicht fertig geworden. Fang einfach nochmal an, es dauert nur etwa fünf Minuten.",
+      "action": "Starte dein Buch"
+    },
+    "generating": {
+      "title": "Der Zauber passiert gerade…",
+      "body": "Unsere Illustratoren skizzieren gerade deine Figuren und malen die ersten Seiten deiner Geschichte. Das dauert meist ein paar Minuten.",
+      "slow": "Das dauert länger als sonst. Oft arbeitet es noch fleißig im Hintergrund, aber du kannst es anstupsen, damit es neu startet, falls es hängen zu bleiben scheint.",
+      "restarting": "Wird neu gestartet…",
+      "restart": "Den Zauber neu starten"
+    },
+    "previewFailed": {
+      "title": "Unsere Illustratoren sind auf ein Problem gestoßen",
+      "body": "Beim Malen deiner Vorschau ist etwas schiefgelaufen. Deine Geschichte und deine Fotos sind sicher, versuch es einfach nochmal und wir machen dort weiter, wo wir aufgehört haben.",
+      "retrying": "Neuer Versuch…",
+      "retry": "Nochmal versuchen"
+    },
+    "purchased": {
+      "title": "Dein ganzes Buch wird gerade illustriert",
+      "body": "Danke für deine Bestellung! Jede Seite deiner Geschichte wird jetzt geschrieben und gemalt. Wir schreiben dir eine E-Mail, sobald sie für deine Durchsicht bereit ist."
+    },
+    "failed": {
+      "title": "Wir sind auf ein Problem gestoßen, und wir kümmern uns darum",
+      "generation": "Beim Illustrieren deines Buches ist etwas schiefgelaufen. Unser Team wurde benachrichtigt und schaut es sich bereits an, deine Geschichte, deine Fotos und deine Bestellung sind sicher, und wir schreiben dir eine E-Mail, sobald es fertig ist. Du musst nichts tun.",
+      "print": "Beim Senden deines Buches an die Druckerei ist etwas schiefgelaufen. Unser Team wurde benachrichtigt und kümmert sich darum, wir schreiben dir eine E-Mail, sobald es unterwegs ist. Du musst nichts tun."
+    },
+    "cancelled": {
+      "title": "Diese Bestellung wurde storniert",
+      "body": "Deine Geschichte ist bei uns sicher aufgehoben. Wenn das ein Versehen war oder du dort weitermachen möchtest, wo du aufgehört hast, antworte einfach auf eine unserer E-Mails.",
+      "action": "Neues Buch starten"
+    },
+    "finished": {
+      "readThrough": "Noch ein letztes Durchblättern?"
+    },
+    "preview": {
+      "ready": "Deine Vorschau ist fertig!",
+      "castTitle": "Prüf deine Besetzung",
+      "castBody": "Bestätige, dass alle wie sie selbst aussehen, bevor wir das ganze Buch illustrieren.",
+      "viewUpClose": "{name} aus der Nähe ansehen",
+      "characterAlt": "{name} als Bilderbuchfigur",
+      "view": "Ansehen",
+      "looksRightYes": "Passt ✓",
+      "looksRight": "Passt so?",
+      "unlockTitle": "Mach ein echtes Buch daraus",
+      "formatGroupLabel": "Buchformat",
+      "createBook": "Mein Buch erstellen",
+      "checkoutPending": "Wir bringen dich zur Kasse…",
+      "secureNote": "Sichere Kasse · gedruckt & zu dir nach Hause geliefert",
+      "confirmCastFirst": "Bestätige zuerst deine Besetzung, damit wir die richtigen Menschen illustrieren.",
+      "personUpClose": "{name} aus der Nähe",
+      "close": "Schließen"
+    },
+    "review": {
+      "coverAlt": "Das Cover deines Buches",
+      "ready": "Dein Buch ist bereit zur Durchsicht",
+      "happyTitle": "Bist du mit jeder Seite zufrieden?",
+      "confirmBody": "Sobald du freigibst, bereiten wir die Druckdateien vor und schicken dein Buch in den Druck, danach sind keine Änderungen mehr möglich.",
+      "approving": "Wird freigegeben…",
+      "printYes": "Ja, druckt mein Buch!",
+      "keepEditing": "Weiter bearbeiten",
+      "reviewBody": "Blättere durch jede Seite, ändere alles, was du magst, und schick es dann in den Druck.",
+      "approve": "Zum Druck freigeben"
+    }
+  },
+  "formats": {
+    "board": {
+      "name": "Pappbilderbuch",
+      "blurb": "Dicke, sturzsichere Seiten, gemacht für Kinder von 2 bis 4 Jahren."
+    },
+    "softcover": {
+      "name": "Softcover",
+      "blurb": "Leicht und liebenswert, perfekt für kleine Hände."
+    },
+    "hardcover": {
+      "name": "Hardcover",
+      "blurb": "Die Erinnerungsstück-Ausgabe, gebaut für tausend Gute-Nacht-Geschichten."
+    }
+  },
+  "categoryShowcase": {
+    "back": "Zurück",
+    "regions": {
+      "dach": "🇩🇪🇦🇹🇨🇭 DACH",
+      "us": "🇺🇸 USA"
+    },
+    "empty": {
+      "title": "Frische Geschichten-Ideen sind schon unterwegs.",
+      "body": "Wir schreiben ständig neue. Fang in der Zwischenzeit einfach mit deiner eigenen Erinnerung an, daraus entstehen die schönsten Bücher.",
+      "action": "Mit deiner eigenen Erinnerung starten"
+    },
+    "ctaTitle": "Jede Familie hat eine Geschichte, die es wert ist, bewahrt zu werden.",
+    "ctaButton": "Schreib deine Geschichte"
+  },
+  "sampleViewer": {
+    "defaultTitle": "Dein Bilderbuch",
+    "castTitle": "Von echten Menschen zu Bilderbuch-Stars",
+    "castBody": "Jede Figur beginnt als echter Mensch. Ein Foto wird zu einem handgezeichneten Charakterbogen und dann zum Star auf jeder Seite.",
+    "photoAlt": "{name}, das echte Foto",
+    "theirPhoto": "Ihr Foto",
+    "characterSheetAlt": "Charakterbogen von {name}",
+    "characterSheet": "Charakterbogen",
+    "ctaTitle": "Stell dir deine Familie auf diesen Seiten vor.",
+    "ctaBodyTemplate": "Starte mit genau dieser Geschichten-Idee und mach sie ganz zu deiner eigenen.",
+    "ctaBodyDefault": "Es dauert nur etwa fünf Minuten, uns deine Erinnerung zu erzählen.",
+    "ctaButton": "Mach dein eigenes"
+  },
+  "errors": {
+    "notFound": {
+      "title": "Seite nicht gefunden",
+      "description": "Wir konnten diese Seite nicht finden, aber es warten jede Menge Geschichten auf dich.",
+      "eyebrow": "Fehler 404",
+      "heading": "Diese Seite ist wohl verlorengegangen",
+      "body": "Die Seite, die du suchst, ist nicht hier, aber jede Familienerinnerung verdient trotzdem ihre Geschichte. Lass uns dich zurück zum Schönen bringen.",
+      "backHome": "Zurück zur Startseite",
+      "browseBooks": "Unsere Bücher entdecken"
+    },
+    "error": {
+      "logoAriaLabel": "Warm Fuzzy Story Club Startseite",
+      "logoAlt": "Warm Fuzzy Story Club",
+      "eyebrow": "Da ist etwas schiefgelaufen",
+      "heading": "Na, das ist mal eine überraschende Wendung",
+      "body": "Bei uns hat etwas gehakt und unser Team wurde benachrichtigt. Deine Geschichte ist sicher. Versuch es einfach noch mal oder geh zurück zur Startseite.",
+      "tryAgain": "Nochmal versuchen",
+      "backHome": "Zurück zur Startseite"
+    },
+    "global": {
+      "heading": "Na, das ist mal eine überraschende Wendung",
+      "body": "Bei uns hat etwas gehakt und unser Team wurde benachrichtigt. Deine Geschichte ist sicher. Bitte lade die Seite neu oder komm gleich noch mal vorbei.",
+      "refresh": "Neu laden",
+      "backHome": "Zurück zur Startseite"
+    }
+  },
+  "home": {
+    "heroLogoAlt": "Warm Fuzzy Story Club",
+    "heroTagline": "Jede Geschichte. Überall. Alle, die du liebst.",
+    "heroSubtitle": "Ein einzigartiges Bilderbuch, geschrieben aus deiner eigenen Erinnerung und mit den echten Menschen darin in den Hauptrollen. Du wählst die Geschichte, den Ort und die Besetzung.",
+    "heroCta": "Schreib deine Geschichte",
+    "yoursEyebrow": "Ganz und gar deins",
+    "yoursHeadingLine1": "Jede Geschichte. Überall.",
+    "yoursHeadingLine2": "Alle, die du liebst.",
+    "yoursIntro": "Keine Vorlage mit eingesetztem Namen. Jedes Buch wird von Grund auf geschrieben, illustriert und besetzt, rund um deine Familie.",
+    "axes": [
+      {
+        "title": "Jede Geschichte",
+        "body": "Keine Lückentext-Vorlage. Wir schreiben deine echte Erinnerung zu einer Geschichte, die nur deine Familie hat.",
+        "cta": "Aus einer Erinnerung starten"
+      },
+      {
+        "title": "Überall, wo du willst",
+        "body": "Spielt an einem Ort, den ihr beide liebt: eure eigene Straße, Omas Garten oder das andere Ende der Welt.",
+        "cta": "Orte, die du liebst"
+      },
+      {
+        "title": "Alle, die du liebst",
+        "body": "Jede und jeder sieht aus wie im echten Leben, gezeichnet nach deinen Fotos. Kinder, Eltern, Großeltern, sogar der Hund.",
+        "cta": "Die Besetzung ansehen"
+      }
+    ],
+    "placesEyebrow": "Lass es überall spielen",
+    "placesHeading": "Orte, die du liebst",
+    "placesIntro": "Deine Geschichte kann überall passieren. Hier sind ein paar Lieblingsorte rund um {region}, die dich inspirieren.",
+    "placesSeeAll": "Alle Orte ansehen",
+    "placesCarouselAria": "Geschichten-Ideen an echten Orten",
+    "categoriesHeading": "Geschenke für all deine Lieblingsmenschen",
+    "categoriesCarouselAria": "Geschenk-Kategorien",
+    "categoriesEmptyTitle": "Unsere Geschenk-Kategorien werden gerade noch ausgepackt.",
+    "categoriesEmptyBody": "Schau gleich noch mal vorbei, oder starte direkt mit deiner eigenen Erinnerung.",
+    "categoriesEmptyCta": "Mit deiner eigenen Erinnerung starten",
+    "ideasEyebrow": "Brauchst du einen Funken?",
+    "ideasHeading": "Starte mit einer Geschichte, die andere Familien lieben.",
+    "ideasIntro": "Wähl eine Idee zum Loslegen und mach sie dann ganz zu deiner eigenen.",
+    "ideasCarouselAria": "{name} Geschichten-Ideen",
+    "ideasEmptyTitle": "Unsere Geschichten-Ideen werden gerade noch liebevoll zugedeckt.",
+    "ideasEmptyBody": "Jedes Buch hier beginnt sowieso mit deiner eigenen Erinnerung: Strandtage mit Oma, Papas legendäre Pfannkuchen, der erste Schnee der kleinen Schwester. Bring deine mit, den Rest übernehmen wir.",
+    "ideasEmptyCta": "Mit deiner eigenen Erinnerung starten",
+    "flipEyebrow": "Sieh es in echt",
+    "flipHeading": "Blätter durch ein fertiges Buch.",
+    "flipIntro": "Jedes davon ist ein echtes, vollständiges Beispielbuch, Seite für Seite, genau die Sorte, die du in Händen halten wirst.",
+    "flipEmpty": "Die ersten Beispielbücher sind gerade in der Druckerei, schau bald wieder vorbei.",
+    "flipBrowseCta": "Beispielbücher ansehen",
+    "sampleFallbackTitle": "Eine Beispielgeschichte",
+    "faqEyebrow": "Gut zu wissen",
+    "faqHeading": "Fragen, beantwortet",
+    "faqStillCuriousPrefix": "Noch neugierig?",
+    "faqStillCuriousLink": "Schreib uns eine Nachricht",
+    "faqStillCuriousSuffix": "und ein echter Mensch antwortet dir.",
+    "faqs": [
+      {
+        "q": "Wie funktioniert das eigentlich?",
+        "a": "Erzähl uns in ein paar Sätzen eine echte Erinnerung und wer dabei war. Wir schreiben daraus eine Geschichte, illustrieren sie im Kunststil deiner Wahl und zeigen dir in Minuten eine kostenlose Vorschau. Gefällt sie dir? Wir drucken ein Erinnerungsstück als Buch und schicken es dir nach Hause."
+      },
+      {
+        "q": "Sehen die Figuren wirklich aus wie wir?",
+        "a": "Ja. Füg ein oder zwei Fotos von jeder Person hinzu und wir zeichnen sie von Hand ins Buch, mit passender Frisur, Gesichtszügen und Lieblingskleidung, damit sie auf jeder Seite wiederzuerkennen sind. Kinder, Eltern, Großeltern, sogar der Familienhund."
+      },
+      {
+        "q": "Ist es eine einzigartige Geschichte oder eine Vorlage mit unserem Namen darin?",
+        "a": "Komplett einzigartig. Nichts hier ist eine Lückentext-Vorlage. Dein Buch wird von Grund auf rund um deine Erinnerung geschrieben, es gibt also keine zwei gleichen."
+      },
+      {
+        "q": "Kann ich die Geschichte überall spielen lassen?",
+        "a": "Überall, wo du willst: eure eigene Straße, Omas Garten, ein Lieblingsurlaubsort oder das andere Ende der Welt. Stöber durch „Orte, die du liebst“ für fertige Ideen in echten Städten."
+      },
+      {
+        "q": "Kann ich vor dem Druck noch etwas ändern?",
+        "a": "Natürlich. Du liest das ganze Buch und passt den Titel, die persönliche Widmung und die Details an, bevor du es zum Druck freigibst. Es wird nichts gedruckt, bevor du zufrieden bist."
+      },
+      {
+        "q": "Was kostet es und welche Formate gibt es?",
+        "a": "Ein stabiles Pappbilderbuch für 39 € (gemacht für 2 bis 4 Jahre), ein Softcover für 49 € und ein Hardcover als Erinnerungsstück für 69 €. Die kostenlose Vorschau kommt immer zuerst, du zahlst also erst, wenn es dir gefällt."
+      }
+    ],
+    "closingHeading": "Jede Familie hat eine Geschichte, die es wert ist, bewahrt zu werden.",
+    "closingIntro": "Es dauert etwa fünf Minuten, uns deine zu erzählen. Das Buch hält ein Leben lang.",
+    "closingCta": "Schreib deine Geschichte"
+  },
+  "legal": {
+    "privacy": {
+      "_note": "[DE LEGAL REVIEW] machine draft, needs lawyer sign-off",
+      "metaTitle": "Datenschutz",
+      "metaDescription": "Wie Warm Fuzzy Story Club mit deinen Fotos, deinen Familienerinnerungen und deinen persönlichen Daten umgeht. Klar und mit Sorgfalt.",
+      "eyebrow": "Dein Vertrauen zählt",
+      "title": "Datenschutz",
+      "intro": "Du gibst uns Fotos der Menschen, die du am meisten liebst, oft deiner Kinder. Wir behandeln das als das Geschenk, das es ist. Hier steht ganz genau, was mit deinen Daten passiert, in klaren Worten.",
+      "shortTitle": "Die Kurzfassung",
+      "shortItems": [
+        "Wir nutzen deine Fotos und Worte nur, um dein Buch zu machen. Sonst nichts.",
+        "Wir verkaufen deine Daten nie und schicken dir nie Werbung, um die du nicht gebeten hast.",
+        "Um das Buch zu erstellen, werden deine Inhalte von vertrauenswürdigen KI- und Druckpartnern verarbeitet, die unten aufgeführt sind.",
+        "Quellfotos werden 30 Tage nach Lieferung deines Buchs gelöscht. Dein Erinnerungstext wird nur aufbewahrt, solange dein Buch existiert.",
+        "Du kannst uns jederzeit bitten, alles zu löschen."
+      ],
+      "secWhoTitle": "Wer für deine Daten verantwortlich ist",
+      "whoP1": "Verantwortlich für deine personenbezogenen Daten ist",
+      "whoReview1": "der Rechtsträger von WFSC.",
+      "whoP2": "Du erreichst uns unter",
+      "whoP3": "oder per Post an",
+      "whoReview2": "die Postadresse des Unternehmens.",
+      "whoP4": "Unsere vollständigen Unternehmensangaben findest du in unserem",
+      "impressum": "Impressum",
+      "secCollectTitle": "Was wir erheben und warum",
+      "collectIntro": "Wir fragen nur nach dem, was ein personalisiertes Buch wirklich braucht:",
+      "collectItems": [
+        {
+          "label": "Fotos",
+          "text": "der Personen in der Geschichte, meist Kinder, damit unsere Illustratoren und die KI daraus Bilderbuchfiguren machen können."
+        },
+        {
+          "label": "Namen und Rollen",
+          "text": "der Mitwirkenden, damit die Geschichte wirklich von ihnen handelt."
+        },
+        {
+          "label": "Deine Familienerinnerung",
+          "text": "der frei geschriebene Moment, um den herum das Buch entstehen soll."
+        },
+        {
+          "label": "Eine Widmung und Unterschrift",
+          "text": "falls du eine hinzufügst, für die gedruckte Widmungsseite."
+        },
+        {
+          "label": "Deine E-Mail",
+          "text": "damit wir dir deinen Vorschau-Link und Bestell-Updates schicken können."
+        },
+        {
+          "label": "Deine Lieferadresse",
+          "text": "und Bestelldetails, damit wir dein Buch drucken und verschicken können."
+        }
+      ],
+      "collectTech": "Außerdem erhalten wir grundlegende technische Daten (wie deine IP-Adresse und deinen Browser), einfach dadurch, dass du die Seite besuchst. Das ist bei jeder Website normal und hilft uns, sie sicher und am Laufen zu halten.",
+      "secLegalTitle": "Rechtsgrundlage",
+      "legalBasis": "Wir verarbeiten deine Daten, um unseren Vertrag mit dir zu erfüllen, also um dein Buch zu erstellen und zu liefern (Art. 6 Abs. 1 lit. b DSGVO). Weil deine Fotos von Kindern sensibel sein können und weil KI beim Erstellen der Illustrationen hilft, stützen wir uns außerdem auf die Einwilligung, die du im Studio gibst, bevor wir beginnen (Art. 6 Abs. 1 lit. a DSGVO und Art. 9 Abs. 2 lit. a, soweit besondere Kategorien personenbezogener Daten betroffen sind). Du kannst diese Einwilligung jederzeit widerrufen, indem du dein Buch löschst. Wir bewahren minimale Bestellunterlagen auf, um unsere gesetzlichen und steuerlichen Pflichten zu erfüllen (Art. 6 Abs. 1 lit. c DSGVO).",
+      "legalReview": "Rechtsgrundlage für besondere Datenkategorien / Kinderdaten mit der Rechtsberatung bestätigen.",
+      "secAiTitle": "KI und die Partner, die dein Buch mitmachen",
+      "aiIntro": "Dein Buch entsteht mit Hilfe von KI- und Druckpartnern. Deine Inhalte werden mit ihnen nur in dem Umfang geteilt, der nötig ist, um dein Buch zu machen, und nur zu diesem Zweck. Insbesondere werden deine Fotos und Texte von KI-Modellen Dritter verarbeitet, um die Geschichte zu schreiben und die Illustrationen zu erzeugen.",
+      "tableHeaders": {
+        "partner": "Partner",
+        "share": "Was wir teilen",
+        "why": "Wozu",
+        "where": "Wo"
+      },
+      "processors": [
+        {
+          "name": "Supabase",
+          "data": "Alles, was du eingibst: Fotos, Namen, Erinnerungstext, Widmung, E-Mail, Buchdateien",
+          "purpose": "Unsere Datenbank und Dateispeicherung",
+          "where": "Hosting in der EU / im EWR"
+        },
+        {
+          "name": "Vercel",
+          "data": "Anfragedaten, IP-Adresse, grobe Standortangabe aus Netzwerk-Headern",
+          "purpose": "Hosting und Auslieferung der Website",
+          "where": "USA"
+        },
+        {
+          "name": "Anthropic (Claude)",
+          "data": "Dein Erinnerungstext, Namen der Figuren und Referenzbilder der Figuren",
+          "purpose": "KI, die die Geschichte schreibt und beschreibt, wie jede Figur aussieht",
+          "where": "USA"
+        },
+        {
+          "name": "Replicate",
+          "data": "Deine Fotos (über kurzlebige private Links), Charakterblätter und Stilreferenzen",
+          "purpose": "KI, die Fotos in illustrierte Figuren und Artwork verwandelt",
+          "where": "USA"
+        },
+        {
+          "name": "Shopify",
+          "data": "E-Mail, Lieferadresse und Bestelldetails",
+          "purpose": "Checkout, Zahlung und Bestellunterlagen",
+          "where": "USA / weltweit"
+        },
+        {
+          "name": "Lulu",
+          "data": "Name, Lieferadresse, Telefon, E-Mail und die druckfertige Buchdatei",
+          "purpose": "Druck und Versand deines physischen Buchs",
+          "where": "USA / EU-Drucknetzwerk"
+        },
+        {
+          "name": "Resend",
+          "data": "Deine E-Mail-Adresse und der Buchtitel",
+          "purpose": "Versand deiner Vorschau-, Prüf- und Bestell-E-Mails",
+          "where": "USA"
+        }
+      ],
+      "aiInngest": "Außerdem nutzen wir Inngest, um die Hintergrundprozesse zu planen, die dein Buch erstellen. Inngest sieht immer nur interne Buch-Kennungen, niemals deine Fotos oder deine Texte.",
+      "aiTransfers": "Einige dieser Partner sitzen in den USA, daher kann das Erstellen deines Buchs eine Datenübermittlung außerhalb des EWR mit sich bringen. Wo das passiert, stützen wir uns auf geeignete Garantien wie die EU-Standardvertragsklauseln und Auftragsverarbeitungsverträge mit jedem Partner.",
+      "aiTransfersReview": "Den Stand der Auftragsverarbeitungsverträge und Standardvertragsklauseln mit jedem Unterauftragnehmer sowie die Aufbewahrungsbedingungen der Eingaben bei den KI-Partnern bestätigen.",
+      "secRetainTitle": "Wie lange wir Dinge aufbewahren",
+      "retainIntro": "Wir bewahren deine Daten nicht länger auf, als dein Buch sie braucht:",
+      "retainItems": [
+        {
+          "label": "Quellfotos",
+          "text": "werden 30 Tage nach dem Versand oder der Stornierung deines Buchs automatisch gelöscht. Das fertige Buch bleibt ansehbar, die Originalfotos bleiben nicht liegen."
+        },
+        {
+          "label": "Dein Erinnerungstext und Buchinhalt",
+          "text": "werden nur so lange aufbewahrt, wie dein Buch existiert. Löschst du das Buch, gehen sie mit."
+        },
+        {
+          "label": "Bestellunterlagen",
+          "text": "werden so lange aufbewahrt, wie es das Steuer- und Buchhaltungsrecht verlangt, aber von persönlichen Angaben befreit, sobald diese nicht mehr nötig sind."
+        }
+      ],
+      "secProtectTitle": "Wie wir dein Buch schützen",
+      "protect": "Deine Fotos und dein fertiges Buch liegen in privatem Speicher und werden nie öffentlich gelistet. Wenn eine Seite sie anzeigen muss, erzeugen wir einen temporären Link, der nach sieben Tagen abläuft. Dein Buch selbst ist nur über einen langen, zufällig erzeugten Zugangslink erreichbar, sodass nur die Personen es öffnen können, mit denen du diesen Link teilst. Das sagen wir in den E-Mails, die wir senden, klar und deutlich.",
+      "secCookiesTitle": "Cookies und Analytics",
+      "cookies": "Wir halten das einfach. Wir verwenden nur die essenziellen Cookies, die nötig sind, um das Studio zu betreiben und deine Sitzung am Laufen zu halten.",
+      "cookiesReview": "Das endgültige Analytics-Setup bestätigen: Wenn Analytics in einem cookielosen, in der EU gehosteten Modus laufen, ist kein Einwilligungsbanner nötig; diesen Abschnitt entsprechend anpassen.",
+      "secRightsTitle": "Deine Rechte",
+      "rights1": "Nach der DSGVO kannst du von uns verlangen, dir die Daten zu zeigen, die wir speichern, sie zu berichtigen, zu löschen, ihre Nutzung einzuschränken oder sie in einem übertragbaren Format herauszugeben. Am einfachsten löschst du alles, indem du dein Buch löschst, wodurch das Buch, die Personen, die erzeugten Illustrationen und die gespeicherten Dateien entfernt werden. Du kannst uns auch schreiben unter",
+      "rights2": "und wir kümmern uns darum. Wenn gerade ein Buch gedruckt wird, müssen wir diesen Druckvorgang unter Umständen zuerst abschließen oder abbrechen. Du hast außerdem das Recht, dich bei einer Datenschutzbehörde zu beschweren.",
+      "rightsReview": "Die zuständige Aufsichtsbehörde für das Land des Unternehmens benennen.",
+      "secChangesTitle": "Änderungen an dieser Richtlinie",
+      "changes": "Wenn wir ändern, wie wir mit deinen Daten umgehen, aktualisieren wir diese Seite und ändern das Datum unten. Bei allem, was dich wesentlich betrifft, sagen wir dir direkt Bescheid.",
+      "lastUpdated": "Zuletzt aktualisiert: Juli 2026."
+    },
+    "terms": {
+      "_note": "[DE LEGAL REVIEW] machine draft, needs lawyer sign-off",
+      "metaTitle": "AGB",
+      "metaDescription": "Die einfache Vereinbarung zwischen dir und Warm Fuzzy Story Club, wenn du ein personalisiertes Buch erstellst und bestellst.",
+      "eyebrow": "Das Kleingedruckte, freundlich gehalten",
+      "title": "Nutzungsbedingungen",
+      "intro": "Das sind die Bedingungen für die Nutzung von Warm Fuzzy Story Club und die Bestellung eines Buchs. Wir haben sie so einfach gehalten, wie wir konnten.",
+      "secPartiesTitle": "Mit wem du die Vereinbarung schließt",
+      "partiesP1": "Diese Bedingungen gelten zwischen dir und",
+      "partiesReview": "dem Rechtsträger von WFSC samt Name und Adresse.",
+      "partiesP2": "Auf dieser Seite nennen wir uns WFSC oder wir, und dich nennen wir du. Unsere vollständigen Unternehmensangaben findest du in unserem",
+      "impressum": "Impressum",
+      "secWhatTitle": "Was wir tun",
+      "whatP1": "Mit WFSC kannst du aus deinen Fotos und einer Familienerinnerung ein personalisiertes, illustriertes Bilderbuch erstellen. Wir nutzen KI- und Druckpartner, um das, was du uns gibst, in eine Vorschau zu verwandeln und, sobald du bestellst, in ein gedrucktes oder digitales Buch. Weil jedes Buch nur für dich gemacht wird, ist jedes einzigartig.",
+      "secStudioTitle": "Das Studio nutzen",
+      "studioP1": "Du musst mindestens 18 Jahre alt sein oder ein Elternteil bzw. eine erziehungsberechtigte Person muss in deinem Namen zustimmen, um zu bestellen. Wenn du Fotos und Texte hochlädst, versicherst du, dass du das Recht hast, sie zu nutzen, und dass du die Einwilligung aller auf den Fotos gezeigten Personen hast, besonders des Elternteils oder der erziehungsberechtigten Person jedes Kindes. Bitte lade nichts hoch, was rechtswidrig oder hasserfüllt ist oder die Rechte anderer verletzt. Wir können eine Bestellung ablehnen oder stoppen, die gegen diese Regeln verstößt.",
+      "secContentTitle": "Deine Inhalte und wem was gehört",
+      "contentP1": "Deine Fotos und deine Worte bleiben deine. Du gibst uns die nötige Erlaubnis, sie zu nutzen, um dein Buch zu erstellen, in der Vorschau zu zeigen, zu drucken und zu liefern, und um es für dich ansehbar zu halten, wie auf unserer",
+      "privacyLink": "Datenschutz",
+      "contentP2": "Seite beschrieben. Wenn deine Bestellung abgeschlossen ist, gehört das fertige personalisierte Buch dir, zum Genießen, zum Nachdrucken über uns und zum Teilen mit deiner Familie. Die zugrunde liegenden Kunststile, Vorlagen, die Software und die Marke bleiben unsere.",
+      "secPricesTitle": "Vorschau, Preise und Bestellungen",
+      "pricesP1": "Eine Vorschau zu erstellen ist kostenlos. Eine Vorschau ist ein Entwurf: Kleine Details können sich zwischen der Vorschau und dem endgültig gedruckten Buch verschieben, und Farben können am Bildschirm etwas anders aussehen als im Druck. Preise werden im Studio angezeigt, bevor du zahlst, und liegen derzeit je nach gewähltem Format zwischen 39 und 69 Euro, zum Beispiel ein Pappbilderbuch oder ein Hardcover. Preise enthalten die Mehrwertsteuer, wo sie anfällt. Deine Bestellung ist bestätigt, sobald die Zahlung abgeschlossen ist und wir dir eine Bestätigung senden. Zahlung und Checkout werden von unserem Zahlungspartner abgewickelt.",
+      "secDeliveryTitle": "Druck und Lieferung",
+      "deliveryP1": "Gedruckte Bücher werden von unserem Druckpartner produziert und versendet. Wir teilen dir beim Checkout eine geschätzte Produktions- und Lieferzeit mit. Diese Zeiten sind Schätzungen, keine Garantien, und können vom Zusteller beeinflusst werden.",
+      "deliveryReview": "Endgültige Produktions- und Lieferzeiten sowie Versandregionen bestätigen.",
+      "secWithdrawalTitle": "Stornierungen, Rückgaben und das Widerrufsrecht",
+      "withdrawalP1": "Weil unsere Bücher personalisiert und nur für dich gemacht sind, gilt das gewöhnliche 14-tägige EU-Widerrufsrecht nicht mehr, sobald die Produktion begonnen hat. Die vollen Details, einschließlich des Zeitfensters, bevor die Produktion startet, und was passiert, wenn etwas beschädigt oder fehlerhaft ankommt, findest du auf unserer",
+      "returnsLink": "Rückgabe und Widerruf",
+      "withdrawalP2": "Seite. Deine gesetzlichen Gewährleistungsrechte bleiben unberührt.",
+      "secWrongTitle": "Wenn etwas schiefgeht",
+      "wrongP1": "Wir möchten, dass du dein Buch liebst. Wenn es beschädigt, fehlerhaft ankommt oder nicht der von dir freigegebenen Bestellung entspricht, sag uns Bescheid, und wir drucken es neu oder erstatten es. Darüber hinaus, und soweit das Gesetz es erlaubt, haftet WFSC nicht für indirekte oder unvorhersehbare Schäden, und nichts in diesen Bedingungen beschränkt eine Haftung, die gesetzlich nicht beschränkt werden kann, etwa für Tod oder Körperverletzung durch Fahrlässigkeit.",
+      "wrongReview": "Die Haftungs- und Gewährleistungsformulierung durch die Rechtsberatung für die Gerichtsbarkeit des Unternehmens festlegen lassen.",
+      "secChangesTitle": "Änderungen und geltendes Recht",
+      "changesP1": "Wir können diese Bedingungen von Zeit zu Zeit aktualisieren. Wenn wir eine wesentliche Änderung vornehmen, stellen wir die neue Version hier mit aktualisiertem Datum ein. Diese Bedingungen unterliegen",
+      "changesReview": "dem geltenden Recht und Gerichtsstand für das Land des Unternehmens.",
+      "changesP2": "Sollte ein Teil dieser Bedingungen unwirksam sein, gilt der Rest weiterhin.",
+      "secTalkTitle": "Sprich mit uns",
+      "talkP1": "Fragen zu diesen Bedingungen? Erreiche uns jederzeit auf unserer",
+      "contactLink": "Kontakt",
+      "talkP2": "Seite.",
+      "lastUpdated": "Zuletzt aktualisiert: Juli 2026."
+    },
+    "returns": {
+      "_note": "[DE LEGAL REVIEW] machine draft, needs lawyer sign-off",
+      "metaTitle": "Rückgabe und Widerruf",
+      "metaDescription": "Dein 14-tägiges EU-Widerrufsrecht, die Ausnahme für personalisierte Bücher und wie wir es wieder gutmachen, wenn dein Buch beschädigt ankommt.",
+      "eyebrow": "Nur für dich gemacht",
+      "title": "Rückgabe und Widerrufsrecht",
+      "intro": "Weil jedes Buch personalisiert ist, sind die Regeln ein wenig anders als bei einem Produkt von der Stange. Hier steht, was gilt und wie wir uns so oder so um dich kümmern.",
+      "breathTitle": "In einem Atemzug",
+      "breathBody": "Personalisierte Bücher sind vom üblichen 14-tägigen Widerrufsrecht ausgenommen, sobald wir mit dem Machen beginnen. Aber wenn etwas beschädigt, fehlerhaft oder falsch ankommt, bringen wir es immer in Ordnung. Und du kannst jederzeit vor Produktionsbeginn kostenlos stornieren.",
+      "secRightTitle": "Das 14-tägige Widerrufsrecht",
+      "rightP1": "Bei den meisten Dingen, die du in der EU online kaufst, hast du das Recht, den Vertrag innerhalb von 14 Tagen ohne Angabe von Gründen zu widerrufen. Das ist ein echtes und wichtiges Verbraucherrecht, und es ist der Ausgangspunkt.",
+      "secExceptionTitle": "Warum personalisierte Bücher eine Ausnahme sind",
+      "exceptionP1": "Unsere Bücher werden nach deinen Vorgaben gefertigt und sind eindeutig auf dich zugeschnitten: deine Fotos, die Namen deiner Familie, deine Erinnerung, deine Widmung. Nach EU-Verbraucherrecht gilt das Widerrufsrecht nicht für Waren, die nach Kundenvorgaben angefertigt oder eindeutig personalisiert sind. In Deutschland ist diese Ausnahme in Art. 246a EGBGB und § 312g Abs. 2 Nr. 1 des Bürgerlichen Gesetzbuchs (BGB) geregelt.",
+      "exceptionP2": "In der Praxis heißt das: Sobald du dein Buch freigibst und die Produktion beginnt, kann die Bestellung nicht mehr einfach deshalb widerrufen werden, weil du es dir anders überlegt hast, denn wir können ein Buch, das von deiner Familie handelt, nicht weiterverkaufen. Das bestätigst und erkennst du an, bevor du zahlst.",
+      "exceptionReview": "Den genauen Zeitpunkt, an dem das Widerrufsrecht erlischt (Freigabe der Bestellung vs. Druckbeginn), mit der Rechtsberatung bestätigen und ihn mit dem Einwilligungstext im Checkout abstimmen.",
+      "secCancelTitle": "Vor Produktionsbeginn stornieren",
+      "cancelP1": "Bevor wir mit der Produktion deines Buchs beginnen, kannst du deine Bestellung für eine volle Erstattung stornieren, ohne Angabe von Gründen. Eine Vorschau zu erstellen und anzusehen ist immer kostenlos und verpflichtet dich zu nichts. Erreiche uns einfach auf der",
+      "contactLink": "Kontakt",
+      "cancelP2": "Seite, und wir regeln das.",
+      "secFaultyTitle": "Wenn dein Buch beschädigt, fehlerhaft oder falsch ankommt",
+      "faultyP1": "Die Personalisierungs-Ausnahme berührt deine gesetzlichen Rechte nicht. Wenn dein Buch beschädigt ankommt, einen Druckfehler hat oder nicht der von dir freigegebenen Bestellung entspricht, liegt das an uns. Sag uns innerhalb einer angemessenen Zeit Bescheid, am besten mit einem Foto des Problems, und wir drucken es neu oder erstatten es dir. Diese Rechte verlierst du nicht, und diese Ausnahme gilt nie für ein fehlerhaftes Produkt.",
+      "secReachTitle": "Wie du uns wegen einer Bestellung erreichst",
+      "reachP1": "Schreib an",
+      "reachP2": "mit deiner Bestellnummer und, wenn es um eine Beschädigung oder einen Fehler geht, einem kurzen Foto. Weitere Wege, uns zu erreichen, findest du auf unserer",
+      "reachP3": "Seite. Wir bemühen uns um eine Antwort innerhalb von",
+      "reachReview": "der zugesagten Reaktionszeit des Kundensupports.",
+      "lastUpdated": "Zuletzt aktualisiert: Juli 2026."
+    },
+    "contact": {
+      "metaTitle": "Kontakt",
+      "metaDescription": "Wie du die Menschen bei Warm Fuzzy Story Club erreichst: Hilfe bei einer Bestellung, eine Datenschutzanfrage oder eine Zusammenarbeit mit Künstlern.",
+      "eyebrow": "Sag Hallo",
+      "title": "Kontaktiere uns",
+      "intro": "Hinter Warm Fuzzy Story Club stecken echte Menschen, und wir hören gern von dir. Wähle unten die Notiz, die passt, und wir melden uns bald bei dir.",
+      "channels": [
+        {
+          "emoji": "💬",
+          "title": "Hilfe bei deinem Buch oder deiner Bestellung",
+          "body": "Fragen vor dem Kauf, Hilfe beim Erstellen oder alles rund um eine Bestellung, die du aufgegeben hast.",
+          "email": "hello@warmfuzzystoryclub.com",
+          "subject": "Ich brauche Hilfe bei meinem Buch"
+        },
+        {
+          "emoji": "🔒",
+          "title": "Datenschutz und deine Daten",
+          "body": "Lösche deine Daten, hol dir eine Kopie dessen, was wir speichern, oder frag alles dazu, wie wir mit deinen Fotos umgehen.",
+          "email": "privacy@warmfuzzystoryclub.com",
+          "subject": "Datenschutzanfrage"
+        },
+        {
+          "emoji": "🎨",
+          "title": "Künstler und Partnerschaften",
+          "body": "Du bist Illustrator und würdest deinen Stil gern im Club sehen, oder du hast eine Idee für eine Partnerschaft.",
+          "email": "hello@warmfuzzystoryclub.com",
+          "subject": "Zusammenarbeit mit Künstlern"
+        }
+      ],
+      "helpTitle": "Hilf uns, dir schneller zu helfen",
+      "helpIntro": "Wenn deine Nachricht eine bestehende Bestellung betrifft, sparst du dir eine Rückfrage, wenn du das hier in deine E-Mail packst:",
+      "helpItems": [
+        "Deine Bestellnummer, falls du eine hast.",
+        "Die E-Mail-Adresse, mit der du bestellt hast.",
+        "Bei einem beschädigten oder fehlerhaften Buch ein kurzes Foto des Problems."
+      ],
+      "helpResponse": "Wir antworten normalerweise innerhalb",
+      "helpResponseReview": "der zugesagten Reaktionszeit des Kundensupports.",
+      "postTitle": "Per Post",
+      "postP1": "Lieber auf Papier? Du kannst uns schreiben an",
+      "postReview": "die Postadresse des Unternehmens.",
+      "postP2": "Unsere vollständigen rechtlichen Angaben findest du im",
+      "impressum": "Impressum",
+      "ctaTitle": "Bereit, etwas Warmes zu machen?",
+      "ctaButton": "Starte deine Geschichte"
+    },
+    "about": {
+      "metaTitle": "Über uns",
+      "metaDescription": "Warum wir personalisierte Bilderbücher machen: um die echten Momente deiner Familie in ein Erinnerungsstück zu verwandeln, das dein Kind immer wieder hören will.",
+      "eyebrow": "Unsere Geschichte über deine Geschichten",
+      "title": "Ein Warm Fuzzy ist ein Gefühl. Wir packen es in ein Buch.",
+      "intro": "Warm Fuzzy Story Club verwandelt die kleinen, echten Momente deiner Familie in ein illustriertes Bilderbuch, mit deinen Menschen im Mittelpunkt.",
+      "secWhyTitle": "Warum wir angefangen haben",
+      "whyP1": "Die besten Gutenachtgeschichten sind die, nach denen ein Kind immer wieder fragt. Uns ist aufgefallen, dass das fast nie die glänzenden aus dem Regal waren. Es waren die ausgedachten über die eigene Familie: der Tag, an dem der Hund die Geburtstagstorte gefressen hat, der Umzug ins neue Haus, das kleine Geschwisterchen, das endlich da war. Diese Geschichten sind kostbar, und meist verschwinden sie in dem Moment, in dem das Licht ausgeht.",
+      "whyP2": "Wir wollten sie einfangen und ihnen einen Einband geben, damit sie hundertmal gelesen und für immer aufbewahrt werden können.",
+      "secHowTitle": "So funktioniert es",
+      "howP1": "Du erzählst uns von einem Moment, der zählt, und fügst ein paar Fotos der Menschen darin hinzu. Unsere Illustratoren und die KI verwandeln diese Fotos in Bilderbuchfiguren, die aussehen wie deine Familie, und weben deine Erinnerung in eine echte, gedruckte Geschichte. Du siehst eine vollständige Vorschau, bevor du überhaupt zahlst, und du bestellst erst, wenn es sich richtig anfühlt.",
+      "howP2": "Jeder Kunststil, den du wählen kannst, beginnt mit der echten Welt einer Illustratorin oder eines Illustrators, nicht mit einem generischen Filter. Die Stile kannst du auf unserer",
+      "artistsLink": "Künstler",
+      "howP3": "Seite kennenlernen.",
+      "secCareTitle": "Was uns wichtig ist",
+      "careP1": "Die Privatsphäre deiner Familie kommt zuerst. Du vertraust uns Fotos deiner Kinder an, und das nehmen wir ernst: Wir nutzen deine Fotos und Worte nur, um dein Buch zu machen, wir verkaufen deine Daten nie, und wir löschen deine Quellfotos, sobald dein Buch geliefert ist. Wie genau, kannst du auf unserer",
+      "privacyLink": "Datenschutz",
+      "careP2": "Seite nachlesen.",
+      "careP3": "Uns liegt auch das Handwerk am Herzen. Ein Buch soll sich wie ein Erinnerungsstück anfühlen, gut gedruckt, mit Herz geschrieben und lesenswert, lange nachdem dein Kind groß geworden ist.",
+      "secHelloTitle": "Sag Hallo",
+      "helloP1": "Wir sind ein kleines Team und lesen jede Nachricht. Wenn du eine Frage oder eine Idee hast oder Illustratorin oder Illustrator bist und deinen Stil gern im Club sehen würdest, findest du uns auf unserer",
+      "contactLink": "Kontakt",
+      "helloP2": "Seite.",
+      "ctaTitle": "Das nächste Lieblingsbuch deiner Familie gibt es noch nicht. Lass es uns machen.",
+      "ctaButton": "Starte deine Geschichte"
+    }
+  },
+  "nav": {
+    "homeAria": "Warm Fuzzy Story Club Startseite",
+    "logoAlt": "Warm Fuzzy Story Club",
+    "ourBooks": "Unsere Bücher",
+    "whoItsFor": "Für wen",
+    "occasions": "Anlässe",
+    "placesYouLove": "Orte, die du liebst",
+    "sampleBooks": "Beispielbücher",
+    "accountAria": "Dein Konto",
+    "writeYourStory": "Schreib deine Geschichte",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schließen",
+    "browse": "Stöbern"
+  },
+  "artists": {
+    "metaTitle": "Unsere Stile",
+    "metaDescription": "Entdecke die Illustrationsstile, in denen dein Buch gezeichnet werden kann, von zartem Aquarell bis zu kräftigem Scherenschnitt. Jeder Look ist mit Handwerk gemacht, nie ein generischer Filter.",
+    "eyebrow": "Echtes Handwerk, kein Filter",
+    "heading": "Die Stile, die deine Geschichte tragen kann",
+    "intro": "Jedes Buch wird von vorne bis hinten in einem dieser markanten Looks illustriert. Jeder Stil hat seine eigene Farbe, Textur und Stimmung, damit du das Gefühl deiner Erinnerung treffen kannst. Wähl einen im ersten Schritt des Assistenten und ändere deine Meinung jederzeit.",
+    "styleCopy": {
+      "flat-vector": "Kräftige, sonnige Scherenschnitt-Formen mit klaren Kanten und einer warmen, grafischen Palette.",
+      "watercolor": "Weiche, verträumte Verläufe und sanfte Kanten, wie ein handgemaltes Erinnerungsstück.",
+      "riso-print": "Retro-Siebdruck-Energie: körnige Textur, leuchtende Farben, verspielter Versatz.",
+      "crayon": "Fröhliche, kindliche Wachsmalstriche, wie am Küchentisch gezeichnet.",
+      "mid-century": "Nostalgischer Bilderbuch-Charme der 50er, charaktervolle Linien und gedämpfte Wärme.",
+      "retro-cartoon": "Zeitlose Samstagmorgen-Cartoon-Formen, kräftige Umrisse und Schwung.",
+      "textured-flat": "Texturierter Flächendruck mit der Wärme von Volkskunst."
+    },
+    "styleFallback": "Ein markanter Warm Fuzzy Story Club Look.",
+    "sampleArtAlt": "{name} Beispielbild",
+    "illustratorTitle": "Bist du Illustrator:in?",
+    "illustratorBody": "Wir möchten unsere Familie an Stilen immer weiter wachsen lassen und bezahlen Künstler:innen für ihr Handwerk. Wenn du deine Arbeit gerne in Büchern sehen würdest, erzähl uns davon.",
+    "illustratorCta": "Melde dich",
+    "startCta": "Starte deine Geschichte"
+  },
+  "account": {
+    "metaTitle": "Dein Konto",
+    "eyebrow": "Dein Konto",
+    "helloName": "Hallo, {name}",
+    "welcomeBack": "Willkommen zurück",
+    "signOut": "Abmelden",
+    "yourBooks": "Deine Bücher",
+    "bookFallbackTitle": "Dein Buch",
+    "previewReady": "Vorschau bereit",
+    "noBookYet": "Du hast noch kein Buch gemacht.",
+    "startFirst": "Mach dein erstes.",
+    "orderHistory": "Bestellverlauf",
+    "noOrders": "Noch keine Bestellungen.",
+    "signInHeading": "Melde dich an, um deine Bücher zu sehen",
+    "signInBody": "Dein Konto bewahrt jedes Buch, das du gemacht hast, und jede Bestellung an einem gemütlichen Ort.",
+    "signInCta": "Mit Shopify anmelden",
+    "inboxHeading": "Dein Buch lebt in deinem Postfach",
+    "inboxBody": "Kein Konto nötig. Wenn du ein Buch erstellst, schicken wir dir per E-Mail einen privaten Link zum Ansehen, Bearbeiten und Bestellen, jederzeit. Bewahr diese E-Mail gut auf, dann ist deine Geschichte immer nur einen Klick entfernt.",
+    "inboxCta": "Starte dein Buch"
+  },
+  "cart": {
+    "heading": "Dein Warenkorb",
+    "intro": "Deine fertigen Bücher, bereit zu echten Erinnerungsstücken zu werden.",
+    "loadingAria": "Dein Warenkorb wird geladen",
+    "keepBrowsing": "Weiter Bücher entdecken"
+  },
+  "wizard": {
+    "steps": [
+      "Stil",
+      "Deine Geschichte",
+      "Die Figuren",
+      "Fertig"
+    ],
+    "roles": {
+      "child": "Kind",
+      "mama": "Mama",
+      "papa": "Papa",
+      "grandma": "Oma",
+      "grandpa": "Opa",
+      "sibling": "Geschwister",
+      "friend": "Freund/in",
+      "other": "Jemand anderes"
+    },
+    "ageBands": [
+      "0-2 Jahre",
+      "3-5 Jahre",
+      "6-8 Jahre"
+    ],
+    "memoryPrompts": [
+      "Der Sommer, in dem wir in Opas Garten eine Höhle gebaut haben und nicht mehr reinkommen wollten, nicht mal zum Abendessen…",
+      "Jeden Sonntag macht Papa Pfannkuchen in Tierform. Letzte Woche hat er sich an einer Giraffe versucht…",
+      "Der Tag, an dem Mias Stützräder abkamen und die ganze Straße jubelte…"
+    ],
+    "resumeEyebrow": "Willkommen zurück",
+    "resumeTitle": "Da weitermachen, wo du aufgehört hast?",
+    "resumeBody": "Wir haben deinen Fortschritt zu diesem Buch gespeichert. Mach genau da weiter, wo du aufgehört hast, oder fang neu an.",
+    "resumeContinue": "Mein Buch fortsetzen",
+    "resumeStartFresh": "Neu anfangen",
+    "pickerEyebrowCategory": "Geschichten für {name}",
+    "pickerEyebrowDefault": "Wähle eine Geschichtsidee",
+    "pickerTitleCategory": "Eine Geschichte, nach der sie jeden Abend fragen.",
+    "pickerTitleDefault": "Mit einer Geschichtsidee starten",
+    "pickerTaglineFallback": "Wähle eine Idee zum Starten und mach sie dann ganz zu deiner.",
+    "pickerCardCta": "Mit dieser Geschichte starten",
+    "pickerOwnMemory": "Stattdessen mit deiner eigenen Erinnerung starten",
+    "back": "Zurück",
+    "continue": "Weiter",
+    "uploadingPhotos": "Fotos werden hochgeladen…",
+    "createPreview": "Meine kostenlose Vorschau erstellen",
+    "creatingPreview": "Deine Vorschau wird erstellt…",
+    "errorUploadFailed": "Upload fehlgeschlagen",
+    "errorGeneric": "Etwas ist schiefgelaufen, bitte versuch es noch mal",
+    "heroAriaLabel": "Geschichtsidee: {title}",
+    "heroEyebrow": "Mit dieser Geschichte starten",
+    "heroStyleLine": "Illustriert im Stil {name} · jederzeit änderbar",
+    "heroMakeThisBook": "Dieses Buch machen",
+    "heroUseOwnMemory": "Eigene Erinnerung verwenden",
+    "heroFreePreview": "Erst die kostenlose Vorschau, du zahlst erst, wenn sie dir gefällt.",
+    "heroHowStoryGoes": "So geht die Geschichte",
+    "agesRange": "{min}-{max} Jahre",
+    "styleTitle": "Wähle deinen Stil",
+    "styleSubtitle": "Jede Seite wird in dem Stil illustriert, den du wählst, fahr mit der Maus drüber, um ihn in Aktion zu sehen. Du kannst ihn später ändern.",
+    "styleError": "Wir konnten die Illustrationsstile gerade nicht laden. Bitte lade die Seite neu und versuch es noch mal.",
+    "styleRadioLabel": "Illustrationsstil",
+    "styleRecommended": "Empfohlen",
+    "styleCardAlt": "Beispiel für {name}",
+    "storyTitleTemplate": "Mach sie zu deiner",
+    "storyTitleOwn": "Erzähl uns deine Geschichte",
+    "storySubtitleTemplate": "Hier ist der Rahmen der Geschichte, füg deine echten Details hinzu und wir weben sie ein.",
+    "storySubtitleOwn": "Schreib sie so, wie du sie beim Zubettgehen erzählen würdest, die kleinen Details machen den Zauber aus.",
+    "memoryLabelTemplate": "Deine echte Erinnerung",
+    "memoryLabelOwn": "Deine Erinnerung",
+    "memoryHintTemplate": "Namen, Orte, das, worüber alle gelacht haben, je echter, desto besser.",
+    "memoryHintOwn": "Brauchst du einen Anstoß? „{prompt}“",
+    "memoryPlaceholderTemplate": "Erzähl uns von DEINEM {noun}, wer dabei war, wie der Tag begann, der Moment, über den alle noch lachen, und das kleine Detail, das du nie vergessen willst…",
+    "whoFor": "Für wen ist es?",
+    "whoForHint": "(wir stimmen die Worte auf das Alter ab)",
+    "ageRadioLabel": "Lesealter",
+    "storyJourney": "Die Reise, die dein Buch nimmt",
+    "castTitle": "Wer ist dabei?",
+    "castSubtitle": "Füg bis zu vier Personen hinzu, mit 1 bis 3 Fotos pro Person. Klare, gut beleuchtete Fotos ihres Gesichts funktionieren am besten.",
+    "castPerson": "Person {n}",
+    "castRemove": "Entfernen",
+    "castName": "Name",
+    "castNamePlaceholder": "Mia",
+    "castRole": "Rolle in der Geschichte",
+    "castPhotoAlt": "Foto von {name}",
+    "castPhotoAltFallback": "Person",
+    "castRemovePhoto": "Foto entfernen",
+    "castAddPhoto": "Foto hinzufügen",
+    "castAddPerson": "+ Weitere Person hinzufügen",
+    "finishTitle": "Fast geschafft",
+    "finishSubtitle": "Füg den letzten Schliff hinzu und sag uns dann, wohin wir deine kostenlose Vorschau schicken sollen, meist in wenigen Minuten fertig.",
+    "finishBookTitle": "Buchtitel",
+    "finishTitlePlaceholder": "Wir schlagen einen vor, wenn du dies leer lässt",
+    "finishNote": "Eine persönliche Widmung",
+    "finishNoteHint": "Wird auf der Widmungsseite vorne im Buch gedruckt, wie eine handgeschriebene Nachricht in einem Geschenk.",
+    "finishNotePlaceholder": "Für Mia, die jeden gewöhnlichen Tag zu einem Abenteuer macht.",
+    "finishSignedFrom": "Unterschrieben von",
+    "finishSignedFromHint": "Wird unter der Widmung angezeigt, z. B. „Alles Liebe, Mama & Papa“.",
+    "finishSignedFromPlaceholder": "Mama & Papa",
+    "finishEmail": "Deine E-Mail",
+    "finishEmailPlaceholder": "du@beispiel.de",
+    "finishConsent": "Mit dem Fortfahren erklärst du dich damit einverstanden, dass wir die von dir bereitgestellte Geschichte und Fotos verwenden dürfen, um dein Buch zu erstellen, einschließlich der Verarbeitung durch vertrauenswürdige KI-Partner (wie Anthropic und Replicate), um die Geschichte zu schreiben und die Illustrationen zu erzeugen. Deine Ausgangsfotos werden 30 Tage nach Auslieferung deines Buches gelöscht, und dein Erinnerungstext wird nur so lange aufbewahrt, wie dein Buch existiert. Wir nutzen deine E-Mail nur für deinen Vorschau-Link und Bestellaktualisierungen, niemals für Newsletter oder Weitergabe. Siehe unsere",
+    "finishConsentLink": "Datenschutzerklärung"
   }
 }
