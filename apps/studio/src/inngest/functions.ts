@@ -41,6 +41,28 @@ async function loadStyle(styleId: string): Promise<StyleDef> {
 }
 
 /**
+ * Send a customer email without ever failing the surrounding function: a
+ * misconfigured email provider (unverified domain, bad key) must not mark a
+ * successfully generated book as failed. Alerts ops instead.
+ */
+async function sendEmailSafe(opts: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<{ sent: boolean }> {
+  try {
+    await sendEmail(opts);
+    return { sent: true };
+  } catch (err) {
+    await opsAlert(
+      'Customer email failed to send',
+      `to=${opts.to} subject="${opts.subject}"\n${err instanceof Error ? err.message : err}`,
+    );
+    return { sent: false };
+  }
+}
+
+/**
  * Character sheets for the image pipeline, with SIGNED sheet URLs (the DB
  * stores canonical private-bucket URLs; Replicate/Anthropic must be able to
  * fetch them).
@@ -276,8 +298,7 @@ export const generatePreview = inngest.createFunction(
     await step.run('send-preview-email', async () => {
       if (!book.email) return { skipped: 'no email' };
       const mail = previewReadyEmail(book);
-      await sendEmail({ to: book.email, ...mail });
-      return { sent: true };
+      return sendEmailSafe({ to: book.email, ...mail });
     });
 
     return { bookId: book.id, previewImages: generated.length };
@@ -436,8 +457,7 @@ export const generateFullBook = inngest.createFunction(
       const fresh = await loadBook(book.id);
       if (!fresh.email) return { skipped: 'no email on book' };
       const mail = reviewReadyEmail(fresh);
-      await sendEmail({ to: fresh.email, ...mail });
-      return { sent: true };
+      return sendEmailSafe({ to: fresh.email, ...mail });
     });
 
     return { bookId: book.id };
@@ -629,8 +649,7 @@ export const submitToPrint = inngest.createFunction(
     await step.run('send-print-email', async () => {
       if (!book.email) return { skipped: 'no email on book' };
       const mail = printSubmittedEmail(book);
-      await sendEmail({ to: book.email, ...mail });
-      return { sent: true };
+      return sendEmailSafe({ to: book.email, ...mail });
     });
 
     return { bookId: book.id, ...printJob };
