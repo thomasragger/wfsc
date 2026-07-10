@@ -41,7 +41,7 @@ export async function CategoryShowcase({
   return (
     <div>
       <section
-        className="relative overflow-hidden"
+        className={`relative overflow-hidden ${gradient ? "" : "flip-wash"}`}
         style={
           gradient
             ? { background: `linear-gradient(150deg, ${gradient.from}, ${gradient.to})` }
@@ -51,7 +51,7 @@ export async function CategoryShowcase({
         {/* Soft white wash over the saturated gradient so the dark title/
             tagline stay legible. */}
         {gradient ? <div className="absolute inset-0 bg-cream/45" aria-hidden="true" /> : null}
-        <div className={`relative mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 ${gradient ? "" : "flip-wash"}`}>
+        <div className="relative mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
           <div className="flex flex-col items-center gap-6 text-center lg:flex-row lg:items-center lg:gap-10 lg:text-left">
             {heroImageUrl ? (
               <div className="h-28 w-28 shrink-0 overflow-hidden rounded-full ring-4 ring-white shadow-polaroid sm:h-36 sm:w-36">
@@ -93,7 +93,7 @@ export async function CategoryShowcase({
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
         {templates.length > 0 ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
             {templates.map((tpl) => (
