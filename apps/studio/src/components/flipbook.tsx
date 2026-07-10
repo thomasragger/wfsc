@@ -9,7 +9,7 @@ import { FONT_PAIRINGS, SCRIPT_FONT, fontStylesheetUrl } from "@wfsc/book-engine
 
 import { Sparkle } from "@/components/decor";
 import { CoverArt } from "@/components/ui/cover-art";
-import { ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { IconChevronLeft, IconChevronRight } from "@/components/ui/icons";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -239,7 +239,21 @@ export function Flipbook({
       );
     }
     if (p.kind === "locked") {
-      return <LockedSpread morePages={p.morePages} variant={p.variant} t={t} />;
+      return (
+        <LockedSpread
+          morePages={p.morePages}
+          variant={p.variant}
+          t={t}
+          onUnlock={() => {
+            // From the overlay, close first, then scroll to the unlock card
+            // once the page is visible again.
+            exitFullscreen();
+            setTimeout(() => {
+              document.getElementById("unlock")?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 60);
+          }}
+        />
+      );
     }
     return <SpreadCanvas spread={p.spread} bodyFont={bodyFont} displayFont={displayFont} t={t} />;
   }
@@ -499,10 +513,12 @@ function LockedSpread({
   morePages,
   variant,
   t,
+  onUnlock,
 }: {
   morePages: number;
   variant: number;
   t: FlipT;
+  onUnlock: () => void;
 }) {
   const [from, to, wash] = LOCKED_PALETTES[variant % LOCKED_PALETTES.length];
   const imageLeft = variant % 2 === 1;
@@ -559,9 +575,9 @@ function LockedSpread({
           {t("morePagesWaiting", { count: morePages })}
         </p>
         <p className="max-w-sm text-sm font-medium text-ink-soft">{t("unlockBody")}</p>
-        <ButtonLink href="#unlock" size="sm" className="mt-1">
+        <Button size="sm" className="mt-1" onClick={onUnlock}>
           {t("unlockCta")}
-        </ButtonLink>
+        </Button>
       </div>
     </PageFrame>
   );
