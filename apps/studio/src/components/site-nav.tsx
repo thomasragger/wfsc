@@ -36,7 +36,7 @@ export function SiteNav({
 
   return (
     <header className="sticky top-0 z-40 border-b border-ink/5 bg-cream/85 backdrop-blur-md">
-      <div className="mx-auto grid h-14 w-full max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6">
+      <div className="mx-auto grid h-14 w-full max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6">
         <Link href="/" className="flex items-center justify-self-start" aria-label={t("homeAria")}>
           <Image
             src="/logo-landscape.png"
@@ -88,7 +88,7 @@ export function SiteNav({
         <div className="animate-page-in border-t border-ink/5 bg-cream md:hidden">
           {/* Any tap inside (a category link, the CTA) closes the panel. */}
           <div
-            className="mx-auto max-h-[calc(100vh-3.5rem)] w-full max-w-6xl space-y-6 overflow-y-auto px-5 py-6"
+            className="mx-auto max-h-[calc(100vh-3.5rem)] w-full max-w-7xl space-y-6 overflow-y-auto px-5 py-6"
             onClick={() => setMobileOpen(false)}
           >
             <MobileSection title={t("browse")}>

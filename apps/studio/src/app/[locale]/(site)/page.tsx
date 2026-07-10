@@ -246,7 +246,7 @@ export default async function HomePage() {
         </div>
 
         {/* Centered logo + CTA + tagline, exactly like the storefront hero */}
-        <div className="relative z-10 mx-auto flex min-h-[52vh] w-full max-w-6xl flex-col items-center justify-center px-4 py-10 text-center">
+        <div className="relative z-10 mx-auto flex min-h-[52vh] w-full max-w-7xl flex-col items-center justify-center px-4 py-10 text-center">
           <h1 className="m-0">
             <Image
               src="/logo.png"
@@ -284,7 +284,7 @@ export default async function HomePage() {
       <section className="relative overflow-hidden py-16 sm:py-20">
         {/* soft immersive band behind the trio */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-lavender/40 via-transparent to-transparent" aria-hidden="true" />
-        <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-6">
+        <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
             <Eyebrow className="mx-auto">{t("yoursEyebrow")}</Eyebrow>
             <h2 className="mt-4 font-display text-4xl font-extrabold leading-tight text-ink sm:text-5xl">
@@ -332,7 +332,7 @@ export default async function HomePage() {
 
       {/* ------------------------------------------- Places you love (region) */}
       {placeTemplates.length > 0 ? (
-        <section className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6">
+        <section className="mx-auto w-full max-w-7xl px-4 pt-16 sm:px-6">
           <div className="flex items-end justify-between gap-4">
             <div>
               <Eyebrow>{t("placesEyebrow")}</Eyebrow>
@@ -366,7 +366,7 @@ export default async function HomePage() {
       ) : null}
 
       {/* --------------------------------------------- Category cards (theme) */}
-      <section className="mx-auto w-full max-w-6xl px-4 pb-6 pt-14 sm:px-6">
+      <section className="mx-auto w-full max-w-7xl px-4 pb-6 pt-14 sm:px-6">
         <h2 className="font-display text-[1.7rem] font-bold text-ink sm:text-3xl">
           {t("categoriesHeading")}
         </h2>
@@ -397,7 +397,7 @@ export default async function HomePage() {
       </section>
 
       {/* --------------------------------------------------- Inspiration gallery */}
-      <section id="ideas" className="mx-auto w-full max-w-6xl scroll-mt-24 px-4 py-12 sm:px-6 sm:py-16">
+      <section id="ideas" className="mx-auto w-full max-w-7xl scroll-mt-24 px-4 py-12 sm:px-6 sm:py-16">
         <div className="flex items-end justify-between gap-4">
           <div>
             <Eyebrow>{t("ideasEyebrow")}</Eyebrow>
@@ -573,7 +573,7 @@ export default async function HomePage() {
       </section>
 
       {/* ------------------------------------------------------- Closing CTA */}
-      <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
         <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-coral via-coral to-ember px-8 py-16 text-center shadow-pop sm:px-16">
           <Doodle src="sun.png" size={64} className="animate-drift absolute left-6 top-8 opacity-90" />
           <Doodle src="cloud.png" size={56} className="animate-float absolute right-8 top-10 opacity-90 [animation-delay:0.7s]" />
