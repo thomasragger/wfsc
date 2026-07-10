@@ -85,7 +85,7 @@ export default async function AccountPage() {
   const portalUrl = accountPortalUrl();
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
+    <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
       {profile ? (
         <>
           {/* ----------------------------------------------------- header */}
