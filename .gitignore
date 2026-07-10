@@ -17,3 +17,6 @@ generated*/
 
 # restyle progress journal (generated)
 scripts/.restyle-progress.json
+
+# agent worktrees
+.claude/worktrees/
