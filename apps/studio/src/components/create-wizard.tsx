@@ -571,7 +571,8 @@ export function CreateWizard() {
   // ---------------------------------------------------------------- stepper
   return (
     <PageTransition>
-      <div ref={topRef} className="scroll-mt-24">
+      {/* pb clears the fixed bottom navigation bar */}
+      <div ref={topRef} className="scroll-mt-24 pb-20">
         <StepProgress steps={stepLabels} current={step} className="mb-8" />
 
         <Card className="overflow-hidden p-6 sm:p-10">

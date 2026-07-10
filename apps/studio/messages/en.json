@@ -726,7 +726,10 @@
     "addressNone": "No saved address yet. You'll add one during checkout.",
     "manageAccount": "Manage account details",
     "manageAccountNote": "Addresses and personal details live in your secure Shopify account.",
-    "openBook": "Open book"
+    "openBook": "Open book",
+    "deleteBook": "Delete book",
+    "deleteConfirm": "Delete this book and all its photos forever? This cannot be undone.",
+    "deleting": "Deleting…"
   },
   "cart": {
     "heading": "Your cart",

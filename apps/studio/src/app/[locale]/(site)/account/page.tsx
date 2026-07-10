@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { ButtonLink } from "@/components/ui/button";
 import { ProductCard } from "@/components/ui/product-card";
+import { DeleteBookButton } from "@/components/delete-book-button";
 import { Card } from "@/components/ui/card";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { getCustomerRefreshToken, getCustomerToken } from "@/lib/customer-session";
@@ -55,6 +56,18 @@ async function savedBooksFor(email: string): Promise<SavedBook[]> {
     return [];
   }
 }
+
+// Mirrors the API's DELETE guard: in-production books can't be deleted.
+const DELETABLE_STATUSES = new Set([
+  "draft",
+  "preview_generating",
+  "preview_failed",
+  "preview_ready",
+  "generation_failed",
+  "print_failed",
+  "shipped",
+  "cancelled",
+]);
 
 function humanize(value: string): string {
   return value.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
@@ -108,14 +121,23 @@ export default async function AccountPage() {
             {savedBooks.length > 0 ? (
               <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
                 {savedBooks.map((b) => (
-                  <ProductCard
-                    key={b.token}
-                    href={`/book/${encodeURIComponent(b.token)}`}
-                    image={b.image}
-                    title={b.title ?? t("bookFallbackTitle")}
-                    subtitle={b.status === "preview_ready" ? t("previewReady") : humanize(b.status)}
-                    ctaLabel={t("openBook")}
-                  />
+                  <div key={b.token} className="flex flex-col">
+                    <ProductCard
+                      href={`/book/${encodeURIComponent(b.token)}`}
+                      image={b.image}
+                      title={b.title ?? t("bookFallbackTitle")}
+                      subtitle={b.status === "preview_ready" ? t("previewReady") : humanize(b.status)}
+                      ctaLabel={t("openBook")}
+                    />
+                    {DELETABLE_STATUSES.has(b.status) ? (
+                      <DeleteBookButton
+                        token={b.token}
+                        label={t("deleteBook")}
+                        confirmMessage={t("deleteConfirm")}
+                        pendingLabel={t("deleting")}
+                      />
+                    ) : null}
+                  </div>
                 ))}
               </div>
             ) : (

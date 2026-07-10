@@ -730,7 +730,10 @@
     "addressNone": "Noch keine gespeicherte Adresse. Du gibst sie beim Bezahlen an.",
     "manageAccount": "Kontodaten verwalten",
     "manageAccountNote": "Adressen und persönliche Daten verwaltest du in deinem sicheren Shopify-Konto.",
-    "openBook": "Buch öffnen"
+    "openBook": "Buch öffnen",
+    "deleteBook": "Buch löschen",
+    "deleteConfirm": "Dieses Buch und alle Fotos für immer löschen? Das kann nicht rückgängig gemacht werden.",
+    "deleting": "Wird gelöscht…"
   },
   "cart": {
     "heading": "Dein Warenkorb",
