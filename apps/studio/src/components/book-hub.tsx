@@ -650,7 +650,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
 
 function Shell({ children, error }: { children: React.ReactNode; error: string | null }) {
   return (
-    <PageTransition className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-14">
+    <PageTransition className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       {error ? <Alert className="mx-auto mb-6 max-w-2xl text-center">{error}</Alert> : null}
       {children}
     </PageTransition>

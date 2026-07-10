@@ -574,9 +574,9 @@ export function CreateWizard() {
     <PageTransition>
       {/* pb clears the fixed bottom navigation bar */}
       <div ref={topRef} className="scroll-mt-24 pb-20">
-        <StepProgress steps={stepLabels} current={step} className="mb-8" />
+        <StepProgress steps={stepLabels} current={step} className="mb-6" />
 
-        <Card className="overflow-hidden p-6 sm:p-10">
+        <Card className="overflow-hidden p-5 sm:p-7">
           <StepTransition stepKey={step} direction={direction}>
             {step === 0 && (
               <StyleStep
@@ -811,7 +811,7 @@ function StyleStep({
   return (
     <section className="flex flex-col gap-5">
       <header>
-        <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">{t("styleTitle")}</h1>
+        <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">{t("styleTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
           {t("styleSubtitle")}
         </p>
@@ -959,7 +959,7 @@ function StoryStep({
   return (
     <section className="flex flex-col gap-6">
       <header>
-        <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">
+        <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">
           {template ? t("storyTitleTemplate") : t("storyTitleOwn")}
         </h1>
         <p className="mt-1 text-sm text-ink-soft">
@@ -981,7 +981,7 @@ function StoryStep({
           >
             <TextArea
               id="memory"
-              className="min-h-44 leading-relaxed"
+              className="min-h-36 leading-relaxed"
               placeholder={
                 template
                   ? t("memoryPlaceholderTemplate", { noun: templateNoun(template.title) })
@@ -1058,104 +1058,134 @@ function CastStep({
   return (
     <section className="flex flex-col gap-5">
       <header>
-        <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">{t("castTitle")}</h1>
+        <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">{t("castTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
           {t("castSubtitle")}
         </p>
       </header>
 
-      {/* Compact, app-like rows: photos | name | role | remove, one line on
-          desktop so several people fit on a laptop screen without scrolling. */}
-      <div className="flex flex-col gap-3">
+      {/* Character cards: the uploaded photo becomes the character preview;
+          the last card adds another person. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {people.map((person) => (
           <div
             key={person.key}
-            className="flex flex-col gap-3 rounded-2xl border-2 border-ink/10 bg-white p-3 sm:flex-row sm:items-center sm:p-3.5"
+            className="relative flex flex-col rounded-2xl border-2 border-ink/10 bg-white p-3"
           >
-            <div className="flex items-center gap-2">
-              {person.photoUrls.map((url) => (
-                <div key={url} className="group relative shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={url}
-                    alt={t("castPhotoAlt", { name: person.name || t("castPhotoAltFallback") })}
-                    className="h-14 w-14 rounded-xl object-cover shadow-fuzzy"
-                  />
-                  <button
-                    type="button"
-                    aria-label={t("castRemovePhoto")}
-                    className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-ink text-[10px] text-cream opacity-90 hover:bg-coral"
-                    onClick={() =>
-                      onUpdate(person.key, { photoUrls: person.photoUrls.filter((u) => u !== url) })
-                    }
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-              {Array.from({ length: person.uploading }).map((_, i) => (
-                <Skeleton key={`up-${i}`} className="h-14 w-14 shrink-0" rounded="rounded-xl" />
-              ))}
-              {person.photoUrls.length + person.uploading < 3 ? (
-                <label className="flex h-14 w-14 shrink-0 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-ink/20 text-ink-soft transition-colors hover:border-marigold hover:text-ink">
-                  <span className="text-lg leading-none">+</span>
-                  <span className="text-[9px] font-semibold">{t("castAddPhoto")}</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="sr-only"
-                    onChange={(e) => {
-                      onAddPhotos(person, e.target.files);
-                      e.target.value = "";
-                    }}
-                  />
-                </label>
-              ) : null}
-            </div>
-
-            <div className="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_9.5rem]">
-              <TextInput
-                id={`name-${person.key}`}
-                aria-label={t("castName")}
-                placeholder={t("castNamePlaceholder")}
-                value={person.name}
-                maxLength={80}
-                onChange={(e) => onUpdate(person.key, { name: e.target.value })}
-              />
-              <Select
-                id={`role-${person.key}`}
-                aria-label={t("castRole")}
-                value={person.role}
-                onChange={(e) => onUpdate(person.key, { role: e.target.value as PersonRole })}
-              >
-                {PERSON_ROLES.map((role) => (
-                  <option key={role} value={role}>
-                    {roleLabels[role]}
-                  </option>
-                ))}
-              </Select>
-            </div>
-
             {people.length > 1 ? (
               <button
                 type="button"
                 aria-label={t("castRemove")}
-                className="self-end text-xs font-semibold text-coral hover:underline sm:self-center"
+                className="absolute -right-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-ink text-xs text-cream opacity-90 hover:bg-coral"
                 onClick={() => onRemove(person.key)}
               >
-                {t("castRemove")}
+                ×
               </button>
             ) : null}
+
+            <label className="group relative block aspect-square w-full cursor-pointer overflow-hidden rounded-xl bg-lavender">
+              {person.photoUrls[0] ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={person.photoUrls[0]}
+                  alt={t("castPhotoAlt", { name: person.name || t("castPhotoAltFallback") })}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                />
+              ) : person.uploading > 0 ? (
+                <Skeleton className="h-full w-full" rounded="rounded-none" />
+              ) : (
+                <span className="flex h-full flex-col items-center justify-center gap-1 text-ink-soft transition-colors group-hover:text-ink">
+                  <span className="text-2xl leading-none">+</span>
+                  <span className="text-[10px] font-semibold">{t("castAddPhoto")}</span>
+                </span>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="sr-only"
+                onChange={(e) => {
+                  onAddPhotos(person, e.target.files);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+
+            {person.photoUrls.length > 0 || person.uploading > 0 ? (
+              <div className="mt-2 flex items-center gap-1.5">
+                {person.photoUrls.map((url) => (
+                  <div key={url} className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" className="h-8 w-8 rounded-md object-cover" />
+                    <button
+                      type="button"
+                      aria-label={t("castRemovePhoto")}
+                      className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-ink text-[9px] text-cream opacity-90 hover:bg-coral"
+                      onClick={() =>
+                        onUpdate(person.key, { photoUrls: person.photoUrls.filter((u) => u !== url) })
+                      }
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {Array.from({ length: person.uploading }).map((_, i) => (
+                  <Skeleton key={`up-${i}`} className="h-8 w-8" rounded="rounded-md" />
+                ))}
+                {person.photoUrls.length + person.uploading < 3 ? (
+                  <label className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border-2 border-dashed border-ink/20 text-xs text-ink-soft hover:border-marigold hover:text-ink">
+                    +
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="sr-only"
+                      onChange={(e) => {
+                        onAddPhotos(person, e.target.files);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                ) : null}
+              </div>
+            ) : null}
+
+            <TextInput
+              id={`name-${person.key}`}
+              aria-label={t("castName")}
+              placeholder={t("castNamePlaceholder")}
+              value={person.name}
+              maxLength={80}
+              className="mt-2"
+              onChange={(e) => onUpdate(person.key, { name: e.target.value })}
+            />
+            <Select
+              id={`role-${person.key}`}
+              aria-label={t("castRole")}
+              value={person.role}
+              className="mt-1.5"
+              onChange={(e) => onUpdate(person.key, { role: e.target.value as PersonRole })}
+            >
+              {PERSON_ROLES.map((role) => (
+                <option key={role} value={role}>
+                  {roleLabels[role]}
+                </option>
+              ))}
+            </Select>
           </div>
         ))}
-      </div>
 
-      {people.length < 4 ? (
-        <Button variant="ghost" size="sm" className="self-start" onClick={onAdd}>
-          {t("castAddPerson")}
-        </Button>
-      ) : null}
+        {people.length < 4 ? (
+          <button
+            type="button"
+            onClick={onAdd}
+            className="flex min-h-[14rem] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink/20 text-ink-soft transition-colors hover:border-marigold hover:text-ink"
+          >
+            <span className="text-2xl leading-none">+</span>
+            <span className="text-xs font-semibold">{t("castAddPerson")}</span>
+          </button>
+        ) : null}
+      </div>
     </section>
   );
 }
@@ -1187,7 +1217,7 @@ function FinishStep({
   return (
     <section className="flex flex-col gap-5">
       <header>
-        <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">{t("finishTitle")}</h1>
+        <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">{t("finishTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
           {t("finishSubtitle")}
         </p>
