@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { useTranslations } from "next-intl";
+
 import {
   FONT_PAIRINGS,
   LAYOUTS,
@@ -29,6 +31,7 @@ export function EditorPanel({
   onSaveGreeting: (greeting: string) => Promise<void>;
   onSelectFontPairing: (id: FontPairingId) => void;
 }) {
+  const t = useTranslations("editor");
   const [greeting, setGreeting] = useState(book.greeting ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -41,14 +44,14 @@ export function EditorPanel({
         <link key={p.id} rel="stylesheet" href={fontStylesheetUrl(p)} />
       ))}
 
-      <h2 className="font-display text-xl font-bold text-ink">Make it yours</h2>
+      <h2 className="font-display text-xl font-bold text-ink">{t("makeItYours")}</h2>
 
       <div className="mt-5">
-        <Field label="Greeting & dedication" htmlFor="greeting">
+        <Field label={t("greetingLabel")} htmlFor="greeting">
           <TextArea
             id="greeting"
             className="min-h-24"
-            placeholder={"For Mia —\nso you never forget the summer of the lighthouse.\nLove, Nana"}
+            placeholder={t("greetingPlaceholder")}
             value={greeting}
             onChange={(e) => {
               setGreeting(e.target.value);
@@ -63,7 +66,7 @@ export function EditorPanel({
             size="sm"
             disabled={!dirty}
             pending={saving}
-            pendingLabel="Saving…"
+            pendingLabel={t("saving")}
             onClick={async () => {
               setSaving(true);
               try {
@@ -74,17 +77,17 @@ export function EditorPanel({
               }
             }}
           >
-            Save dedication
+            {t("saveDedication")}
           </Button>
           {saved && !dirty ? (
-            <span className="text-xs font-semibold text-sage">Saved ✓</span>
+            <span className="text-xs font-semibold text-sage">{t("saved")}</span>
           ) : null}
         </div>
       </div>
 
       <div className="mt-7">
-        <p className="mb-2 text-sm font-bold text-ink">Lettering</p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" role="radiogroup" aria-label="Font pairing">
+        <p className="mb-2 text-sm font-bold text-ink">{t("lettering")}</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" role="radiogroup" aria-label={t("fontPairingLabel")}>
           {ALL_PAIRINGS.map((pairing) => {
             const selected = book.fontPairing === pairing.id;
             return (
@@ -114,7 +117,7 @@ export function EditorPanel({
                     fontWeight: pairing.body.weight,
                   }}
                 >
-                  Once upon a time…
+                  {t("fontSample")}
                 </span>
               </button>
             );
@@ -137,6 +140,7 @@ export function SpreadEditor({
   onChangeLayout: (layout: LayoutId) => void;
   onRegenerate: (note: string) => Promise<void>;
 }) {
+  const t = useTranslations("editor");
   const [text, setText] = useState(spread.text ?? "");
   const [savingText, setSavingText] = useState(false);
   const [note, setNote] = useState("");
@@ -150,11 +154,11 @@ export function SpreadEditor({
   return (
     <Card className="p-6 sm:p-8">
       <h3 className="font-display text-lg font-bold text-ink">
-        Edit this {spread.kind === "greeting" ? "dedication" : "page"}
+        {spread.kind === "greeting" ? t("editDedication") : t("editPage")}
       </h3>
 
       <div className="mt-4">
-        <Field label="Story text" htmlFor={`spread-text-${spread.id}`}>
+        <Field label={t("storyText")} htmlFor={`spread-text-${spread.id}`}>
           <TextArea
             id={`spread-text-${spread.id}`}
             className="min-h-28"
@@ -169,7 +173,7 @@ export function SpreadEditor({
           className="mt-2"
           disabled={!dirty}
           pending={savingText}
-          pendingLabel="Saving…"
+          pendingLabel={t("saving")}
           onClick={async () => {
             setSavingText(true);
             try {
@@ -179,14 +183,14 @@ export function SpreadEditor({
             }
           }}
         >
-          Save text
+          {t("saveText")}
         </Button>
       </div>
 
       {isStory ? (
         <div className="mt-6">
-          <p className="mb-2 text-sm font-bold text-ink">Layout</p>
-          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Page layout">
+          <p className="mb-2 text-sm font-bold text-ink">{t("layout")}</p>
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("pageLayoutLabel")}>
             {ALL_LAYOUTS.map((layout) => {
               const selected = spread.layout === layout.id;
               // Full-spread art is a different aspect ratio; switching into it
@@ -199,11 +203,7 @@ export function SpreadEditor({
                   role="radio"
                   selected={selected}
                   disabled={disabled}
-                  title={
-                    disabled
-                      ? "This page's illustration doesn't fit the full-spread layout"
-                      : layout.description
-                  }
+                  title={disabled ? t("fullSpreadDisabled") : layout.description}
                   onClick={() => onChangeLayout(layout.id)}
                 >
                   {layout.name}
@@ -221,18 +221,15 @@ export function SpreadEditor({
               <span className="text-lg" aria-hidden="true">
                 ✨
               </span>
-              <p className="text-sm text-ink">
-                A new illustration for this page is being drawn. It&rsquo;ll appear here when
-                it&rsquo;s ready.
-              </p>
+              <p className="text-sm text-ink">{t("regenQueued")}</p>
             </div>
           ) : noteOpen ? (
             <div>
-              <Field label="What should our illustrators change?" htmlFor={`regen-${spread.id}`}>
+              <Field label={t("regenPrompt")} htmlFor={`regen-${spread.id}`}>
                 <TextArea
                   id={`regen-${spread.id}`}
                   className="min-h-20"
-                  placeholder="e.g. Mia should be wearing her yellow raincoat, and it should be evening"
+                  placeholder={t("regenPlaceholder")}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   maxLength={600}
@@ -243,7 +240,7 @@ export function SpreadEditor({
                   size="sm"
                   disabled={note.trim().length < 3}
                   pending={regenState === "sending"}
-                  pendingLabel="Sending…"
+                  pendingLabel={t("sending")}
                   onClick={async () => {
                     setRegenState("sending");
                     try {
@@ -254,16 +251,16 @@ export function SpreadEditor({
                     }
                   }}
                 >
-                  Redraw this illustration
+                  {t("redraw")}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => setNoteOpen(false)}>
-                  Cancel
+                  {t("cancel")}
                 </Button>
               </div>
             </div>
           ) : (
             <Button variant="ghost" size="sm" onClick={() => setNoteOpen(true)}>
-              ✏️ Ask for a different illustration
+              {t("askDifferent")}
             </Button>
           )}
         </div>

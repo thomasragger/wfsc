@@ -265,6 +265,8 @@ function emailText(parts: TextParts): string {
 export interface LinkEmailCopy {
   subject: string;
   preheader: string;
+  /** Alt text for the mascot accent image (localized alongside the copy). */
+  mascotAlt: string;
   heading: string;
   paragraphs: string[];
   cta: string;
@@ -276,6 +278,8 @@ export interface LinkEmailCopy {
 export interface NoticeEmailCopy {
   subject: string;
   preheader: string;
+  /** Alt text for the mascot accent image (localized alongside the copy). */
+  mascotAlt: string;
   heading: string;
   paragraphs: string[];
   contact?: string;
@@ -297,6 +301,7 @@ export const previewReadyCopy: Record<string, LinkEmailCopy> = {
   en: {
     subject: 'Your sneak peek of {title} is ready',
     preheader: 'The first pages are illustrated and waiting for you.',
+    mascotAlt: 'Two Warm Fuzzy Story Club friends sharing a storybook',
     heading: 'Come take a peek',
     paragraphs: [
       'The first pages of {title} are illustrated and ready for you to see.',
@@ -309,6 +314,7 @@ export const previewReadyCopy: Record<string, LinkEmailCopy> = {
   de: {
     subject: 'Deine Vorschau von {title} ist fertig',
     preheader: 'Die ersten Seiten sind illustriert und warten auf dich.',
+    mascotAlt: 'Zwei Freunde vom Warm Fuzzy Story Club, die sich ein Bilderbuch teilen',
     heading: 'Komm, schau mal rein',
     paragraphs: [
       'Die ersten Seiten von {title} sind illustriert und bereit für dich.',
@@ -325,6 +331,7 @@ export const reviewReadyCopy: Record<string, LinkEmailCopy> = {
   en: {
     subject: '{title} is ready for you to review',
     preheader: 'Your book is fully illustrated. Take a look and approve it for print.',
+    mascotAlt: 'A happy family with their finished storybook',
     heading: 'Your book is ready',
     paragraphs: [
       '{title} is fully written and illustrated. Have a read through, and if anything needs a tweak, you can adjust the dedication, fonts, and layouts.',
@@ -337,6 +344,7 @@ export const reviewReadyCopy: Record<string, LinkEmailCopy> = {
   de: {
     subject: '{title} ist fertig für deine Durchsicht',
     preheader: 'Dein Buch ist vollständig illustriert. Sieh es dir an und gib es zum Druck frei.',
+    mascotAlt: 'Eine glückliche Familie mit ihrem fertigen Bilderbuch',
     heading: 'Dein Buch ist fertig',
     paragraphs: [
       '{title} ist vollständig geschrieben und illustriert. Lies es in Ruhe durch, und falls etwas noch nicht passt, kannst du Widmung, Schriften und Layouts anpassen.',
@@ -353,6 +361,7 @@ export const printSubmittedCopy: Record<string, NoticeEmailCopy> = {
   en: {
     subject: '{title} is on its way to the printer',
     preheader: 'Your book is being printed. We will email you when it ships.',
+    mascotAlt: 'A little friend setting off on a journey',
     heading: 'Off to the printer',
     paragraphs: [
       '{title} has been sent to print. Printing usually takes 3 to 5 business days.',
@@ -363,6 +372,7 @@ export const printSubmittedCopy: Record<string, NoticeEmailCopy> = {
   de: {
     subject: '{title} ist auf dem Weg in die Druckerei',
     preheader: 'Dein Buch wird gedruckt. Wir melden uns, sobald es verschickt wird.',
+    mascotAlt: 'Ein kleiner Freund macht sich auf die Reise',
     heading: 'Ab in den Druck',
     paragraphs: [
       '{title} ist in den Druck gegangen. Der Druck dauert normalerweise 3 bis 5 Werktage.',
@@ -377,6 +387,7 @@ export const generationDelayedCopy: Record<string, NoticeEmailCopy> = {
   en: {
     subject: '{title} is taking a little longer',
     preheader: 'Your book needs a bit more time. We are on it; nothing is needed from you.',
+    mascotAlt: 'A Warm Fuzzy Story Club friend at work on a book',
     heading: 'A little more time',
     paragraphs: [
       '{title} is taking a little longer to illustrate than usual. Our team is already looking into it, and there is nothing you need to do.',
@@ -388,6 +399,7 @@ export const generationDelayedCopy: Record<string, NoticeEmailCopy> = {
   de: {
     subject: '{title} dauert ein bisschen länger',
     preheader: 'Dein Buch braucht noch etwas Zeit. Wir kümmern uns darum, du musst nichts tun.',
+    mascotAlt: 'Ein Freund vom Warm Fuzzy Story Club arbeitet an einem Buch',
     heading: 'Noch ein bisschen Zeit',
     paragraphs: [
       '{title} braucht beim Illustrieren länger als sonst. Unser Team schaut es sich schon an, und du musst nichts weiter tun.',
@@ -411,7 +423,7 @@ export function previewReadyEmail(book: EmailBook & { access_token: string }): R
     html: emailLayout({
       lang: book.locale ?? 'en',
       preheader: fillText(copy.preheader, title),
-      mascot: { file: 'story.png', alt: 'Two Warm Fuzzy Story Club friends sharing a storybook' },
+      mascot: { file: 'story.png', alt: copy.mascotAlt },
       heading: copy.heading,
       paragraphsHtml: copy.paragraphs.map((p) => fillHtml(p, title)),
       cta,
@@ -439,7 +451,7 @@ export function reviewReadyEmail(book: EmailBook & { access_token: string }): Re
     html: emailLayout({
       lang: book.locale ?? 'en',
       preheader: fillText(copy.preheader, title),
-      mascot: { file: 'family.png', alt: 'A happy family with their finished storybook' },
+      mascot: { file: 'family.png', alt: copy.mascotAlt },
       heading: copy.heading,
       paragraphsHtml: copy.paragraphs.map((p) => fillHtml(p, title)),
       cta,
@@ -465,7 +477,7 @@ export function printSubmittedEmail(book: EmailBook): RenderedEmail {
     html: emailLayout({
       lang: book.locale ?? 'en',
       preheader: fillText(copy.preheader, title),
-      mascot: { file: 'travel.png', alt: 'A little friend setting off on a journey' },
+      mascot: { file: 'travel.png', alt: copy.mascotAlt },
       heading: copy.heading,
       paragraphsHtml: copy.paragraphs.map((p) => fillHtml(p, title)),
       footer: copy.footer,
@@ -488,7 +500,7 @@ export function generationDelayedEmail(book: EmailBook): RenderedEmail {
     html: emailLayout({
       lang: book.locale ?? 'en',
       preheader: fillText(copy.preheader, title),
-      mascot: { file: 'story.png', alt: 'A Warm Fuzzy Story Club friend at work on a book' },
+      mascot: { file: 'story.png', alt: copy.mascotAlt },
       heading: copy.heading,
       paragraphsHtml: copy.paragraphs.map((p) => fillHtml(p, title)),
       contactNote: copy.contact,

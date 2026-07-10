@@ -2,41 +2,36 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useTranslations } from "next-intl";
+
 import { Doodle, Sparkle } from "@/components/decor";
 import { Card, Polaroid } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { BookPayload } from "@/lib/book-payload";
 
-const MICRO_COPY = [
-  "Mixing just the right shade of bedtime blue…",
-  "Teaching the illustrations to hold still…",
-  "Sneaking an extra warm fuzzy onto every page…",
-  "Double-checking that everyone's smile is right…",
-  "Whispering your story to the paintbrushes…",
-  "Adding one more twinkle, because why not…",
-];
+type StatusT = ReturnType<typeof useTranslations>;
 
 /** What the pipeline is doing right now, read from the polled payload. */
-function deriveStage(book: BookPayload): { key: string; label: string } {
+function deriveStage(book: BookPayload, t: StatusT): { key: string; label: string } {
   const drawing = book.people.find((p) => !p.characterSheetUrl);
   const storySpreads = book.spreads.filter((s) => s.kind === "story");
   const written = storySpreads.some((s) => (s.text ?? "").trim().length > 0);
 
   if (!written) {
-    return { key: "writing", label: "Writing your story…" };
+    return { key: "writing", label: t("writing") };
   }
   if (drawing) {
-    return { key: `drawing-${drawing.id}`, label: `Drawing ${drawing.name}…` };
+    return { key: `drawing-${drawing.id}`, label: t("drawing", { name: drawing.name }) };
   }
   const total = storySpreads.length || Math.max(Math.ceil(book.pageCount / 2), 1);
   const painted = storySpreads.filter((s) => s.imageUrl !== null).length;
   if (painted < total) {
     return {
       key: `painting-${painted}`,
-      label: `Painting page ${Math.min(painted + 1, total)} of ${total}…`,
+      label: t("painting", { current: Math.min(painted + 1, total), total }),
     };
   }
-  return { key: "binding", label: "Putting the finishing touches on…" };
+  return { key: "binding", label: t("finishing") };
 }
 
 /**
@@ -53,14 +48,16 @@ export function MagicHappening({
   title: string;
   body: string;
 }) {
-  const stage = useMemo(() => deriveStage(book), [book]);
+  const t = useTranslations("statusViews");
+  const microCopy = t.raw("microCopy") as string[];
+  const stage = useMemo(() => deriveStage(book, t), [book, t]);
 
   // Rotate a warm line every few seconds.
   const [lineIndex, setLineIndex] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setLineIndex((i) => (i + 1) % MICRO_COPY.length), 4200);
+    const id = setInterval(() => setLineIndex((i) => (i + 1) % microCopy.length), 4200);
     return () => clearInterval(id);
-  }, []);
+  }, [microCopy.length]);
 
   // Remember which sheets were present on mount so only NEW arrivals flip in.
   const [seenSheets, setSeenSheets] = useState<Set<string>>(
@@ -95,7 +92,7 @@ export function MagicHappening({
           src="/mascot/part3.png"
           size={112}
           className="animate-bounce-soft"
-          alt="Warm Fuzzy mascot conjuring your book"
+          alt={t("mascotAlt")}
         />
         <Sparkle className="absolute -left-3 top-1 animate-twinkle text-cobalt" size={20} />
         <Sparkle className="absolute -right-4 top-8 animate-twinkle text-coral [animation-delay:0.7s]" size={16} />
@@ -118,7 +115,7 @@ export function MagicHappening({
           <div className="h-full w-full animate-shimmer bg-gradient-to-r from-marigold via-coral to-marigold" />
         </div>
         <p key={lineIndex} className="animate-page-in text-xs italic text-ink-soft">
-          {MICRO_COPY[lineIndex]}
+          {microCopy[lineIndex]}
         </p>
       </div>
 
@@ -140,38 +137,37 @@ export function MagicHappening({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={person.characterSheetUrl}
-                      alt={`${person.name} as a storybook character`}
+                      alt={t("characterAlt", { name: person.name })}
                       className="aspect-square w-full object-cover"
                     />
                   ) : (
                     <Skeleton className="aspect-square w-full" rounded="rounded-none" />
                   )
                 }
-                caption={person.characterSheetUrl ? person.name : `Drawing ${person.name}…`}
+                caption={
+                  person.characterSheetUrl
+                    ? person.name
+                    : t("drawingCaption", { name: person.name })
+                }
               />
             </div>
           ))}
         </div>
       ) : null}
 
-      <p className="mt-2 max-w-sm text-xs leading-relaxed text-ink-soft">
-        We&rsquo;ll email you a link — you can safely close this page. It also updates by
-        itself, no need to refresh.
-      </p>
+      <p className="mt-2 max-w-sm text-xs leading-relaxed text-ink-soft">{t("emailNote")}</p>
     </Card>
   );
 }
 
-const TIMELINE_STEPS = [
-  { key: "approved", label: "Approved", detail: "You signed off on every page." },
-  { key: "submitted_to_print", label: "Sent to print", detail: "Your book is on the press." },
-  { key: "shipped", label: "Shipped", detail: "On its way to your doorstep." },
-] as const;
+const TIMELINE_STEP_KEYS = ["approved", "sentToPrint", "shipped"] as const;
 
 /** Celebratory timeline for approved / submitted_to_print / shipped. */
 export function StatusTimeline({ book }: { book: BookPayload }) {
+  const t = useTranslations("statusViews");
   const reached =
     book.status === "shipped" ? 3 : book.status === "submitted_to_print" ? 2 : 1;
+  const subject = book.title ? `"${book.title}"` : t("timeline.yourStory");
 
   return (
     <Card className="relative mx-auto w-full max-w-2xl overflow-hidden px-8 py-12">
@@ -183,23 +179,22 @@ export function StatusTimeline({ book }: { book: BookPayload }) {
         </p>
         <h1 className="mt-2 font-display text-2xl font-bold text-ink sm:text-3xl">
           {book.status === "shipped"
-            ? "Your book is on its way!"
+            ? t("timeline.shippedTitle")
             : book.status === "submitted_to_print"
-              ? "Your book is being printed!"
-              : "Your book is approved!"}
+              ? t("timeline.printingTitle")
+              : t("timeline.approvedTitle")}
         </h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-ink-soft">
-          {book.title ? `"${book.title}"` : "Your story"} is becoming a real, printed book.
-          We&rsquo;ll email you at every step.
+          {t("timeline.becomingReal", { subject })}
         </p>
       </div>
 
       <ol className="mt-10 flex flex-col gap-0">
-        {TIMELINE_STEPS.map((step, i) => {
+        {TIMELINE_STEP_KEYS.map((stepKey, i) => {
           const done = i < reached;
-          const isLast = i === TIMELINE_STEPS.length - 1;
+          const isLast = i === TIMELINE_STEP_KEYS.length - 1;
           return (
-            <li key={step.key} className="relative flex gap-4 pb-8 last:pb-0">
+            <li key={stepKey} className="relative flex gap-4 pb-8 last:pb-0">
               {!isLast ? (
                 <span
                   className={`absolute left-[15px] top-8 h-[calc(100%-2rem)] w-0.5 rounded ${
@@ -217,9 +212,9 @@ export function StatusTimeline({ book }: { book: BookPayload }) {
               </span>
               <div>
                 <p className={`font-display font-bold ${done ? "text-ink" : "text-ink-soft"}`}>
-                  {step.label}
+                  {t(`timeline.${stepKey}.label`)}
                 </p>
-                <p className="text-sm text-ink-soft">{step.detail}</p>
+                <p className="text-sm text-ink-soft">{t(`timeline.${stepKey}.detail`)}</p>
               </div>
             </li>
           );

@@ -168,6 +168,7 @@ async function serializeBook(
   return {
     token: book.access_token,
     status: book.status,
+    locale: book.locale,
     title: book.title,
     greeting: book.greeting,
     greetingFrom: book.greeting_from,

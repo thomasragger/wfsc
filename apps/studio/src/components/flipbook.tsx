@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { createTranslator, useTranslations } from "next-intl";
+
 import { FONT_PAIRINGS, SCRIPT_FONT, fontStylesheetUrl } from "@wfsc/book-engine";
 
 import { Sparkle } from "@/components/decor";
@@ -10,7 +12,21 @@ import { CoverImage } from "@/components/ui/cover-image";
 import { IconChevronLeft, IconChevronRight } from "@/components/ui/icons";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { Skeleton } from "@/components/ui/skeleton";
+import deMessages from "../../messages/de.json";
+import enMessages from "../../messages/en.json";
 import type { BookPayload, SpreadPayload } from "@/lib/book-payload";
+
+type FlipT = ReturnType<typeof useTranslations>;
+
+// The dedication signature ("Love, {name}" / "Alles Liebe, {name}") is printed
+// content, so it follows the BOOK's own locale — passed via the payload — not
+// the viewer's UI locale. We resolve it against the matching message catalog.
+const BOOK_MESSAGES: Record<string, typeof enMessages> = {
+  en: enMessages,
+  // de.json is a partial override (missing keys fall back to en per-key), but
+  // it does carry every `flipbook` key we read here.
+  de: deMessages as unknown as typeof enMessages,
+};
 
 export type FlipPage =
   | { kind: "cover" }
@@ -19,13 +35,13 @@ export type FlipPage =
   | { kind: "spread"; spread: SpreadPayload }
   | { kind: "locked"; morePages: number; variant: number };
 
-export function pageLabel(page: FlipPage): string {
-  if (page.kind === "cover") return "Cover";
-  if (page.kind === "title") return "Title page";
-  if (page.kind === "dedication") return "Dedication";
-  if (page.kind === "locked") return "Waiting to be unlocked";
-  if (page.spread.kind === "greeting") return "Dedication";
-  return `Spread ${page.spread.position}`;
+export function pageLabel(page: FlipPage, t: FlipT): string {
+  if (page.kind === "cover") return t("cover");
+  if (page.kind === "title") return t("titlePage");
+  if (page.kind === "dedication") return t("dedication");
+  if (page.kind === "locked") return t("lockedLabel");
+  if (page.spread.kind === "greeting") return t("dedication");
+  return t("spread", { position: page.spread.position });
 }
 
 interface FlipbookProps {
@@ -43,6 +59,14 @@ interface FlipbookProps {
  * cropped. Keyboard arrows, swipe, and the dot rail all navigate.
  */
 export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
+  const t = useTranslations("flipbook");
+  // Book-locale translator for printed-page copy (see BOOK_MESSAGES above).
+  const bookLocale = book.locale === "de" ? "de" : "en";
+  const tBook = createTranslator({
+    locale: bookLocale,
+    messages: BOOK_MESSAGES[bookLocale],
+    namespace: "flipbook",
+  });
   const pairing = FONT_PAIRINGS[book.fontPairing];
   const displayFont = {
     fontFamily: `'${pairing.display.family}', sans-serif`,
@@ -100,11 +124,11 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
     if (p.kind === "cover") {
       return (
         <div className="flex h-full flex-col items-center justify-center gap-5 text-center">
-          <CoverImage src={book.coverImageUrl} alt="Book cover" size="lg" priority />
+          <CoverImage src={book.coverImageUrl} alt={t("bookCoverAlt")} size="lg" priority />
           {/* When the title is illustrated onto the cover, don't repeat it. */}
           {book.coverHasTitle ? null : (
             <h2 className="font-display text-2xl font-extrabold text-ink sm:text-3xl">
-              {book.title ?? "Your storybook"}
+              {book.title ?? t("defaultTitle")}
             </h2>
           )}
         </div>
@@ -120,7 +144,7 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
               <img src="/logo.png" alt="Warm Fuzzy Story Club" className="h-9 w-auto opacity-90 sm:h-11" />
               <span className="font-display text-lg text-marigold" aria-hidden="true">❦</span>
               <p className="text-[clamp(0.5rem,1.2vw,0.68rem)] font-semibold uppercase tracking-[0.18em] text-ink/40">
-                A Warm Fuzzy Story Club book
+                {t("imprint")}
               </p>
             </div>
             {/* recto: title */}
@@ -130,7 +154,7 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
               </h2>
               {p.styleName ? (
                 <p className="text-[clamp(0.62rem,1.5vw,0.85rem)] italic text-ink-soft" style={bodyFont}>
-                  Illustrated in the {p.styleName} style
+                  {t("styleLine", { style: p.styleName })}
                 </p>
               ) : null}
               <Sparkle className="mt-1 text-marigold" size={18} />
@@ -154,7 +178,7 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
             {/* recto: dedication + who it's from */}
             <div className="flex flex-col items-center justify-center bg-cream px-[11%] text-center" style={bodyFont}>
               <p className="text-[clamp(0.55rem,1.3vw,0.72rem)] font-semibold uppercase tracking-[0.2em] text-ink/35">
-                Dedication
+                {t("dedication")}
               </p>
               <p
                 className="mt-4 whitespace-pre-line text-[clamp(1.15rem,3.2vw,1.8rem)] leading-snug text-ink"
@@ -167,7 +191,7 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
                   className="mt-4 text-[clamp(1.05rem,2.8vw,1.5rem)] text-ink-soft"
                   style={scriptFont}
                 >
-                  Love, {p.from}
+                  {tBook("dedicationFrom", { name: p.from })}
                 </p>
               ) : null}
             </div>
@@ -176,9 +200,9 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
       );
     }
     if (p.kind === "locked") {
-      return <LockedSpread morePages={p.morePages} variant={p.variant} />;
+      return <LockedSpread morePages={p.morePages} variant={p.variant} t={t} />;
     }
-    return <SpreadCanvas spread={p.spread} bodyFont={bodyFont} displayFont={displayFont} />;
+    return <SpreadCanvas spread={p.spread} bodyFont={bodyFont} displayFont={displayFont} t={t} />;
   }
 
   return (
@@ -186,8 +210,8 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
       className="flex flex-col items-center gap-4"
       tabIndex={0}
       role="group"
-      aria-label="Book preview"
-      aria-roledescription="book viewer"
+      aria-label={t("bookPreview")}
+      aria-roledescription={t("bookViewer")}
       onKeyDown={(e) => {
         if (e.key === "ArrowLeft" && clamped > 0) onIndexChange(clamped - 1);
         if (e.key === "ArrowRight" && clamped < pages.length - 1) onIndexChange(clamped + 1);
@@ -224,7 +248,7 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
         {/* Page turn buttons */}
         <button
           type="button"
-          aria-label="Previous page"
+          aria-label={t("previousPage")}
           disabled={clamped === 0}
           onClick={() => onIndexChange(clamped - 1)}
           className="absolute -left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink shadow-fuzzy transition hover:bg-marigold disabled:opacity-30 sm:-left-5"
@@ -233,7 +257,7 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
         </button>
         <button
           type="button"
-          aria-label="Next page"
+          aria-label={t("nextPage")}
           disabled={clamped === pages.length - 1}
           onClick={() => onIndexChange(clamped + 1)}
           className="absolute -right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink shadow-fuzzy transition hover:bg-marigold disabled:opacity-30 sm:-right-5"
@@ -244,15 +268,15 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
 
       {/* Dot nav */}
       <div className="flex items-center gap-3">
-        <p className="text-xs font-semibold text-ink-soft">{pageLabel(pages[clamped])}</p>
-        <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label="Pages">
+        <p className="text-xs font-semibold text-ink-soft">{pageLabel(pages[clamped], t)}</p>
+        <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label={t("pages")}>
           {pages.map((p, i) => (
             <button
               key={i}
               type="button"
               role="tab"
               aria-selected={i === clamped}
-              aria-label={pageLabel(p)}
+              aria-label={pageLabel(p, t)}
               onClick={() => onIndexChange(i)}
               className={`h-2.5 rounded-full transition-all ${
                 i === clamped ? "w-6 bg-coral" : "w-2.5 bg-ink/15 hover:bg-ink/30"
@@ -273,10 +297,12 @@ function SpreadCanvas({
   spread,
   bodyFont,
   displayFont,
+  t,
 }: {
   spread: SpreadPayload;
   bodyFont: React.CSSProperties;
   displayFont: React.CSSProperties;
+  t: FlipT;
 }) {
   const text = spread.text?.trim() ?? "";
   const mirrored = spread.layout === "text-right"; // every other layout reads text-left
@@ -291,7 +317,7 @@ function SpreadCanvas({
           <div>
             <Sparkle className="mx-auto mb-3 text-marigold" size={18} />
             <p className="whitespace-pre-line text-[clamp(0.85rem,2.4vw,1.25rem)] italic leading-relaxed text-ink">
-              {text || "Your dedication will live here."}
+              {text || t("dedicationPlaceholder")}
             </p>
             <p className="mt-4 font-display text-sm text-ink-soft" style={displayFont} aria-hidden="true">
               ❦
@@ -376,7 +402,15 @@ const LOCKED_PALETTES: [string, string, string][] = [
  * (soft out-of-focus art + squiggle "text" lines — never the real copy)
  * under a warm blur, with a lock badge and an unlock CTA.
  */
-function LockedSpread({ morePages, variant }: { morePages: number; variant: number }) {
+function LockedSpread({
+  morePages,
+  variant,
+  t,
+}: {
+  morePages: number;
+  variant: number;
+  t: FlipT;
+}) {
   const [from, to, wash] = LOCKED_PALETTES[variant % LOCKED_PALETTES.length];
   const imageLeft = variant % 2 === 1;
 
@@ -429,13 +463,11 @@ function LockedSpread({ morePages, variant }: { morePages: number; variant: numb
           <LockIcon />
         </span>
         <p className="font-display text-xl font-extrabold text-ink sm:text-2xl">
-          {morePages} more pages are waiting
+          {t("morePagesWaiting", { count: morePages })}
         </p>
-        <p className="max-w-sm text-sm font-medium text-ink-soft">
-          Unlock your full book and we&rsquo;ll illustrate every page of your story.
-        </p>
+        <p className="max-w-sm text-sm font-medium text-ink-soft">{t("unlockBody")}</p>
         <ButtonLink href="#unlock" size="sm" className="mt-1">
-          Unlock your full book
+          {t("unlockCta")}
         </ButtonLink>
       </div>
     </PageFrame>

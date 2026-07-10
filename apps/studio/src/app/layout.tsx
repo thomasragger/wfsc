@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Baloo_2, Quicksand } from "next/font/google";
 import "./globals.css";
 
@@ -25,38 +25,40 @@ const quicksand = Quicksand({
 // otherwise — in which case the whole site is noindexed until launch.
 const SITE_URL = siteUrl();
 
-const SITE_DESCRIPTION =
-  "Turn a real family memory into a one-of-a-kind, beautifully illustrated children's book, starring the people you love. Free preview in minutes, a printed keepsake at your door.";
-
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  ...(isLaunched() ? {} : { robots: { index: false, follow: false } }),
-  title: {
-    default: "Warm Fuzzy Story Club: personalized children's books from your memories",
-    template: "%s · Warm Fuzzy Story Club",
-  },
-  description: SITE_DESCRIPTION,
-  applicationName: "Warm Fuzzy Story Club",
-  // Relative canonical resolves per-route against metadataBase, so every page
-  // inherits a correct self-referential canonical unless it overrides this.
-  alternates: { canonical: "./" },
-  openGraph: {
-    type: "website",
-    siteName: "Warm Fuzzy Story Club",
-    title: "Warm Fuzzy Story Club",
-    description: SITE_DESCRIPTION,
-    url: SITE_URL,
-    locale: "en",
-    // opengraph-image.tsx supplies the shared card image site-wide.
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Warm Fuzzy Story Club",
-    description: SITE_DESCRIPTION,
-  },
-  // Icons resolve from the app/ file convention (favicon.ico, icon.png,
-  // apple-icon.png), so nothing competes with them.
-};
+// Locale-aware so DACH search snippets and social cards render in German.
+export async function generateMetadata(): Promise<Metadata> {
+  const [t, locale] = await Promise.all([getTranslations("rootMeta"), getLocale()]);
+  const description = t("description");
+  return {
+    metadataBase: new URL(SITE_URL),
+    ...(isLaunched() ? {} : { robots: { index: false, follow: false } }),
+    title: {
+      default: t("titleDefault"),
+      template: "%s · Warm Fuzzy Story Club",
+    },
+    description,
+    applicationName: "Warm Fuzzy Story Club",
+    // Relative canonical resolves per-route against metadataBase, so every page
+    // inherits a correct self-referential canonical unless it overrides this.
+    alternates: { canonical: "./" },
+    openGraph: {
+      type: "website",
+      siteName: "Warm Fuzzy Story Club",
+      title: t("ogTitle"),
+      description,
+      url: SITE_URL,
+      locale: locale === "de" ? "de_DE" : "en",
+      // opengraph-image.tsx supplies the shared card image site-wide.
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t("ogTitle"),
+      description,
+    },
+    // Icons resolve from the app/ file convention (favicon.ico, icon.png,
+    // apple-icon.png), so nothing competes with them.
+  };
+}
 
 /**
  * Root layout: fonts + global defs only. Page chrome lives in the route
@@ -68,7 +70,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const locale = await getLocale();
+  const [locale, t] = await Promise.all([getLocale(), getTranslations("chrome")]);
   return (
     <html lang={locale} className={`${baloo.variable} ${quicksand.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
@@ -77,7 +79,7 @@ export default async function RootLayout({
           href="#main-content"
           className="sr-only rounded-full bg-coral px-5 py-2.5 font-bold text-white shadow-pop focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100]"
         >
-          Skip to content
+          {t("skipToContent")}
         </a>
         <ScallopDefs />
         <NextIntlClientProvider>

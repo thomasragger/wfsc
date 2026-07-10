@@ -106,6 +106,124 @@
       "approve": "Zum Druck freigeben"
     }
   },
+  "editor": {
+    "makeItYours": "Mach es zu deinem",
+    "greetingLabel": "Gruß & Widmung",
+    "greetingPlaceholder": "Für Mia —\ndamit du den Sommer mit dem Leuchtturm nie vergisst.\nAlles Liebe, Oma",
+    "saving": "Wird gespeichert…",
+    "saveDedication": "Widmung speichern",
+    "saved": "Gespeichert ✓",
+    "lettering": "Schrift",
+    "fontPairingLabel": "Schriftkombination",
+    "fontSample": "Es war einmal…",
+    "editPage": "Diese Seite bearbeiten",
+    "editDedication": "Diese Widmung bearbeiten",
+    "storyText": "Text der Geschichte",
+    "saveText": "Text speichern",
+    "layout": "Layout",
+    "pageLayoutLabel": "Seitenlayout",
+    "fullSpreadDisabled": "Die Illustration dieser Seite passt nicht ins ganzseitige Layout",
+    "regenQueued": "Eine neue Illustration für diese Seite wird gerade gezeichnet. Sie erscheint hier, sobald sie fertig ist.",
+    "regenPrompt": "Was sollen unsere Illustratoren ändern?",
+    "regenPlaceholder": "z. B. Mia soll ihre gelbe Regenjacke tragen, und es soll Abend sein",
+    "sending": "Wird gesendet…",
+    "redraw": "Diese Illustration neu zeichnen",
+    "cancel": "Abbrechen",
+    "askDifferent": "✏️ Um eine andere Illustration bitten"
+  },
+  "statusViews": {
+    "microCopy": [
+      "Wir mischen genau den richtigen Blauton für die gute Nacht…",
+      "Wir bringen den Illustrationen bei, still zu halten…",
+      "Wir schmuggeln auf jede Seite noch ein warmes Fuzzy…",
+      "Wir prüfen noch mal, ob jedes Lächeln stimmt…",
+      "Wir flüstern deine Geschichte den Pinseln zu…",
+      "Wir fügen noch ein Funkeln hinzu, warum auch nicht…"
+    ],
+    "mascotAlt": "Das Warm Fuzzy Maskottchen zaubert dein Buch herbei",
+    "writing": "Deine Geschichte wird geschrieben…",
+    "drawing": "{name} wird gezeichnet…",
+    "painting": "Seite {current} von {total} wird gemalt…",
+    "finishing": "Der letzte Schliff wird angelegt…",
+    "characterAlt": "{name} als Bilderbuchfigur",
+    "drawingCaption": "{name} wird gezeichnet…",
+    "emailNote": "Wir schicken dir einen Link per E-Mail, du kannst diese Seite ruhig schließen. Sie aktualisiert sich auch von selbst, du musst nicht neu laden.",
+    "timeline": {
+      "shippedTitle": "Dein Buch ist unterwegs!",
+      "printingTitle": "Dein Buch wird gedruckt!",
+      "approvedTitle": "Dein Buch ist freigegeben!",
+      "becomingReal": "{subject} wird gerade zu einem echten, gedruckten Buch. Wir schreiben dir bei jedem Schritt.",
+      "yourStory": "Deine Geschichte",
+      "approved": {
+        "label": "Freigegeben",
+        "detail": "Du hast jede Seite abgesegnet."
+      },
+      "sentToPrint": {
+        "label": "In den Druck gegeben",
+        "detail": "Dein Buch ist in der Druckmaschine."
+      },
+      "shipped": {
+        "label": "Verschickt",
+        "detail": "Auf dem Weg zu deiner Haustür."
+      }
+    }
+  },
+  "flipbook": {
+    "cover": "Cover",
+    "titlePage": "Titelseite",
+    "dedication": "Widmung",
+    "lockedLabel": "Wartet darauf, freigeschaltet zu werden",
+    "spread": "Doppelseite {position}",
+    "bookCoverAlt": "Buchcover",
+    "defaultTitle": "Dein Bilderbuch",
+    "imprint": "Ein Buch vom Warm Fuzzy Story Club",
+    "styleLine": "Illustriert im Stil {style}",
+    "dedicationFrom": "Alles Liebe, {name}",
+    "dedicationPlaceholder": "Deine Widmung findet hier ihren Platz.",
+    "bookPreview": "Buchvorschau",
+    "bookViewer": "Buchbetrachter",
+    "previousPage": "Vorherige Seite",
+    "nextPage": "Nächste Seite",
+    "pages": "Seiten",
+    "morePagesWaiting": "Noch {count} Seiten warten auf dich",
+    "unlockBody": "Schalte dein ganzes Buch frei und wir illustrieren jede Seite deiner Geschichte.",
+    "unlockCta": "Ganzes Buch freischalten"
+  },
+  "studioChrome": {
+    "homeAria": "Warm Fuzzy Story Club Startseite",
+    "logoAlt": "Warm Fuzzy Story Club",
+    "badge": "Story Studio",
+    "backToSite": "Zurück zur Seite",
+    "back": "Zurück",
+    "footerTagline": "Warm Fuzzy Story Club · deine Geschichte bleibt privat",
+    "about": "Über uns",
+    "contact": "Kontakt",
+    "imprint": "Impressum",
+    "privacy": "Datenschutz",
+    "terms": "AGB",
+    "returns": "Widerruf"
+  },
+  "announcement": {
+    "justLaunched": "Frisch gestartet: Gestalte dein persönliches Bilderbuch"
+  },
+  "booksPage": {
+    "metaTitle": "Unsere Bücher",
+    "metaDescription": "Jede Geschichtsidee, die du in ein personalisiertes Buch verwandeln kannst.",
+    "title": "Jede Geschichte, die auf deine Familie wartet.",
+    "tagline": "Wähl eine Geschichtsidee und mach sie zu deiner: deine Namen, deine Fotos, deine Erinnerung, von vorne bis hinten illustriert.",
+    "loadingAria": "Bücher werden geladen"
+  },
+  "createPage": {
+    "metaTitle": "Starte dein Buch"
+  },
+  "chrome": {
+    "skipToContent": "Zum Inhalt springen"
+  },
+  "rootMeta": {
+    "titleDefault": "Warm Fuzzy Story Club: personalisierte Kinderbücher aus deinen Erinnerungen",
+    "description": "Verwandle eine echte Familienerinnerung in ein einzigartiges, wunderschön illustriertes Kinderbuch mit den Menschen, die du liebst, in der Hauptrolle. Kostenlose Vorschau in Minuten, ein gedrucktes Erinnerungsstück vor deiner Tür.",
+    "ogTitle": "Warm Fuzzy Story Club"
+  },
   "formats": {
     "board": {
       "name": "Pappbilderbuch",

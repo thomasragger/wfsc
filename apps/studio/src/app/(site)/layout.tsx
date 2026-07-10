@@ -1,3 +1,5 @@
+import { getTranslations } from "next-intl/server";
+
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 import { loadNavCategories } from "@/lib/categories";
@@ -11,12 +13,15 @@ export default async function SiteLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { audience, occasions } = await loadNavCategories();
+  const [{ audience, occasions }, t] = await Promise.all([
+    loadNavCategories(),
+    getTranslations("announcement"),
+  ]);
 
   return (
     <>
       <p className="bg-coral px-4 py-2 text-center text-sm font-medium text-white">
-        Just launched: Create your personalized storybook
+        {t("justLaunched")}
       </p>
 
       <SiteNav audience={audience} occasions={occasions} accountsEnabled={isCustomerAccountsConfigured()} />

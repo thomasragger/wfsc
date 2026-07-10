@@ -74,6 +74,9 @@ export interface StylePayload {
 export interface BookPayload {
   token: string;
   status: BookStatus;
+  /** The book's own content locale (drives printed-page copy like the
+   *  dedication signature), independent of the viewer's UI locale. */
+  locale: string | null;
   title: string | null;
   greeting: string | null;
   greetingFrom: string | null;

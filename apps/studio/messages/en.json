@@ -105,6 +105,124 @@
       "approve": "Approve for printing"
     }
   },
+  "editor": {
+    "makeItYours": "Make it yours",
+    "greetingLabel": "Greeting & dedication",
+    "greetingPlaceholder": "For Mia —\nso you never forget the summer of the lighthouse.\nLove, Nana",
+    "saving": "Saving…",
+    "saveDedication": "Save dedication",
+    "saved": "Saved ✓",
+    "lettering": "Lettering",
+    "fontPairingLabel": "Font pairing",
+    "fontSample": "Once upon a time…",
+    "editPage": "Edit this page",
+    "editDedication": "Edit this dedication",
+    "storyText": "Story text",
+    "saveText": "Save text",
+    "layout": "Layout",
+    "pageLayoutLabel": "Page layout",
+    "fullSpreadDisabled": "This page's illustration doesn't fit the full-spread layout",
+    "regenQueued": "A new illustration for this page is being drawn. It'll appear here when it's ready.",
+    "regenPrompt": "What should our illustrators change?",
+    "regenPlaceholder": "e.g. Mia should be wearing her yellow raincoat, and it should be evening",
+    "sending": "Sending…",
+    "redraw": "Redraw this illustration",
+    "cancel": "Cancel",
+    "askDifferent": "✏️ Ask for a different illustration"
+  },
+  "statusViews": {
+    "microCopy": [
+      "Mixing just the right shade of bedtime blue…",
+      "Teaching the illustrations to hold still…",
+      "Sneaking an extra warm fuzzy onto every page…",
+      "Double-checking that everyone's smile is right…",
+      "Whispering your story to the paintbrushes…",
+      "Adding one more twinkle, because why not…"
+    ],
+    "mascotAlt": "Warm Fuzzy mascot conjuring your book",
+    "writing": "Writing your story…",
+    "drawing": "Drawing {name}…",
+    "painting": "Painting page {current} of {total}…",
+    "finishing": "Putting the finishing touches on…",
+    "characterAlt": "{name} as a storybook character",
+    "drawingCaption": "Drawing {name}…",
+    "emailNote": "We'll email you a link — you can safely close this page. It also updates by itself, no need to refresh.",
+    "timeline": {
+      "shippedTitle": "Your book is on its way!",
+      "printingTitle": "Your book is being printed!",
+      "approvedTitle": "Your book is approved!",
+      "becomingReal": "{subject} is becoming a real, printed book. We'll email you at every step.",
+      "yourStory": "Your story",
+      "approved": {
+        "label": "Approved",
+        "detail": "You signed off on every page."
+      },
+      "sentToPrint": {
+        "label": "Sent to print",
+        "detail": "Your book is on the press."
+      },
+      "shipped": {
+        "label": "Shipped",
+        "detail": "On its way to your doorstep."
+      }
+    }
+  },
+  "flipbook": {
+    "cover": "Cover",
+    "titlePage": "Title page",
+    "dedication": "Dedication",
+    "lockedLabel": "Waiting to be unlocked",
+    "spread": "Spread {position}",
+    "bookCoverAlt": "Book cover",
+    "defaultTitle": "Your storybook",
+    "imprint": "A Warm Fuzzy Story Club book",
+    "styleLine": "Illustrated in the {style} style",
+    "dedicationFrom": "Love, {name}",
+    "dedicationPlaceholder": "Your dedication will live here.",
+    "bookPreview": "Book preview",
+    "bookViewer": "book viewer",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "pages": "Pages",
+    "morePagesWaiting": "{count} more pages are waiting",
+    "unlockBody": "Unlock your full book and we'll illustrate every page of your story.",
+    "unlockCta": "Unlock your full book"
+  },
+  "studioChrome": {
+    "homeAria": "Warm Fuzzy Story Club home",
+    "logoAlt": "Warm Fuzzy Story Club",
+    "badge": "Story Studio",
+    "backToSite": "Back to site",
+    "back": "Back",
+    "footerTagline": "Warm Fuzzy Story Club · your story stays private",
+    "about": "About",
+    "contact": "Contact",
+    "imprint": "Impressum",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "returns": "Returns"
+  },
+  "announcement": {
+    "justLaunched": "Just launched: Create your personalized storybook"
+  },
+  "booksPage": {
+    "metaTitle": "Our books",
+    "metaDescription": "Every story idea you can make into a personalized book.",
+    "title": "Every story, waiting for your family.",
+    "tagline": "Pick a story idea and make it yours — your names, your photos, your memory, illustrated cover to cover.",
+    "loadingAria": "Loading books"
+  },
+  "createPage": {
+    "metaTitle": "Start your book"
+  },
+  "chrome": {
+    "skipToContent": "Skip to content"
+  },
+  "rootMeta": {
+    "titleDefault": "Warm Fuzzy Story Club: personalized children's books from your memories",
+    "description": "Turn a real family memory into a one-of-a-kind, beautifully illustrated children's book, starring the people you love. Free preview in minutes, a printed keepsake at your door.",
+    "ogTitle": "Warm Fuzzy Story Club"
+  },
   "formats": {
     "board": {
       "name": "Board book",

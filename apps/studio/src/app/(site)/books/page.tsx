@@ -1,20 +1,21 @@
+import { getTranslations } from "next-intl/server";
+
 import { CategoryShowcase } from "@/components/category-showcase";
 import { loadAllTemplates } from "@/lib/categories";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Our books",
-  description: "Every story idea you can make into a personalized book.",
-};
+export async function generateMetadata() {
+  const t = await getTranslations("booksPage");
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
 
 export default async function BooksPage() {
-  const templates = await loadAllTemplates();
+  const [templates, t] = await Promise.all([
+    loadAllTemplates(),
+    getTranslations("booksPage"),
+  ]);
   return (
-    <CategoryShowcase
-      title="Every story, waiting for your family."
-      tagline="Pick a story idea and make it yours — your names, your photos, your memory, illustrated cover to cover."
-      templates={templates}
-    />
+    <CategoryShowcase title={t("title")} tagline={t("tagline")} templates={templates} />
   );
 }

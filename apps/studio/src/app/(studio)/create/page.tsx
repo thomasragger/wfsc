@@ -1,11 +1,13 @@
+import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
 import { CreateWizard } from "@/components/create-wizard";
 import { SkeletonGrid } from "@/components/ui/skeleton";
 
-export const metadata = {
-  title: "Start your book",
-};
+export async function generateMetadata() {
+  const t = await getTranslations("createPage");
+  return { title: t("metaTitle") };
+}
 
 export default function CreatePage() {
   return (
