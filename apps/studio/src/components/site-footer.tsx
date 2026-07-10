@@ -51,14 +51,14 @@ export async function SiteFooter({
           ))}
         </FooterCol>
 
-        {/* Legal + trust column (O1). Plain literals for now; O7 can extract. */}
-        <FooterCol title="Legal">
-          <FooterLink href="/about">About us</FooterLink>
-          <FooterLink href="/contact">Contact</FooterLink>
-          <FooterLink href="/imprint">Impressum</FooterLink>
-          <FooterLink href="/privacy">Privacy</FooterLink>
-          <FooterLink href="/terms">Terms</FooterLink>
-          <FooterLink href="/returns">Returns and withdrawal</FooterLink>
+        {/* Legal + trust column (O1). */}
+        <FooterCol title={t("legal")}>
+          <FooterLink href="/about">{t("aboutUs")}</FooterLink>
+          <FooterLink href="/contact">{t("contact")}</FooterLink>
+          <FooterLink href="/imprint">{t("imprint")}</FooterLink>
+          <FooterLink href="/privacy">{t("privacy")}</FooterLink>
+          <FooterLink href="/terms">{t("terms")}</FooterLink>
+          <FooterLink href="/returns">{t("returns")}</FooterLink>
         </FooterCol>
       </div>
     </footer>

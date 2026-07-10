@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 
 import { SiteFooter } from "@/components/site-footer";
@@ -10,10 +11,13 @@ import { isCustomerAccountsConfigured } from "@/lib/shopify-customer";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Page not found",
-  description: "We couldn't find that page, but there are plenty of stories waiting.",
-};
+export async function generateMetadata() {
+  const t = await getTranslations("errors");
+  return {
+    title: t("notFound.title"),
+    description: t("notFound.description"),
+  };
+}
 
 /**
  * Branded 404. Rendered from the app root (outside the (site) route group),
@@ -21,6 +25,7 @@ export const metadata = {
  * effort: if the lookup fails we still show a full, usable page.
  */
 export default async function NotFound() {
+  const t = await getTranslations("errors");
   let audience: AudienceCategory[] = [];
   let occasions: OccasionCategory[] = [];
   try {
@@ -42,18 +47,15 @@ export default async function NotFound() {
           height={180}
           className="h-32 w-auto sm:h-40"
         />
-        <Eyebrow className="mx-auto mt-6">Error 404</Eyebrow>
+        <Eyebrow className="mx-auto mt-6">{t("notFound.eyebrow")}</Eyebrow>
         <h1 className="mt-4 font-display text-4xl font-extrabold text-ink sm:text-5xl">
-          This page wandered off
+          {t("notFound.heading")}
         </h1>
-        <p className="mx-auto mt-4 max-w-md text-ink-soft">
-          The page you were after isn&rsquo;t here, but every family memory still deserves a story.
-          Let&rsquo;s get you back to the good stuff.
-        </p>
+        <p className="mx-auto mt-4 max-w-md text-ink-soft">{t("notFound.body")}</p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <ButtonLink href="/">Back home</ButtonLink>
+          <ButtonLink href="/">{t("notFound.backHome")}</ButtonLink>
           <ButtonLink href="/books" variant="ghost">
-            Browse our books
+            {t("notFound.browseBooks")}
           </ButtonLink>
         </div>
       </main>

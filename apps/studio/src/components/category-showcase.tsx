@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { Doodle } from "@/components/decor";
 import { BookTile } from "@/components/ui/book-tile";
@@ -13,7 +14,7 @@ import type { CategoryTemplate } from "@/lib/categories";
  * of story-idea BookTiles (flat preview at rest, 3D mockup on hover), and a
  * closing CTA. Used by /books, /for/[category] and /occasions/[occasion].
  */
-export function CategoryShowcase({
+export async function CategoryShowcase({
   title,
   tagline,
   heroImageUrl,
@@ -32,9 +33,10 @@ export function CategoryShowcase({
   backLabel?: string;
   regionSwitch?: { current: "dach" | "us"; basePath: string };
 }) {
+  const t = await getTranslations("categoryShowcase");
   const REGION_TABS: { id: "dach" | "us"; label: string }[] = [
-    { id: "dach", label: "🇩🇪🇦🇹🇨🇭 DACH" },
-    { id: "us", label: "🇺🇸 USA" },
+    { id: "dach", label: t("regions.dach") },
+    { id: "us", label: t("regions.us") },
   ];
   return (
     <div>
@@ -64,7 +66,7 @@ export function CategoryShowcase({
                   href={backHref}
                   className="mb-6 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3.5 py-1.5 text-xs font-bold text-ink shadow-sm ring-1 ring-white/60 transition hover:bg-white"
                 >
-                  <IconArrowLeft className="h-3.5 w-3.5" /> {backLabel ?? "Back"}
+                  <IconArrowLeft className="h-3.5 w-3.5" /> {backLabel ?? t("back")}
                 </Link>
               ) : null}
               <h1 className="font-display text-4xl font-extrabold text-ink sm:text-5xl">{title}</h1>
@@ -110,16 +112,16 @@ export function CategoryShowcase({
         ) : (
           <EmptyState
             doodle="sun.png"
-            title="Fresh story ideas are on the way."
-            body="We're always writing new ones. In the meantime, start from your own memory — that's where the best books come from."
-            action={<ButtonLink href="/create">Start from your own memory</ButtonLink>}
+            title={t("empty.title")}
+            body={t("empty.body")}
+            action={<ButtonLink href="/create">{t("empty.action")}</ButtonLink>}
           />
         )}
 
         <div className="mt-16 text-center">
-          <p className="font-display text-lg font-bold text-ink">Every family has a story worth keeping.</p>
+          <p className="font-display text-lg font-bold text-ink">{t("ctaTitle")}</p>
           <ButtonLink href="/create" size="lg" className="mt-4">
-            Write your story
+            {t("ctaButton")}
           </ButtonLink>
         </div>
       </section>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -31,14 +32,15 @@ export function SiteNav({
   accountsEnabled?: boolean;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const t = useTranslations("nav");
 
   return (
     <header className="sticky top-0 z-40 border-b border-ink/5 bg-cream/85 backdrop-blur-md">
       <div className="mx-auto grid h-14 w-full max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex items-center justify-self-start" aria-label="Warm Fuzzy Story Club home">
+        <Link href="/" className="flex items-center justify-self-start" aria-label={t("homeAria")}>
           <Image
             src="/logo-landscape.png"
-            alt="Warm Fuzzy Story Club"
+            alt={t("logoAlt")}
             width={1216}
             height={527}
             priority
@@ -48,11 +50,11 @@ export function SiteNav({
 
         {/* Desktop nav (centered) */}
         <nav aria-label="Main" className="hidden items-center gap-1 justify-self-center md:flex">
-          <NavLink href="/books">Our books</NavLink>
-          <MegaItem label="Who it's for" items={audience.map((c) => ({ href: `/for/${c.id}`, label: c.name, sub: c.tagline }))} />
-          <MegaItem label="Occasions" items={occasions.map((c) => ({ href: `/occasions/${c.id}`, label: c.name, sub: c.tagline }))} />
-          <NavLink href="/for/places">Places you love</NavLink>
-          <NavLink href="/samples">Sample books</NavLink>
+          <NavLink href="/books">{t("ourBooks")}</NavLink>
+          <MegaItem label={t("whoItsFor")} items={audience.map((c) => ({ href: `/for/${c.id}`, label: c.name, sub: c.tagline }))} />
+          <MegaItem label={t("occasions")} items={occasions.map((c) => ({ href: `/occasions/${c.id}`, label: c.name, sub: c.tagline }))} />
+          <NavLink href="/for/places">{t("placesYouLove")}</NavLink>
+          <NavLink href="/samples">{t("sampleBooks")}</NavLink>
         </nav>
 
         <div className="flex items-center gap-1 justify-self-end">
@@ -60,19 +62,19 @@ export function SiteNav({
             <Link
               href="/account"
               className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-ink/5"
-              aria-label="Your account"
+              aria-label={t("accountAria")}
             >
               <IconUser />
             </Link>
           ) : null}
           <CartButton />
           <ButtonLink href="/create" size="sm" className="ml-1 hidden whitespace-nowrap sm:inline-flex sm:px-5">
-            Write your story
+            {t("writeYourStory")}
           </ButtonLink>
           <button
             type="button"
             className="flex h-10 w-10 items-center justify-center rounded-full text-ink hover:bg-ink/5 md:hidden"
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-label={mobileOpen ? t("closeMenu") : t("openMenu")}
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((v) => !v)}
           >
@@ -89,20 +91,20 @@ export function SiteNav({
             className="mx-auto max-h-[calc(100vh-3.5rem)] w-full max-w-6xl space-y-6 overflow-y-auto px-5 py-6"
             onClick={() => setMobileOpen(false)}
           >
-            <MobileSection title="Browse">
-              <MobileLink href="/books">Our books</MobileLink>
-              <MobileLink href="/for/places">Places you love</MobileLink>
-              <MobileLink href="/samples">Sample books</MobileLink>
-              <MobileLink href="/create">Write your story</MobileLink>
+            <MobileSection title={t("browse")}>
+              <MobileLink href="/books">{t("ourBooks")}</MobileLink>
+              <MobileLink href="/for/places">{t("placesYouLove")}</MobileLink>
+              <MobileLink href="/samples">{t("sampleBooks")}</MobileLink>
+              <MobileLink href="/create">{t("writeYourStory")}</MobileLink>
             </MobileSection>
-            <MobileSection title="Who it's for">
+            <MobileSection title={t("whoItsFor")}>
               {audience.map((c) => (
                 <MobileLink key={c.id} href={`/for/${c.id}`}>
                   {c.name}
                 </MobileLink>
               ))}
             </MobileSection>
-            <MobileSection title="Occasions">
+            <MobileSection title={t("occasions")}>
               {occasions.map((c) => (
                 <MobileLink key={c.id} href={`/occasions/${c.id}`}>
                   {c.name}
@@ -110,7 +112,7 @@ export function SiteNav({
               ))}
             </MobileSection>
             <ButtonLink href="/create" className="w-full">
-              Write your story
+              {t("writeYourStory")}
             </ButtonLink>
           </div>
         </div>

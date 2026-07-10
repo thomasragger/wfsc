@@ -1,6 +1,7 @@
 "use client";
 
 import * as Sentry from "@sentry/nextjs";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
@@ -21,6 +22,8 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations("errors");
+
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
@@ -29,10 +32,10 @@ export default function Error({
     <>
       <header className="border-b border-ink/5 bg-cream/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center px-4 sm:px-6">
-          <Link href="/" className="flex items-center" aria-label="Warm Fuzzy Story Club home">
+          <Link href="/" className="flex items-center" aria-label={t("error.logoAriaLabel")}>
             <Image
               src="/logo-landscape.png"
-              alt="Warm Fuzzy Story Club"
+              alt={t("error.logoAlt")}
               width={1216}
               height={527}
               priority
@@ -51,18 +54,15 @@ export default function Error({
           height={180}
           className="h-32 w-auto sm:h-40"
         />
-        <Eyebrow className="mx-auto mt-6">Something went wrong</Eyebrow>
+        <Eyebrow className="mx-auto mt-6">{t("error.eyebrow")}</Eyebrow>
         <h1 className="mt-4 font-display text-4xl font-extrabold text-ink sm:text-5xl">
-          Well, that&rsquo;s a plot twist
+          {t("error.heading")}
         </h1>
-        <p className="mx-auto mt-4 max-w-md text-ink-soft">
-          Something hiccuped on our end and our team has been notified. Your story is safe. Give it
-          another try, or head back home.
-        </p>
+        <p className="mx-auto mt-4 max-w-md text-ink-soft">{t("error.body")}</p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Button onClick={() => reset()}>Try again</Button>
+          <Button onClick={() => reset()}>{t("error.tryAgain")}</Button>
           <ButtonLink href="/" variant="ghost">
-            Back home
+            {t("error.backHome")}
           </ButtonLink>
         </div>
       </main>
