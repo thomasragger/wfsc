@@ -275,6 +275,40 @@ Acceptance: every old script has a CLI equivalent; no absolute paths or date con
 Acceptance: `/de` has zero English strings on every `(site)` page and the wizard; a `locale=de`
 book gets German emails; Thomas signs off the German voice.
 
+### O8 — Transactional email design + copy — `launch/o8-emails`
+
+Redesign the four customer emails in `apps/studio/src/lib/email.ts` (previewReady,
+reviewReady, printSubmitted, generationDelayed) to be genuinely on-brand and
+well-written. Ops alerts (`lib/ops-alert.ts`) stay plain.
+
+1. **Shared layout wrapper** (one function all templates use): cream background
+   `#fffaf7`, white rounded card, ink `#761e0b`, coral CTA button `#ff7916`,
+   logo from `${STUDIO_URL}/logo.png` (already public). Consider a mascot PNG
+   (`/mascots/*.png`) as a warm accent per email.
+2. **Email-client reality** (non-negotiable): table-based layout, ALL styles
+   inline, no flexbox/grid, no web fonts (font stack:
+   `'Quicksand','Trebuchet MS',Helvetica,Arial,sans-serif`), max width 600px,
+   bulletproof button (padded table cell, not just a styled `<a>`), images with
+   width attributes + alt text, works with images off. Add a preheader
+   (hidden preview text) per email and pass a `text` plain-part to Resend
+   alongside `html`.
+3. **Copy**: match the site voice — warm, plain-spoken, second person, no
+   corporate filler ("Every family has a story worth keeping" energy). Each
+   email: one job, one CTA. generationDelayed stays honest (no fake ETA).
+   Include the "anyone with this link can view your book" privacy note where
+   a book link is present.
+4. **Localization-ready**: keep all strings in one exported per-template map
+   (or accept a `locale` param with an `en` table now) so O7 can add `de`
+   without restructuring; templates already receive the book row — thread
+   `book.locale` through.
+5. **Verify**: send all four templates to OPS_ALERT_EMAIL via a small
+   `wfsc-admin send-test-emails` command (admin CLI from O6) and eyeball in
+   Gmail at minimum; dark-mode spot check.
+
+Acceptance: four redesigned emails delivered to the test inbox, rendering
+correctly with images on and off; strings extractable for O7; no template
+regressions in the three Inngest send sites + onFailure.
+
 ---
 
 ## Sequencing
