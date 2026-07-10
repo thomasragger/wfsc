@@ -442,7 +442,7 @@ export default async function HomePage() {
                       size="sm"
                       className="hidden shrink-0 sm:inline-flex"
                     >
-                      {t("seeAll", { name: cat.name })}
+                      {t("seeAll")}
                       <IconArrowRight className="ml-1.5 h-4 w-4" />
                     </ButtonLink>
                   </div>
