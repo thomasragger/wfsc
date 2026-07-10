@@ -63,6 +63,7 @@ async function sendEmailSafe(opts: {
   to: string;
   subject: string;
   html: string;
+  text?: string;
 }): Promise<{ sent: boolean }> {
   try {
     await sendEmail(opts);
@@ -339,7 +340,7 @@ export const generateFullBook = inngest.createFunction(
       await db.from('books').update({ status: 'generation_failed' }).eq('id', bookId);
       const { data: book } = await db
         .from('books')
-        .select('email, title, access_token')
+        .select('email, title, access_token, locale')
         .eq('id', bookId)
         .maybeSingle();
       if (book?.email) {
