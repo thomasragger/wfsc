@@ -191,7 +191,14 @@ Acceptance: social-share debuggers render title+image for `/`, a category page, 
    photo upload success/fail, `createBook` submitted, preview viewed, checkout started,
    purchase (server-side from the `orders/paid` webhook), review page opened, approved.
    Server events keyed on book id, no PII in properties.
-2. Sentry: Next.js client+server + instrument the Inngest functions; source maps on Vercel.
+   **REQUIRED: cookieless mode** (`persistence: "memory"`) — decided 2026-07-10 so the site
+   needs NO cookie banner (only strictly-necessary cookies remain: cart, locale). Trade-off:
+   no cross-session visitor stitching. Revisit with a proper CMP only if ad pixels
+   (Meta/Google) are ever added. Env vars are live: NEXT_PUBLIC_POSTHOG_KEY/_HOST.
+2. Sentry: SDK scaffold + DSN are DONE (2026-07-10, F-track): client/server/edge init,
+   request-error capture, replay (masked, 10%/100% on error), global-error boundary,
+   /monitoring tunnel. O3 still owns: SENTRY_ORG/SENTRY_PROJECT/SENTRY_AUTH_TOKEN for
+   source-map upload, and instrumenting Inngest failures explicitly.
 3. Ops alerting: shared helper (email via Resend to an ops address, or Slack webhook) used by
    F2/F3 failure paths — build the helper here, `lib/ops-alert.ts`.
 4. `lib/email.ts:13-16`: in production, missing `RESEND_API_KEY` must fail loudly at boot
