@@ -8,6 +8,7 @@
  * those. If you need a new piece of UI, add it to ui/*, catalogue it here,
  * and only then use it.
  */
+import { notFound } from "next/navigation";
 import Image from "next/image";
 
 import { ArtPlaceholder, BlobFrame, Doodle, Sparkle } from "@/components/decor";
@@ -25,9 +26,19 @@ import { Spinner } from "@/components/ui/spinner";
 import { StepProgress } from "@/components/ui/steps";
 
 export const metadata = {
-  title: "Style guide — Warm Fuzzy Story Club",
+  title: "Style guide",
   robots: { index: false },
 };
+
+/**
+ * The style guide is an internal reference sheet. Keep it off the public site
+ * in production unless SHOW_STYLEGUIDE is explicitly set (e.g. a preview build).
+ */
+function assertStyleguideVisible() {
+  if (process.env.NODE_ENV === "production" && !process.env.SHOW_STYLEGUIDE) {
+    notFound();
+  }
+}
 
 const TOKENS = [
   { name: "ink", value: "#761e0b", text: "text-white" },
@@ -64,6 +75,7 @@ function Section({
 }
 
 export default function StyleguidePage() {
+  assertStyleguideVisible();
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
       <header className="mb-12">

@@ -45,7 +45,7 @@ export default function StudioLayout({
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col">{children}</main>
+      <main id="main-content" className="flex flex-1 flex-col">{children}</main>
 
       <footer className="border-t border-ink/5 py-5 text-center text-xs text-ink-soft">
         <p>Warm Fuzzy Story Club · your story stays private</p>
