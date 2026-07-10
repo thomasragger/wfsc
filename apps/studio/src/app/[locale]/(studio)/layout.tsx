@@ -53,6 +53,18 @@ export default async function StudioLayout({
 
       <main id="main-content" className="flex flex-1 flex-col">{children}</main>
 
+      <footer className="border-t border-ink/10 bg-cream">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-ink-soft sm:flex-row sm:px-6">
+          <p className="font-semibold">{t("footerTagline")}</p>
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-semibold">
+            {(["about", "contact", "imprint", "privacy", "terms", "returns"] as const).map((k) => (
+              <Link key={k} href={`/${k}`} className="transition-colors hover:text-coral">
+                {t(k)}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </footer>
     </>
   );
 }

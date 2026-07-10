@@ -156,7 +156,6 @@ function draftIsResumable(d: WizardDraft): boolean {
 
 export function CreateWizard() {
   const t = useTranslations("wizard");
-  const tChrome = useTranslations("studioChrome");
   const stepLabels = t.raw("steps") as string[];
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -682,9 +681,13 @@ export function CreateWizard() {
             </Card>
           </div>
 
-          {/* Right rail (lg+ only): step list + actions + trust note. On <lg the
-              inline nav under the step card carries the actions instead. */}
-          <aside className="hidden lg:block">
+          {/* Right rail (lg+ only): step list + actions + trust note, then the
+              evolving "book so far" preview. On <lg the inline nav under the
+              step card carries the actions instead. `lg:self-stretch` makes the
+              aside fill the full grid-row height so the inner sticky div has
+              room to travel (grid `lg:items-start` would otherwise shrink it to
+              content height and sticky would never engage). */}
+          <aside className="hidden lg:block lg:self-stretch">
             <div className="lg:sticky lg:top-24">
               <Card className="p-5">
                 <ol className="flex flex-col gap-1" aria-label={stepLabels.join(", ")}>
@@ -728,17 +731,34 @@ export function CreateWizard() {
                 <p className="mt-4 text-center text-xs text-ink-soft">{t("heroFreePreview")}</p>
               </Card>
 
-              {/* The bottom bar's micro-footer legal links, mirrored under the rail
-                  (the studio has no separate footer). */}
-              <nav className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-semibold text-ink-soft/80">
-                {(["about", "contact", "imprint", "privacy", "terms", "returns"] as const).map((k) => (
-                  <Link key={k} href={`/${k === "about" ? "about" : k}`} className="hover:text-coral">
-                    {tChrome(k)}
-                  </Link>
-                ))}
-              </nav>
+              {/* The book, growing with every choice, right below the rail. */}
+              <BookSoFar
+                layout="rail"
+                selectedStyle={selectedStyle}
+                template={template}
+                memoryText={memoryText}
+                people={people}
+                title={title}
+                greeting={greeting}
+                greetingFrom={greetingFrom}
+              />
             </div>
           </aside>
+        </div>
+
+        {/* The evolving book on <lg: a compact horizontal strip above the inline
+            nav (front matter lives in the Finish step's own previews there). */}
+        <div className="mt-6 lg:hidden">
+          <BookSoFar
+            layout="strip"
+            selectedStyle={selectedStyle}
+            template={template}
+            memoryText={memoryText}
+            people={people}
+            title={title}
+            greeting={greeting}
+            greetingFrom={greetingFrom}
+          />
         </div>
 
         {/* Step navigation on <lg: inline under the step card (the rail carries
@@ -747,14 +767,6 @@ export function CreateWizard() {
           {backButton("ghost", "") ?? <span />}
           {forwardButton("")}
         </div>
-        {/* Micro-footer legal links on <lg (the studio has no separate footer). */}
-        <nav className="mt-8 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-semibold text-ink-soft/80 lg:hidden">
-          {(["about", "contact", "imprint", "privacy", "terms", "returns"] as const).map((k) => (
-            <Link key={k} href={`/${k === "about" ? "about" : k}`} className="hover:text-coral">
-              {tChrome(k)}
-            </Link>
-          ))}
-        </nav>
       </div>
     </PageTransition>
   );
@@ -1324,22 +1336,12 @@ function FinishStep({
   // font picker, so we render in the default "storybook" pairing (display face
   // for the title) and the shared script face for the dedication, exactly like
   // the flipbook. Fonts load via the same Google Fonts stylesheet the flipbook uses.
-  const pairing = FONT_PAIRINGS.storybook;
-  const displayFont = {
-    fontFamily: `'${pairing.display.family}', sans-serif`,
-    fontWeight: pairing.display.weight,
-  };
-  const scriptFont = {
-    fontFamily: `'${SCRIPT_FONT.family}', cursive`,
-    fontWeight: SCRIPT_FONT.weight,
-  };
-
   const titleText = title.trim() || (template ? template.title : t("finishTitlePlaceholder"));
 
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-6">
       {/* React hoists this to <head>; loads the pairing + script Google fonts. */}
-      <link rel="stylesheet" href={fontStylesheetUrl(pairing)} />
+      <link rel="stylesheet" href={fontStylesheetUrl(FM_PAIRING)} />
 
       <header>
         <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">{t("finishTitle")}</h1>
@@ -1348,99 +1350,68 @@ function FinishStep({
         </p>
       </header>
 
-      {/* The book's front matter as living pages: inputs on the left, live title
-          + dedication page previews on the right (they update as you type). */}
-      <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
-        <div className="flex flex-col gap-4">
-          <Field label={t("finishBookTitle")} htmlFor="title" optional>
-            <TextInput
-              id="title"
-              placeholder={template ? template.title : t("finishTitlePlaceholder")}
-              value={title}
-              onChange={(e) => onTitleChange(e.target.value)}
-              maxLength={120}
-            />
-          </Field>
-
-          <Field
-            label={t("finishNote")}
-            htmlFor="greeting"
-            optional
-            hint={t("finishNoteHint")}
-          >
-            <TextArea
-              id="greeting"
-              className="min-h-24 leading-relaxed"
-              placeholder={t("finishNotePlaceholder")}
-              value={greeting}
-              onChange={(e) => onGreetingChange(e.target.value)}
-              maxLength={600}
-            />
-          </Field>
-
-          <Field
-            label={t("finishSignedFrom")}
-            htmlFor="greeting-from"
-            optional
-            hint={t("finishSignedFromHint")}
-          >
-            <TextInput
-              id="greeting-from"
-              placeholder={t("finishSignedFromPlaceholder")}
-              value={greetingFrom}
-              onChange={(e) => onGreetingFromChange(e.target.value)}
-              maxLength={80}
-            />
-          </Field>
-        </div>
-
-        {/* Live previews of the two printed front-matter pages, side by side
-            like an open book so the step stays compact. */}
-        <div>
-          <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
-            {t("finishPreviewLabel")}
-          </p>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-          {/* Title page */}
+      {/* Live front-matter previews. On lg+ the right-rail "book so far" panel
+          carries these and stays in view while you type, so here they show only
+          on <lg — side by side, full width, above the inputs. */}
+      <div className="lg:hidden">
+        <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
+          {t("finishPreviewLabel")}
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-3">
           <FinishPreviewPage caption={tFlip("titlePage")}>
-            <div className="flex h-full flex-col items-center justify-center gap-2 px-[12%] pb-[14%] text-center">
-              <h3
-                className="font-display text-[clamp(1.05rem,3.4vw,1.6rem)] font-extrabold leading-tight text-ink"
-                style={displayFont}
-              >
-                {titleText}
-              </h3>
-              <Sparkle className="text-marigold" size={16} />
-            </div>
-            <p className="absolute inset-x-0 bottom-[7%] text-center text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-ink/40">
-              {tFlip("imprint")}
-            </p>
+            <TitlePageInner title={titleText} imprint={tFlip("imprint")} />
           </FinishPreviewPage>
-
-          {/* Dedication page */}
           <FinishPreviewPage caption={tFlip("dedication")}>
-            <div className="flex h-full flex-col items-center justify-center gap-3 px-[11%] text-center">
-              <p className="text-[0.58rem] font-semibold uppercase tracking-[0.2em] text-ink/35">
-                {tFlip("dedication")}
-              </p>
-              <p
-                className="whitespace-pre-line text-[clamp(1rem,3.6vw,1.5rem)] leading-snug text-ink"
-                style={scriptFont}
-              >
-                {greeting.trim() || tFlip("dedicationPlaceholder")}
-              </p>
-              {greetingFrom.trim() ? (
-                <p
-                  className="text-[clamp(0.9rem,3.2vw,1.3rem)] text-ink-soft"
-                  style={scriptFont}
-                >
-                  {tFlip("dedicationFrom", { name: greetingFrom.trim() })}
-                </p>
-              ) : null}
-            </div>
+            <DedicationPageInner
+              label={tFlip("dedication")}
+              greeting={greeting}
+              placeholder={tFlip("dedicationPlaceholder")}
+              fromText={
+                greetingFrom.trim() ? tFlip("dedicationFrom", { name: greetingFrom.trim() }) : null
+              }
+            />
           </FinishPreviewPage>
-          </div>
         </div>
+      </div>
+
+      {/* Front-matter inputs. Comfortable single column; the live preview is the
+          rail (lg+) or the strip above (<lg). */}
+      <div className="flex flex-col gap-4">
+        <Field label={t("finishBookTitle")} htmlFor="title" optional>
+          <TextInput
+            id="title"
+            placeholder={template ? template.title : t("finishTitlePlaceholder")}
+            value={title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            maxLength={120}
+          />
+        </Field>
+
+        <Field label={t("finishNote")} htmlFor="greeting" optional hint={t("finishNoteHint")}>
+          <TextArea
+            id="greeting"
+            className="min-h-24 leading-relaxed"
+            placeholder={t("finishNotePlaceholder")}
+            value={greeting}
+            onChange={(e) => onGreetingChange(e.target.value)}
+            maxLength={600}
+          />
+        </Field>
+
+        <Field
+          label={t("finishSignedFrom")}
+          htmlFor="greeting-from"
+          optional
+          hint={t("finishSignedFromHint")}
+        >
+          <TextInput
+            id="greeting-from"
+            placeholder={t("finishSignedFromPlaceholder")}
+            value={greetingFrom}
+            onChange={(e) => onGreetingFromChange(e.target.value)}
+            maxLength={80}
+          />
+        </Field>
       </div>
 
       {/* Delivery + consent, clearly after the front matter. */}
@@ -1497,5 +1468,306 @@ function FinishPreviewPage({
         {caption}
       </figcaption>
     </figure>
+  );
+}
+
+/* --------------------------------------------------------------- book so far */
+// The front-matter pages render in the book's own font language (no font picker
+// in the wizard, so we use the default "storybook" pairing + the shared script
+// face, exactly like the flipbook). Shared here so the Finish step's inline
+// previews and the "book so far" panel stay identical.
+const FM_PAIRING = FONT_PAIRINGS.storybook;
+const FM_DISPLAY = {
+  fontFamily: `'${FM_PAIRING.display.family}', sans-serif`,
+  fontWeight: FM_PAIRING.display.weight,
+} as const;
+const FM_SCRIPT = {
+  fontFamily: `'${SCRIPT_FONT.family}', cursive`,
+  fontWeight: SCRIPT_FONT.weight,
+} as const;
+
+/** The printed title page, centred title + imprint line. */
+function TitlePageInner({ title, imprint }: { title: string; imprint: string }) {
+  return (
+    <>
+      <div className="flex h-full flex-col items-center justify-center gap-2 px-[12%] pb-[14%] text-center">
+        <h3
+          className="font-display text-[clamp(1rem,3.4vw,1.6rem)] font-extrabold leading-tight text-ink"
+          style={FM_DISPLAY}
+        >
+          {title}
+        </h3>
+        <Sparkle className="text-marigold" size={16} />
+      </div>
+      <p className="absolute inset-x-0 bottom-[7%] text-center text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-ink/40">
+        {imprint}
+      </p>
+    </>
+  );
+}
+
+/** The printed dedication page: label, the note in a script face, and a signoff. */
+function DedicationPageInner({
+  label,
+  greeting,
+  placeholder,
+  fromText,
+}: {
+  label: string;
+  greeting: string;
+  placeholder: string;
+  fromText: string | null;
+}) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-3 px-[11%] text-center">
+      <p className="text-[0.58rem] font-semibold uppercase tracking-[0.2em] text-ink/35">{label}</p>
+      <p
+        className="whitespace-pre-line text-[clamp(0.95rem,3.6vw,1.5rem)] leading-snug text-ink"
+        style={FM_SCRIPT}
+      >
+        {greeting.trim() || placeholder}
+      </p>
+      {fromText ? (
+        <p className="text-[clamp(0.85rem,3.2vw,1.3rem)] text-ink-soft" style={FM_SCRIPT}>
+          {fromText}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/** The book cover: the chosen style's art, with the title over a soft scrim. */
+function CoverPageInner({
+  image,
+  title,
+  alt,
+}: {
+  image: string | null;
+  title: string;
+  alt: string;
+}) {
+  return (
+    <>
+      {image ? (
+        <ProgressiveImage
+          src={image}
+          alt={alt}
+          className="absolute inset-0 h-full w-full"
+          imgClassName="h-full w-full object-cover"
+        />
+      ) : (
+        <ArtPlaceholder />
+      )}
+      <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-ink/75 via-ink/25 to-transparent" />
+      <div className="absolute inset-x-0 bottom-[8%] px-[10%] text-center">
+        <h3
+          className="font-display text-[clamp(0.8rem,3vw,1.3rem)] font-extrabold leading-tight text-white drop-shadow"
+          style={FM_DISPLAY}
+        >
+          {title}
+        </h3>
+      </div>
+    </>
+  );
+}
+
+/** The typed memory as a manuscript snippet on faint ruled lines. */
+function StoryPageInner({ text }: { text: string }) {
+  return (
+    <div className="flex h-full flex-col px-[12%] pb-[12%] pt-[16%]">
+      <p
+        className="overflow-hidden font-body text-ink/85"
+        style={{
+          fontSize: "0.68rem",
+          lineHeight: "1.15rem",
+          backgroundImage:
+            "repeating-linear-gradient(to bottom, transparent 0, transparent calc(1.15rem - 1px), rgb(118 30 11 / 0.12) calc(1.15rem - 1px), rgb(118 30 11 / 0.12) 1.15rem)",
+          display: "-webkit-box",
+          WebkitLineClamp: 8,
+          WebkitBoxOrient: "vertical",
+        }}
+      >
+        {text}
+      </p>
+    </div>
+  );
+}
+
+/** The cast page: "starring" over a row of portrait thumbnails + names. */
+function CastPageInner({
+  label,
+  members,
+}: {
+  label: string;
+  members: { key: string; name: string; photo: string | null }[];
+}) {
+  const shown = members.slice(0, 4);
+  const names = members.map((m) => m.name).filter((n) => n.length > 0);
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-2.5 px-[10%] text-center">
+      <p className="text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-ink/40">{label}</p>
+      <div className="flex flex-wrap items-center justify-center gap-1.5">
+        {shown.map((m) =>
+          m.photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={m.key}
+              src={m.photo}
+              alt=""
+              className="h-8 w-8 rounded-full object-cover shadow-sm ring-2 ring-white"
+            />
+          ) : (
+            <span
+              key={m.key}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-lavender font-display text-[0.7rem] font-bold text-ink ring-2 ring-white"
+              aria-hidden="true"
+            >
+              {m.name.slice(0, 1).toUpperCase() || "?"}
+            </span>
+          ),
+        )}
+      </div>
+      {names.length > 0 ? (
+        <p className="font-display text-[0.62rem] font-bold leading-tight text-ink">
+          {names.join(", ")}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The persistent "your book so far" preview: a small stack (rail, lg+) or strip
+ * (<lg) of mini front/front-matter pages that grows as the wizard is filled in.
+ * Purely presentational — every value comes from the wizard's own state. Only
+ * pages with real content render; front-matter pages (title/dedication) show in
+ * the rail only, since <lg the Finish step carries its own larger previews.
+ */
+function BookSoFar({
+  layout,
+  selectedStyle,
+  template,
+  memoryText,
+  people,
+  title,
+  greeting,
+  greetingFrom,
+}: {
+  layout: "rail" | "strip";
+  selectedStyle: StyleSummary | null;
+  template: TemplateSummary | null;
+  memoryText: string;
+  people: PersonDraft[];
+  title: string;
+  greeting: string;
+  greetingFrom: string;
+}) {
+  const t = useTranslations("wizard");
+  const tFlip = useTranslations("flipbook");
+
+  const includeFrontMatter = layout === "rail";
+  const coverTitle = title.trim() || template?.title || t("bookSoFarCoverTitle");
+  const castMembers = people
+    .filter((p) => p.photoUrls[0] || p.name.trim())
+    .map((p) => ({ key: p.key, name: p.name.trim(), photo: p.photoUrls[0] ?? null }));
+
+  const pages: { key: string; caption: string; node: React.ReactNode }[] = [];
+  if (selectedStyle) {
+    pages.push({
+      key: "cover",
+      caption: tFlip("cover"),
+      node: (
+        <CoverPageInner
+          image={selectedStyle.previewImageUrl}
+          title={coverTitle}
+          alt={t("styleCardAlt", { name: selectedStyle.name })}
+        />
+      ),
+    });
+  }
+  if (memoryText.trim()) {
+    pages.push({
+      key: "story",
+      caption: t("bookSoFarStory"),
+      node: <StoryPageInner text={memoryText.trim()} />,
+    });
+  }
+  if (castMembers.length > 0) {
+    pages.push({
+      key: "cast",
+      caption: t("bookSoFarCast"),
+      node: <CastPageInner label={t("bookSoFarCastStarring")} members={castMembers} />,
+    });
+  }
+  if (includeFrontMatter && title.trim()) {
+    pages.push({
+      key: "title",
+      caption: tFlip("titlePage"),
+      node: <TitlePageInner title={title.trim()} imprint={tFlip("imprint")} />,
+    });
+  }
+  if (includeFrontMatter && greeting.trim()) {
+    pages.push({
+      key: "dedication",
+      caption: tFlip("dedication"),
+      node: (
+        <DedicationPageInner
+          label={tFlip("dedication")}
+          greeting={greeting}
+          placeholder={tFlip("dedicationPlaceholder")}
+          fromText={
+            greetingFrom.trim() ? tFlip("dedicationFrom", { name: greetingFrom.trim() }) : null
+          }
+        />
+      ),
+    });
+  }
+
+  // Loads the pairing + script Google fonts whenever the panel is on screen
+  // (React hoists + dedupes this <link> with the Finish step's identical one).
+  const fontLink = <link rel="stylesheet" href={fontStylesheetUrl(FM_PAIRING)} />;
+
+  if (layout === "strip") {
+    if (pages.length === 0) return null;
+    return (
+      <section aria-label={t("bookSoFarHeading")}>
+        {fontLink}
+        <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-ink-soft/80">
+          {t("bookSoFarHeading")}
+        </p>
+        <div className="-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {pages.map((page) => (
+            <div key={page.key} className="animate-page-in w-28 shrink-0 snap-start">
+              <FinishPreviewPage caption={page.caption}>{page.node}</FinishPreviewPage>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section aria-label={t("bookSoFarHeading")} className="mt-5">
+      {fontLink}
+      <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-ink-soft/80">
+        {t("bookSoFarHeading")}
+      </p>
+      {pages.length === 0 ? (
+        <div className="mt-3 rounded-2xl border-2 border-dashed border-ink/10 px-5 py-8 text-center text-xs leading-relaxed text-ink-soft/70">
+          {t("bookSoFarEmpty")}
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-col items-center gap-4">
+          {pages.map((page, i) => (
+            <div
+              key={page.key}
+              className={`animate-page-in w-full max-w-[11rem] ${i % 2 === 0 ? "-rotate-1" : "rotate-1"}`}
+            >
+              <FinishPreviewPage caption={page.caption}>{page.node}</FinishPreviewPage>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

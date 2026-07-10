@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 
 import { FONT_PAIRINGS, type FontPairingId, type LayoutId } from "@wfsc/book-engine";
 
-import { Link } from "@/i18n/navigation";
 import { ArtPlaceholder } from "@/components/decor";
 import { EditorPanel, SpreadEditor } from "@/components/editor";
 import { Flipbook, type FlipPage } from "@/components/flipbook";
@@ -652,21 +651,11 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
 }
 
 function Shell({ children, error }: { children: React.ReactNode; error: string | null }) {
-  const tChrome = useTranslations("studioChrome");
+  // Legal links live in the studio layout's footer now.
   return (
     <PageTransition className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       {error ? <Alert className="mx-auto mb-6 max-w-2xl text-center">{error}</Alert> : null}
       {children}
-      {/* Compact legal footer (the studio layout carries no separate footer). */}
-      <footer className="mt-14 border-t border-ink/5 pt-5 text-center text-xs text-ink-soft">
-        <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 font-semibold">
-          {(["about", "contact", "imprint", "privacy", "terms", "returns"] as const).map((k) => (
-            <Link key={k} href={`/${k}`} className="hover:text-coral">
-              {tChrome(k)}
-            </Link>
-          ))}
-        </nav>
-      </footer>
     </PageTransition>
   );
 }

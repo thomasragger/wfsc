@@ -837,6 +837,12 @@
     "finishEmailPlaceholder": "you@example.com",
     "finishConsent": "Yes, please use my story and photos to create this book. Details in our",
     "finishConsentLink": "privacy policy",
-    "finishPreviewLabel": "How your book begins"
+    "finishPreviewLabel": "How your book begins",
+    "bookSoFarHeading": "Your book so far",
+    "bookSoFarEmpty": "Your book will appear here as you make each choice.",
+    "bookSoFarStory": "Your story",
+    "bookSoFarCast": "The cast",
+    "bookSoFarCastStarring": "Starring",
+    "bookSoFarCoverTitle": "Our story"
   }
 }

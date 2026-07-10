@@ -841,6 +841,12 @@
     "finishEmailPlaceholder": "du@beispiel.de",
     "finishConsent": "Ja, meine Geschichte und Fotos dürfen für dieses Buch verwendet werden. Details in unserer",
     "finishConsentLink": "Datenschutzerklärung",
-    "finishPreviewLabel": "So beginnt dein Buch"
+    "finishPreviewLabel": "So beginnt dein Buch",
+    "bookSoFarHeading": "Dein Buch bisher",
+    "bookSoFarEmpty": "Hier entsteht dein Buch, Schritt für Schritt mit jeder Entscheidung.",
+    "bookSoFarStory": "Deine Geschichte",
+    "bookSoFarCast": "Die Figuren",
+    "bookSoFarCastStarring": "Mit dabei",
+    "bookSoFarCoverTitle": "Unsere Geschichte"
   }
 }
