@@ -52,15 +52,11 @@ export async function CategoryShowcase({
             tagline stay legible. */}
         {gradient ? <div className="absolute inset-0 bg-cream/45" aria-hidden="true" /> : null}
         <div className="relative mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
-          <div className="flex flex-col items-center gap-6 text-center lg:flex-row lg:items-center lg:gap-10 lg:text-left">
-            {heroImageUrl ? (
-              <div className="h-28 w-28 shrink-0 overflow-hidden rounded-full ring-4 ring-white shadow-polaroid sm:h-36 sm:w-36">
-                <Image src={heroImageUrl} alt="" width={160} height={160} className="h-full w-full object-cover" />
-              </div>
-            ) : (
-              <Doodle src="sun.png" size={72} className="animate-drift hidden lg:block" />
-            )}
-            <div>
+          {/* Text first so the headline shares the left edge with the first
+              card in the grid below; the category portrait is a right-side
+              accent instead of an indent. */}
+          <div className="flex flex-col items-center gap-6 text-center lg:flex-row lg:items-center lg:justify-between lg:gap-10 lg:text-left">
+            <div className="min-w-0">
               {backHref ? (
                 <Link
                   href={backHref}
@@ -89,6 +85,13 @@ export async function CategoryShowcase({
                 </div>
               ) : null}
             </div>
+            {heroImageUrl ? (
+              <div className="order-first h-28 w-28 shrink-0 overflow-hidden rounded-full ring-4 ring-white shadow-polaroid sm:h-36 sm:w-36 lg:order-none">
+                <Image src={heroImageUrl} alt="" width={160} height={160} className="h-full w-full object-cover" />
+              </div>
+            ) : (
+              <Doodle src="sun.png" size={72} className="animate-drift hidden lg:block" />
+            )}
           </div>
         </div>
       </section>
