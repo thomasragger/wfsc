@@ -172,12 +172,13 @@ const HERO_DOODLES = [
 
 export default async function HomePage() {
   const region = await detectRegion();
-  const [inspiration, samples, places, t, tCard] = await Promise.all([
+  const [inspiration, samples, places, t, tCard, tSamples] = await Promise.all([
     loadInspiration(),
     fetchSamples(),
     loadAudiencePage("places", region),
     getTranslations("home"),
     getTranslations("categoryShowcase"),
+    getTranslations("samples"),
   ]);
   const placeTemplates = places?.templates ?? [];
   const axes = t.raw("axes") as { title: string; body: string; cta: string }[];
@@ -498,31 +499,21 @@ export default async function HomePage() {
                 const art = categoryArt(s.categoryId ?? "kids", s.categoryName ?? "Kids");
                 const clone = i >= samples.length;
                 return (
-                  <Link
+                  <div
                     key={`${s.token}-${i}`}
-                    href={`/samples/${encodeURIComponent(s.token)}`}
-                    draggable={false}
                     aria-hidden={clone}
-                    tabIndex={clone ? -1 : undefined}
-                    className="group mr-7 flex w-40 shrink-0 flex-col sm:mr-9 sm:w-48"
+                    inert={clone}
+                    className="mr-6 w-52 shrink-0 sm:mr-8 sm:w-56"
                   >
-                    <BookTileVisual
+                    <ProductCard
+                      href={`/samples/${encodeURIComponent(s.token)}`}
                       image={s.mockupImageUrl ?? s.coverImageUrl ?? `/categories/${art.photo}.jpg`}
-                      alt={s.title ?? t("sampleFallbackTitle")}
-                      aspectClassName="aspect-square"
-                      className="shadow-polaroid transition-transform duration-300 group-hover:-translate-y-1.5"
+                      title={s.title ?? t("sampleFallbackTitle")}
+                      subtitle={s.templateTagline}
+                      tag={s.categoryName}
+                      ctaLabel={tSamples("cardCta")}
                     />
-                    <div className="px-1 pt-4 text-center">
-                      <p className="line-clamp-2 font-display text-sm font-extrabold leading-snug text-ink transition-colors group-hover:text-coral">
-                        {s.title ?? t("sampleFallbackTitle")}
-                      </p>
-                      {s.categoryName ? (
-                        <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-coral/70">
-                          {s.categoryName}
-                        </p>
-                      ) : null}
-                    </div>
-                  </Link>
+                  </div>
                 );
               })}
             </div>
