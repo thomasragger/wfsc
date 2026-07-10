@@ -51,7 +51,7 @@ export function SampleViewer({
   return (
     // Fixed-size columns centered as a pair: the cover column is exactly as
     // wide as the cover, so the gap to the CTA card is the gap, not dead space.
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,34rem)_20rem] lg:justify-center lg:gap-8">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,34rem)_20rem] lg:items-start lg:justify-center lg:gap-8">
       {/* Left — one shared content width so the cover and the cast cards
           align edge-to-edge. */}
       <div className="mx-auto w-full max-w-[min(34rem,70vh)] min-w-0 lg:mx-0">

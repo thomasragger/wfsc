@@ -264,7 +264,7 @@ export function Flipbook({
     <div
       className={
         fullscreen
-          ? "fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-ink/90 p-4 backdrop-blur-sm sm:p-8"
+          ? "fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-cream/95 p-4 backdrop-blur-sm sm:p-8"
           : "flex flex-col items-center gap-4"
       }
       ref={rootRef}
@@ -286,6 +286,20 @@ export function Flipbook({
       {/* React hoists this to <head>; loads the pairing's Google fonts. */}
       <link rel="stylesheet" href={fontStylesheetUrl(pairing)} />
 
+      {/* Fullscreen close lives at the overlay's own top-right corner. */}
+      {fullscreen ? (
+        <button
+          type="button"
+          aria-label={t("closeFullscreen")}
+          onClick={exitFullscreen}
+          className="absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-fuzzy transition hover:bg-marigold sm:right-6 sm:top-6"
+        >
+          <svg viewBox="0 0 20 20" className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <path d="M5 5l10 10M15 5L5 15" />
+          </svg>
+        </button>
+      ) : null}
+
       {/* Width is viewport-height-aware: a 2:1 spread at min(78rem, 150vh)
           never exceeds ~75vh tall, so wide screens get a genuinely big book
           without pushing the pager off-screen. */}
@@ -294,22 +308,18 @@ export function Flipbook({
           fullscreen ? "max-w-[min(96vw,170vh)]" : "max-w-[min(78rem,150vh)]"
         }`}
       >
-        <button
-          type="button"
-          aria-label={fullscreen ? t("closeFullscreen") : t("viewLarger")}
-          onClick={() => (fullscreen ? exitFullscreen() : setFullscreenState(true))}
-          className="absolute -top-4 right-0 z-20 flex h-9 w-9 -translate-y-full items-center justify-center rounded-full bg-white text-ink shadow-fuzzy transition hover:bg-marigold"
-        >
-          {fullscreen ? (
-            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <path d="M5 5l10 10M15 5L5 15" />
-            </svg>
-          ) : (
+        {!fullscreen ? (
+          <button
+            type="button"
+            aria-label={t("viewLarger")}
+            onClick={() => setFullscreenState(true)}
+            className="absolute -top-4 right-0 z-20 flex h-9 w-9 -translate-y-full items-center justify-center rounded-full bg-white text-ink shadow-fuzzy transition hover:bg-marigold"
+          >
             <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 3h5v5M8 17H3v-5M17 3l-6 6M3 17l6-6" />
             </svg>
-          )}
-        </button>
+          </button>
+        ) : null}
         <div
           className="relative aspect-2/1 touch-pan-y select-none"
           onPointerDown={onPointerDown}
@@ -357,7 +367,7 @@ export function Flipbook({
 
       {/* Dot nav */}
       <div className="flex items-center gap-3">
-        <p className={`text-xs font-semibold ${fullscreen ? "text-cream/80" : "text-ink-soft"}`}>
+        <p className="text-xs font-semibold text-ink-soft">
           {pageLabel(pages[clamped], t)}
         </p>
         <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label={t("pages")}>
@@ -370,11 +380,7 @@ export function Flipbook({
               aria-label={pageLabel(p, t)}
               onClick={() => onIndexChange(i)}
               className={`h-2.5 rounded-full transition-all ${
-                i === clamped
-                  ? "w-6 bg-coral"
-                  : fullscreen
-                    ? "w-2.5 bg-white/30 hover:bg-white/50"
-                    : "w-2.5 bg-ink/15 hover:bg-ink/30"
+                i === clamped ? "w-6 bg-coral" : "w-2.5 bg-ink/15 hover:bg-ink/30"
               }`}
             />
           ))}
