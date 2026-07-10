@@ -5,7 +5,10 @@ cap) already exist; this spec covers the per-client limits O5 implements.
 
 ## Infrastructure
 
-- Upstash Redis (`@upstash/ratelimit` + `@upstash/redis`), sliding window.
+- Postgres-backed (decision 2026-07-10: no Upstash, keep the service count
+  down): `rate_limits` table + atomic `rate_limit_hit` RPC, fixed window
+  (migration `0013_rate_limits.sql`). Adequate at our request rates; revisit
+  Redis only if abuse ever makes DB load visible.
 - Enforce in each route handler (not middleware) so limits can key on
   body/email as well as IP. IP from `x-forwarded-for` first hop; treat
   missing IP as one shared bucket, never as unlimited.

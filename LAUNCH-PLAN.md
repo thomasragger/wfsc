@@ -29,7 +29,7 @@ These block specific workstreams; everything else can start immediately.
 | D2 | Launch market: DACH-first (German is launch-blocking) vs US-first English (German is fast-follow). Current code defaults region to `dach`. | Scope of O7 |
 | D3 | Photo/data retention window (suggestion: source photos deleted 30 days after delivery; memory text retained only while book exists) | F1 |
 | D4 | Board book (€39): fix properly or cut from launch. DB enum, env var, and checkout mapping are all broken for it today. | F2 |
-| D5 | Create accounts: PostHog + Sentry (O3), Upstash Redis + Cloudflare Turnstile (O5), verify Resend domain, confirm production domain for `STUDIO_URL` | O3, O5, F1 |
+| D5 | ~~Create accounts~~ DONE 2026-07-10 except Turnstile: PostHog + Sentry + Resend live; Upstash DROPPED (rate limiting is Postgres-backed since migration 0013, no account needed); Cloudflare Turnstile DEFERRED (code is merged and dormant; add keys only if abuse appears — the daily budget cap bounds worst case) | — |
 | D6 | Preview spend ceiling: max € per day on free preview generation before new previews queue/pause (suggestion: start at €50/day) | F3 |
 
 ---
@@ -232,7 +232,8 @@ required var.
 ### O5 — Rate limiting and abuse control — `launch/o5-ratelimit` (after F3 spec)
 
 Implements F3's spec. Baseline:
-1. Upstash-based limits: `POST /api/books` 3/hour/IP + 5/day/email; `POST /api/uploads`
+1. Rate limits (Postgres-backed since 2026-07-10, `rate_limit_hit` RPC — NOT Upstash):
+   `POST /api/books` 3/hour/IP + 5/day/email; `POST /api/uploads`
    30/hour/IP; regenerate endpoints 10/day/book. Friendly 429 JSON the wizard surfaces nicely.
 2. Cloudflare Turnstile on the wizard finish step, verified server-side in `books/route.ts`.
 3. Upload hardening: verify magic bytes not just MIME, cap pixel dimensions, strip EXIF
