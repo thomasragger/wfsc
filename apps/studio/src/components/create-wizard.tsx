@@ -632,10 +632,10 @@ export function CreateWizard() {
           {error ? <Alert className="mt-5">{error}</Alert> : null}
         </Card>
 
-        {/* Step navigation: sticky at the viewport bottom so Continue is
-            never hidden below the fold, whatever the step's height. */}
-        <div className="sticky bottom-0 z-30 -mx-4 mt-4 border-t border-ink/10 bg-cream/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
-          <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3">
+        {/* Step navigation: fixed full-width bar at the viewport bottom so
+            Continue is never hidden, whatever the step's height. */}
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-cream/95 px-4 py-3 backdrop-blur sm:px-6 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
             {step > 0 ? (
               <Button variant="ghost" onClick={() => goTo(step - 1)}>
                 {t("back")}
