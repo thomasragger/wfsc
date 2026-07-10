@@ -4,6 +4,11 @@ import { z } from "zod";
 import { inngest } from "@/inngest/client";
 import { fetchBookBundle } from "@/lib/books";
 import { regenCountForBook } from "@/lib/generation-jobs";
+import {
+  RATE_LIMIT_COPY,
+  checkRateLimit,
+  rateLimitResponse,
+} from "@/lib/rate-limit";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -21,6 +26,13 @@ const RegenerateSchema = z.object({
 export async function POST(request: Request, { params }: Params) {
   try {
     const { token, id } = await params;
+
+    // Short-window per-book rate limit (complements the lifetime cap below).
+    const dailyLimit = await checkRateLimit("regenerate-book", token);
+    if (!dailyLimit.ok) {
+      return rateLimitResponse(RATE_LIMIT_COPY.regenerate, dailyLimit.retryAfter);
+    }
+
     const parsed = RegenerateSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json(
