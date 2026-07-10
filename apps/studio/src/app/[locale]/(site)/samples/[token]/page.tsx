@@ -82,24 +82,28 @@ export default async function SampleBookPage({
           url: `/samples/${book.access_token}`,
         })}
       />
-      <div className="mb-6">
-        <ButtonLink href="/samples" variant="ghost" size="sm">
-          <IconArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-          {t("allSamples")}
-        </ButtonLink>
-      </div>
-      <header className="mb-8">
-        <h1 className="font-display text-3xl font-bold text-ink sm:text-4xl">
-          {payload.title ?? t("detailFallbackTitle")}
-        </h1>
-        {payload.style ? (
-          <p className="mt-1 text-sm text-ink-soft">
-            {t("illustratedIn", { style: payload.style.name })}
-          </p>
-        ) : null}
-      </header>
+      {/* Everything shares the width of the cover+rail pair (34 + 2 + 20rem),
+          so the back button, headline, cover, and cards align on one edge. */}
+      <div className="mx-auto w-full lg:max-w-[56rem]">
+        <div className="mb-6">
+          <ButtonLink href="/samples" variant="ghost" size="sm">
+            <IconArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+            {t("allSamples")}
+          </ButtonLink>
+        </div>
+        <header className="mb-8">
+          <h1 className="font-display text-3xl font-bold text-ink sm:text-4xl">
+            {payload.title ?? t("detailFallbackTitle")}
+          </h1>
+          {payload.style ? (
+            <p className="mt-1 text-sm text-ink-soft">
+              {t("illustratedIn", { style: payload.style.name })}
+            </p>
+          ) : null}
+        </header>
 
-      <SampleViewer book={payload} suggestedTemplateId={book.template_id} />
+        <SampleViewer book={payload} suggestedTemplateId={book.template_id} />
+      </div>
     </PageTransition>
   );
 }

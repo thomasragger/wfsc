@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { createTranslator, useTranslations } from "next-intl";
 
@@ -259,11 +260,11 @@ export function Flipbook({
     return <SpreadCanvas spread={p.spread} bodyFont={bodyFont} displayFont={displayFont} t={t} />;
   }
 
-  return (
+  const root = (
     <div
       className={
         fullscreen
-          ? "fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-ink/90 p-4 backdrop-blur-sm sm:p-8"
+          ? "fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-ink/90 p-4 backdrop-blur-sm sm:p-8"
           : "flex flex-col items-center gap-4"
       }
       ref={rootRef}
@@ -381,6 +382,14 @@ export function Flipbook({
       </div>
     </div>
   );
+
+  // Ancestors with transforms (page transitions) re-anchor position:fixed, so
+  // the fullscreen overlay must escape to <body> via a portal to truly cover
+  // the viewport. Only ever true client-side (user interaction), so document
+  // is always available here.
+  return fullscreen && typeof document !== "undefined"
+    ? createPortal(root, document.body)
+    : root;
 }
 
 /**
