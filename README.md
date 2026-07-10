@@ -22,7 +22,17 @@ pnpm dev                   # studio on :3000
 npx inngest-cli@latest dev # local Inngest dev server
 ```
 
-Database: apply `supabase/migrations/` then `supabase/seed.sql` to your Supabase project (`supabase db push` or SQL editor).
+Database: apply `supabase/migrations/` then `supabase/seed.sql` to your Supabase project (`supabase db push` or SQL editor). The seed can also be applied with `pnpm wfsc-admin seed` (needs `SUPABASE_DB_URL`).
+
+### Content ops
+
+All content-ops tasks (seeding, template expansion, cover imagery, sample books, Shopify/Lulu setup, catalog translation) run through one CLI:
+
+```bash
+pnpm wfsc-admin --help
+```
+
+The full workflow (new template to imagery to samples to Shopify sync to translate) is documented in `docs/content-ops.md`.
 
 ### Pipeline CLI harness
 

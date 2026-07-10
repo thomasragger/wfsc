@@ -7,20 +7,10 @@ settings:
 importers:
 
   .:
-    dependencies:
-      '@anthropic-ai/sdk':
-        specifier: ^0.60.0
-        version: 0.60.0
     devDependencies:
       '@shopify/cli':
         specifier: ^4.4.0
         version: 4.4.0
-      '@supabase/supabase-js':
-        specifier: ^2.110.1
-        version: 2.110.1
-      replicate:
-        specifier: ^1.4.0
-        version: 1.4.0
 
   apps/shopify-app: {}
 
@@ -84,6 +74,28 @@ importers:
       tailwindcss:
         specifier: ^4
         version: 4.3.2
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
+  packages/admin-cli:
+    dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.60.0
+        version: 0.60.0
+      '@supabase/supabase-js':
+        specifier: ^2.110.1
+        version: 2.110.1
+      replicate:
+        specifier: ^1.4.0
+        version: 1.4.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22
+        version: 22.20.0
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.0
       typescript:
         specifier: ^5
         version: 5.9.3

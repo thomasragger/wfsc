@@ -1,0 +1,26 @@
+{
+  "name": "@wfsc/admin-cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "wfsc-admin": "bin/wfsc-admin.mjs"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "wfsc-admin": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0",
+    "@supabase/supabase-js": "^2.110.1",
+    "replicate": "^1.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "tsx": "^4.19.2",
+    "typescript": "^5"
+  }
+}

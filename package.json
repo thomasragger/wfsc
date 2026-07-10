@@ -9,17 +9,13 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
-    "generate-book": "pnpm --filter @wfsc/pipeline generate-book"
+    "generate-book": "pnpm --filter @wfsc/pipeline generate-book",
+    "wfsc-admin": "pnpm --filter @wfsc/admin-cli run wfsc-admin"
   },
   "engines": {
     "node": ">=22"
   },
   "devDependencies": {
-    "@shopify/cli": "^4.4.0",
-    "@supabase/supabase-js": "^2.110.1",
-    "replicate": "^1.4.0"
-  },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.60.0"
+    "@shopify/cli": "^4.4.0"
   }
 }
