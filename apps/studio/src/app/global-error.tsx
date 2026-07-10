@@ -67,6 +67,9 @@ export default function GlobalError({
             >
               Refresh
             </button>
+            {/* Plain <a> on purpose: global-error replaces the crashed root
+                layout, so next/link's router context can't be relied on. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/" style={{ ...buttonBase, background: "#ffffff", color: "#761e0b" }}>
               Back home
             </a>

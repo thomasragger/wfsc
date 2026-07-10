@@ -5,6 +5,8 @@ import posthog from "posthog-js";
 import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react";
 import { Suspense, useEffect } from "react";
 
+import { redactBookTokens } from "@/lib/redact";
+
 /**
  * PostHog analytics, EU host, cookieless.
  *
@@ -37,8 +39,9 @@ function PageviewTracker() {
   useEffect(() => {
     if (!posthogClient || !pathname) return;
     const query = searchParams?.toString();
+    // Book URLs carry the access token (a bearer credential): redact it.
     posthogClient.capture("$pageview", {
-      $current_url: window.origin + pathname + (query ? `?${query}` : ""),
+      $current_url: window.origin + redactBookTokens(pathname) + (query ? `?${query}` : ""),
     });
   }, [posthogClient, pathname, searchParams]);
 

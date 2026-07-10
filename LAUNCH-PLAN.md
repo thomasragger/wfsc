@@ -130,23 +130,23 @@ Acceptance: `/de` renders the migrated surfaces in German; a test book generated
 `locale=de` produces a German story and PDF with correct diacritics; en fallback works for
 untranslated catalog fields.
 
-### F5 — Conclusive review and launch sign-off — `launch/f5-review` (LAST)
+### F5 — Launch-readiness code review — `launch/f5-review` (LAST)
 
-Run in a FRESH Fable session after all workstreams merge, so nothing is reviewed by the
-context that wrote it.
+A thorough code review of our own codebase before going live, done by fresh reviewers so
+nothing is judged by the context that wrote it. This is standard pre-launch QA of the
+launch delta (`c369b20..HEAD`).
 
-1. Re-run the three-lens audit from 2026-07-10 (site/copy, backend/commerce, pipeline/content-ops)
-   with fresh subagents; diff findings against this plan.
-2. `/security-review` on the full branch delta; `/code-review` at high effort on the riskiest
-   merges (F1, F2).
-3. End-to-end dress rehearsal: real wizard run with real photos → preview email → Shopify TEST
-   order (incl. a two-book cart) → full generation → review/edit → approve → Lulu SANDBOX print
-   job → simulated SHIPPED webhook → Shopify fulfillment. Then the GDPR walkthrough: request
-   deletion, verify storage + DB are empty.
-4. Failure drills: kill generation mid-book (expect terminal state + email), replay both
-   webhooks, submit checkout with invalid variant, hit rate limits.
-5. Output: `LAUNCH-REVIEW.md` with go/no-go per Phase-0 decision, residual risks, and a day-one
-   ops runbook (where alerts land, how to retry a stuck book, how to refund).
+1. Fresh read-only reviewers over three areas: (a) order lifecycle + generation pipeline
+   correctness, (b) API routes + privacy configuration (token checks, private buckets,
+   rate limits, GDPR deletion path), (c) frontend/i18n/SEO/legal-page completeness.
+2. Verify the tree: typecheck, lint, production build all green.
+3. Smoke-test the deployed site: key routes, sitemap/robots, legal pages, 404 handling.
+4. Manual end-to-end walkthrough checklist for Thomas: create a real book with the wizard,
+   place a Shopify TEST-mode order (including a two-book cart), review + approve, confirm the
+   Lulu SANDBOX print job, then delete the book and confirm its data is gone.
+5. Output: `LAUNCH-REVIEW.md` — findings ranked by severity, what was fixed, what remains,
+   go/no-go per Phase-0 decision, and a day-one ops runbook (where alerts land, how to retry
+   a stuck book, how to process a refund).
 
 ---
 
@@ -309,6 +309,34 @@ well-written. Ops alerts (`lib/ops-alert.ts`) stay plain.
 Acceptance: four redesigned emails delivered to the test inbox, rendering
 correctly with images on and off; strings extractable for O7; no template
 regressions in the three Inngest send sites + onFailure.
+
+### O9 — German localization: post-wizard surfaces — `launch/o9-german-studio`
+
+Found by the F5 review: O7 covered marketing/wizard/emails, but the surfaces a
+customer sees AFTER intake are hardcoded English. Extract to the existing
+next-intl catalogs (pattern: any localized component, e.g. book-hub.tsx) and
+write natural du-Form German for:
+
+1. `components/editor.tsx` — the whole book-editing surface (labels, buttons,
+   placeholders, aria-labels, the redraw dialog).
+2. `components/status-views.tsx` — generation progress (MICRO_COPY array,
+   phase lines, timeline steps, post-approval statuses).
+3. `components/flipbook.tsx` — page labels (feed aria-labels), cover fallbacks,
+   dedication "Love, {name}" (renders inside the book page: use the book's
+   locale, not the UI locale), and the locked-page paywall teaser
+   ("{n} more pages are waiting" / "Unlock your full book") — conversion copy,
+   translate with care.
+4. `app/(studio)/layout.tsx` — studio chrome + footer labels.
+5. `app/(site)/layout.tsx` announcement bar; `app/(site)/books/page.tsx`
+   hardcoded prop overrides; `app/layout.tsx` skip-link text;
+   `(studio)/create/page.tsx` + `books/loading.tsx` metadata/aria strings.
+6. Root `metadata` (title/description/OG) via a locale-aware `generateMetadata`
+   so DACH search snippets are German.
+7. Email mascot alt texts (`lib/email.ts`).
+
+Acceptance: with the `de` locale, zero English strings anywhere in the
+create → wait → review → edit → approve → read journey; `pnpm lint` and en/de
+key parity clean; paywall/dedication strings reviewed by Thomas.
 
 ---
 

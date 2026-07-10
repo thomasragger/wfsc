@@ -340,6 +340,29 @@ export function bookIdsFromOrderPayload(order: {
   return ids;
 }
 
+/**
+ * The order's financial status ('REFUNDED', 'PARTIALLY_REFUNDED', 'PAID', …).
+ * Used to distinguish a full refund (cancel the book + print job) from a
+ * partial goodwill refund (keep fulfilling).
+ */
+export async function getOrderFinancialStatus(orderId: number): Promise<string | null> {
+  interface OrderStatusResult {
+    order: { displayFinancialStatus: string | null } | null;
+  }
+  const data = await graphql<OrderStatusResult>(
+    'admin',
+    /* GraphQL */ `
+      query OrderFinancialStatus($id: ID!) {
+        order(id: $id) {
+          displayFinancialStatus
+        }
+      }
+    `,
+    { id: `gid://shopify/Order/${orderId}` },
+  );
+  return data.order?.displayFinancialStatus ?? null;
+}
+
 /** Create a fulfillment with tracking for the order's open fulfillment order. */
 export async function fulfillOrderWithTracking(opts: {
   orderId: number;

@@ -45,7 +45,7 @@ export default function Error({
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-20 text-center sm:py-28">
+      <main id="main-content" className="flex flex-1 flex-col items-center justify-center px-4 py-20 text-center sm:py-28">
         <Image
           src="/mascot/part1.png"
           alt=""

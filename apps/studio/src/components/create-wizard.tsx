@@ -245,9 +245,12 @@ export function CreateWizard() {
   }, []);
 
   // On load (per entry point): surface a resumable draft, otherwise unlock saving.
+  // localStorage is client-only, so this must run post-mount (a lazy initializer
+  // would desync server and client HTML); the synchronous setState is intentional.
   useEffect(() => {
     const draft = readDraft(storageKey);
     if (draft && draftIsResumable(draft)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPendingDraft(draft);
       setDraftHydrated(false);
     } else {

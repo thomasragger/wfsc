@@ -19,6 +19,10 @@ export const runtime = "nodejs";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 const MAX_DIMENSION = 8000; // cap pixel width/height to bound model input
+// Refuse to DECODE anything larger than this (a 10 MB PNG can decompress to
+// hundreds of MB of raw pixels — a memory-exhaustion lever on serverless).
+// 80 MP comfortably covers modern phone cameras (48-50 MP).
+const MAX_INPUT_PIXELS = 80_000_000;
 
 /**
  * Real image formats we accept, verified by decoding the bytes (not by the
@@ -81,7 +85,14 @@ export async function POST(request: Request) {
     // dimensions. If sharp cannot decode it, it is not an image we can trust.
     let format: string | undefined;
     try {
-      const meta = await sharp(inputBytes).metadata();
+      // metadata() reads the header only (no full decode) — safe on bombs.
+      const meta = await sharp(inputBytes, { limitInputPixels: MAX_INPUT_PIXELS }).metadata();
+      if ((meta.width ?? 0) * (meta.height ?? 0) > MAX_INPUT_PIXELS) {
+        return NextResponse.json(
+          { error: "That image has too many pixels. Please upload a regular photo." },
+          { status: 400 },
+        );
+      }
       format = meta.format;
     } catch {
       return NextResponse.json(
@@ -103,7 +114,7 @@ export async function POST(request: Request) {
       // caps dimensions; the encode step re-writes the file without metadata
       // (sharp drops all metadata by default).
       outputBytes = await encode(
-        sharp(inputBytes)
+        sharp(inputBytes, { limitInputPixels: MAX_INPUT_PIXELS })
           .rotate()
           .resize({
             width: MAX_DIMENSION,

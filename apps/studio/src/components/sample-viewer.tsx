@@ -34,7 +34,7 @@ export function SampleViewer({
         .filter((s) => s.kind !== "cover" && s.kind !== "greeting")
         .map((spread) => ({ kind: "spread" as const, spread })),
     ];
-  }, [book]);
+  }, [book, t]);
 
   const createHref = suggestedTemplateId
     ? `/create?template=${encodeURIComponent(suggestedTemplateId)}`

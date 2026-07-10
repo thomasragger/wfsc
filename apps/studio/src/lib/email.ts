@@ -121,6 +121,11 @@ function pickCopy<T>(map: Record<string, T>, locale: string | null | undefined):
   return (locale ? map[locale] : undefined) ?? map.en;
 }
 
+/** Localized fallback for a book without a title yet. */
+function fallbackTitle(locale: string | null | undefined): string {
+  return locale === 'de' ? 'Dein Bilderbuch' : 'Your storybook';
+}
+
 // --- Shared layout ------------------------------------------------------------
 
 interface LayoutParts {
@@ -137,6 +142,8 @@ interface LayoutParts {
   privacyNote?: string;
   /** Optional muted contact note. */
   contactNote?: string;
+  /** Document language for the html tag ('en' | 'de'). */
+  lang?: string;
   /** Small brand footer line. */
   footer: string;
 }
@@ -178,7 +185,7 @@ function emailLayout(parts: LayoutParts): string {
     : '';
 
   return `<!doctype html>
-<html lang="en">
+<html lang="${parts.lang === 'de' ? 'de' : 'en'}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -396,12 +403,13 @@ export const generationDelayedCopy: Record<string, NoticeEmailCopy> = {
 /** "Your preview is ready": sent when the free preview finishes generating. */
 export function previewReadyEmail(book: EmailBook & { access_token: string }): RenderedEmail {
   const copy = pickCopy(previewReadyCopy, book.locale);
-  const title = book.title ?? 'Your storybook';
+  const title = book.title ?? fallbackTitle(book.locale);
   const link = `${studioUrl()}/book/${book.access_token}`;
   const cta = { label: copy.cta, href: link };
   return {
     subject: fillText(copy.subject, title),
     html: emailLayout({
+      lang: book.locale ?? 'en',
       preheader: fillText(copy.preheader, title),
       mascot: { file: 'story.png', alt: 'Two Warm Fuzzy Story Club friends sharing a storybook' },
       heading: copy.heading,
@@ -423,12 +431,13 @@ export function previewReadyEmail(book: EmailBook & { access_token: string }): R
 /** "Your book is ready to review": sent when the full book finishes generating. */
 export function reviewReadyEmail(book: EmailBook & { access_token: string }): RenderedEmail {
   const copy = pickCopy(reviewReadyCopy, book.locale);
-  const title = book.title ?? 'Your storybook';
+  const title = book.title ?? fallbackTitle(book.locale);
   const link = `${studioUrl()}/book/${book.access_token}`;
   const cta = { label: copy.cta, href: link };
   return {
     subject: fillText(copy.subject, title),
     html: emailLayout({
+      lang: book.locale ?? 'en',
       preheader: fillText(copy.preheader, title),
       mascot: { file: 'family.png', alt: 'A happy family with their finished storybook' },
       heading: copy.heading,
@@ -450,10 +459,11 @@ export function reviewReadyEmail(book: EmailBook & { access_token: string }): Re
 /** "Your book went to print": sent after the print job is submitted. */
 export function printSubmittedEmail(book: EmailBook): RenderedEmail {
   const copy = pickCopy(printSubmittedCopy, book.locale);
-  const title = book.title ?? 'Your storybook';
+  const title = book.title ?? fallbackTitle(book.locale);
   return {
     subject: fillText(copy.subject, title),
     html: emailLayout({
+      lang: book.locale ?? 'en',
       preheader: fillText(copy.preheader, title),
       mascot: { file: 'travel.png', alt: 'A little friend setting off on a journey' },
       heading: copy.heading,
@@ -472,10 +482,11 @@ export function printSubmittedEmail(book: EmailBook): RenderedEmail {
  *  after payment and ops has to step in. Honest, no fake ETA. */
 export function generationDelayedEmail(book: EmailBook): RenderedEmail {
   const copy = pickCopy(generationDelayedCopy, book.locale);
-  const title = book.title ?? 'Your storybook';
+  const title = book.title ?? fallbackTitle(book.locale);
   return {
     subject: fillText(copy.subject, title),
     html: emailLayout({
+      lang: book.locale ?? 'en',
       preheader: fillText(copy.preheader, title),
       mascot: { file: 'story.png', alt: 'A Warm Fuzzy Story Club friend at work on a book' },
       heading: copy.heading,

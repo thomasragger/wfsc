@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { getCustomerToken } from "@/lib/customer-session";
 import { getCustomerProfile, isCustomerAccountsConfigured, type CustomerProfile } from "@/lib/shopify-customer";
+import { signUrls } from "@/lib/storage";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -31,10 +32,14 @@ async function savedBooksFor(email: string): Promise<SavedBook[]> {
       .eq("email", email)
       .eq("is_sample", false)
       .order("created_at", { ascending: false });
-    return (data ?? []).map((b) => ({
+    // Covers live in the private book-assets bucket: sign before rendering.
+    const images = await signUrls(
+      (data ?? []).map((b) => ((b.mockup_image_url ?? b.cover_image_url) ?? null) as string | null),
+    );
+    return (data ?? []).map((b, i) => ({
       token: b.access_token as string,
       title: (b.title ?? null) as string | null,
-      image: ((b.mockup_image_url ?? b.cover_image_url) ?? null) as string | null,
+      image: images[i],
       status: b.status as string,
     }));
   } catch {

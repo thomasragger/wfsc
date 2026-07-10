@@ -4,6 +4,12 @@ import { z } from "zod";
 import { captureServer } from "@/lib/analytics";
 import { fetchBookBundle } from "@/lib/books";
 import { variantForFormat } from "@/lib/cart";
+import {
+  RATE_LIMIT_COPY,
+  checkRateLimit,
+  getClientIp,
+  rateLimitResponse,
+} from "@/lib/rate-limit";
 import { createCheckout } from "@/lib/shopify";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -22,6 +28,12 @@ const CheckoutSchema = z.object({
 export async function POST(request: Request, { params }: Params) {
   try {
     const { token } = await params;
+
+    const limit = await checkRateLimit("checkout-ip", getClientIp(request));
+    if (!limit.ok) {
+      return rateLimitResponse(RATE_LIMIT_COPY.checkout, limit.retryAfter);
+    }
+
     const parsed = CheckoutSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ error: "Pick a book format" }, { status: 400 });

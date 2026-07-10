@@ -38,7 +38,7 @@ export default async function NotFound() {
     <>
       <SiteNav audience={audience} occasions={occasions} accountsEnabled={isCustomerAccountsConfigured()} />
 
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-20 text-center sm:py-28">
+      <main id="main-content" className="flex flex-1 flex-col items-center justify-center px-4 py-20 text-center sm:py-28">
         <Image
           src="/mascot/part3.png"
           alt=""

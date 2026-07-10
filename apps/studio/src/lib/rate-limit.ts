@@ -19,7 +19,14 @@ import { supabaseAdmin } from "@/lib/supabase";
  */
 
 /** The distinct limits from the spec: max hits per fixed window. */
-export type RateLimitKind = "books-ip" | "books-email" | "uploads-ip" | "regenerate-book";
+export type RateLimitKind =
+  | "books-ip"
+  | "books-email"
+  | "uploads-ip"
+  | "regenerate-book"
+  | "retry-book"
+  | "checkout-ip"
+  | "cart-ip";
 
 const LIMITS: Record<RateLimitKind, { windowSeconds: number; max: number }> = {
   // Each create triggers paid preview generation.
@@ -29,6 +36,11 @@ const LIMITS: Record<RateLimitKind, { windowSeconds: number; max: number }> = {
   "uploads-ip": { windowSeconds: 60 * 60, max: 30 },
   // Complements the lifetime WFSC_MAX_REGENS_PER_BOOK cap.
   "regenerate-book": { windowSeconds: 24 * 60 * 60, max: 10 },
+  // Each retry re-runs the paid preview pipeline.
+  "retry-book": { windowSeconds: 60 * 60, max: 5 },
+  // Shopify mutation cost.
+  "checkout-ip": { windowSeconds: 60 * 60, max: 20 },
+  "cart-ip": { windowSeconds: 60 * 60, max: 20 },
 };
 
 export interface RateLimitResult {
@@ -39,18 +51,22 @@ export interface RateLimitResult {
 }
 
 /**
- * Read the client IP from proxy headers the Vercel/Next way: the first hop in
- * `x-forwarded-for`, then `x-real-ip`. A missing IP collapses to one shared
- * bucket ("unknown"), never an unlimited pass (per spec).
+ * Read the client IP from proxy headers. Order matters for spoof resistance:
+ * `x-real-ip` is SET BY Vercel's edge (a client cannot forge it), whereas the
+ * leftmost `x-forwarded-for` entry is client-supplied (Vercel appends the real
+ * IP at the end, it does not strip attacker values). So: x-real-ip first, then
+ * the RIGHTMOST forwarded hop. A missing IP collapses to one shared bucket
+ * ("unknown"), never an unlimited pass (per spec).
  */
 export function getClientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    const first = forwarded.split(",")[0]?.trim();
-    if (first) return first;
-  }
   const real = request.headers.get("x-real-ip");
   if (real?.trim()) return real.trim();
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const hops = forwarded.split(",").map((h) => h.trim()).filter(Boolean);
+    const last = hops[hops.length - 1];
+    if (last) return last;
+  }
   return "unknown";
 }
 
@@ -77,8 +93,24 @@ export async function checkRateLimit(
     return { ok: row.allowed, retryAfter: row.allowed ? 0 : row.retry_after };
   } catch (err) {
     console.error(`[rate-limit] check failed for ${kind}, failing open`, err);
+    void alertLimiterBrokenOnce();
     return { ok: true, retryAfter: 0 };
   }
+}
+
+// A broken limiter fails open by design (a DB outage also breaks book
+// creation itself, so closing gains little) — but it must be VISIBLE, not
+// silent. One alert per instance per day.
+let limiterAlertedOn: string | null = null;
+async function alertLimiterBrokenOnce(): Promise<void> {
+  const today = new Date().toISOString().slice(0, 10);
+  if (limiterAlertedOn === today) return;
+  limiterAlertedOn = today;
+  const { opsAlert } = await import("@/lib/ops-alert");
+  await opsAlert(
+    "Rate limiter failing open",
+    "rate_limit_hit RPC calls are erroring; all rate limits are currently disabled. Check the rate_limits table / migration 0013 and database health.",
+  );
 }
 
 /** Friendly, customer-facing 429 copy per route (org rule: no em dashes). */
@@ -87,6 +119,8 @@ export const RATE_LIMIT_COPY = {
     "Whoa, that's a lot of storybooks! Please wait a little while before starting another one.",
   uploads: "Too many photos too quickly, give it a minute and try again.",
   regenerate: "You've redrawn quite a few pages just now. Give it a minute.",
+  retry: "The illustrators are already on it. Give it a few minutes before restarting again.",
+  checkout: "Too many checkout attempts right now. Please wait a moment and try again.",
 } as const;
 
 /**

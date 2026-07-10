@@ -623,10 +623,39 @@ export const submitToPrint = inngest.createFunction(
       return result;
     });
 
-    const printJob = await step.run('submit-lulu', async () => {
-      // Lulu has no board-book SKU. Hold board orders for manual/alternate-printer
-      // fulfillment instead of silently printing them as something else.
-      if ((book.format ?? 'hardcover') === 'board') {
+    // The Lulu call is an EXTERNAL side effect and gets its OWN step: if it
+    // shared a step with the DB writes and a write failed, the step retry
+    // would call Lulu again and physically print (and ship) the book twice.
+    const isBoard = (book.format ?? 'hardcover') === 'board';
+    const luluJob = isBoard
+      ? null
+      : await step.run('submit-lulu-create', async () => {
+          const shippingAddress: LuluAddress = {
+            name: addr.name ?? `${addr.first_name ?? ''} ${addr.last_name ?? ''}`.trim(),
+            street1: addr.address1!,
+            street2: addr.address2 ?? undefined,
+            city: addr.city ?? '',
+            postcode: addr.zip ?? '',
+            country_code: addr.country_code!,
+            state_code: addr.province_code ?? undefined,
+            phone_number: addr.phone ?? undefined,
+            email: book.email ?? undefined,
+          };
+          return createPrintJob({
+            externalId: book.id,
+            format: (book.format ?? 'hardcover') as 'softcover' | 'hardcover',
+            pageCount: book.page_count,
+            title: book.title ?? 'Personalized Storybook',
+            interiorPdfUrl: pdfs.signedInteriorUrl,
+            coverPdfUrl: pdfs.signedCoverUrl,
+            shippingAddress,
+          });
+        });
+
+    const printJob = await step.run('record-print-job', async () => {
+      if (isBoard) {
+        // Lulu has no board-book SKU. Hold board orders for manual/alternate-
+        // printer fulfillment instead of silently printing them as something else.
         await db.from('print_jobs').insert({
           book_id: book.id,
           provider: 'manual',
@@ -637,35 +666,15 @@ export const submitToPrint = inngest.createFunction(
         await db.from('books').update({ status: 'submitted_to_print' }).eq('id', book.id);
         return { manual: true as const };
       }
-      const shippingAddress: LuluAddress = {
-        name: addr.name ?? `${addr.first_name ?? ''} ${addr.last_name ?? ''}`.trim(),
-        street1: addr.address1!,
-        street2: addr.address2 ?? undefined,
-        city: addr.city ?? '',
-        postcode: addr.zip ?? '',
-        country_code: addr.country_code!,
-        state_code: addr.province_code ?? undefined,
-        phone_number: addr.phone ?? undefined,
-        email: book.email ?? undefined,
-      };
-      const job = await createPrintJob({
-        externalId: book.id,
-        format: (book.format ?? 'hardcover') as 'softcover' | 'hardcover',
-        pageCount: book.page_count,
-        title: book.title ?? 'Personalized Storybook',
-        interiorPdfUrl: pdfs.signedInteriorUrl,
-        coverPdfUrl: pdfs.signedCoverUrl,
-        shippingAddress,
-      });
       await db.from('print_jobs').insert({
         book_id: book.id,
         provider: 'lulu',
-        provider_job_id: String(job.id),
-        status: job.status?.name ?? 'CREATED',
-        raw: job,
+        provider_job_id: String(luluJob!.id),
+        status: luluJob!.status?.name ?? 'CREATED',
+        raw: luluJob,
       });
       await db.from('books').update({ status: 'submitted_to_print' }).eq('id', book.id);
-      return { luluJobId: job.id };
+      return { luluJobId: luluJob!.id };
     });
 
     await step.run('send-print-email', async () => {

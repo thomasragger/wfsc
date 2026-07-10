@@ -5,7 +5,7 @@ import { captureServer } from '@/lib/analytics';
 import { bookIdsForEmail, deleteBookData } from '@/lib/deletion';
 import { cancelPrintJob } from '@/lib/lulu';
 import { opsAlert } from '@/lib/ops-alert';
-import { bookIdsFromOrderPayload, verifyWebhookHmac } from '@/lib/shopify';
+import { bookIdsFromOrderPayload, getOrderFinancialStatus, verifyWebhookHmac } from '@/lib/shopify';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
@@ -110,17 +110,25 @@ export async function POST(request: Request) {
       }
       if (!claimed || claimed.length === 0) continue; // already processed
 
+      const format = detectFormat(payload, bookId);
+
+      // Order linkage (email, order id, format) must persist REGARDLESS of the
+      // book's current status — generateFullBook and submitToPrint depend on
+      // it. Only the status transition itself is guarded against regressions.
       await db
         .from('books')
         .update({
-          status: 'purchased',
           email: payload.email ?? payload.contact_email ?? null,
           shopify_order_id: payload.id,
           shopify_order_number: String(payload.order_number ?? ''),
-          format: detectFormat(payload, bookId),
+          format,
         })
+        .eq('id', bookId);
+      await db
+        .from('books')
+        .update({ status: 'purchased' })
         .eq('id', bookId)
-        .in('status', ['preview_ready', 'draft']); // don't regress later states
+        .in('status', ['preview_ready', 'draft', 'preview_generating', 'preview_failed']);
 
       await inngest.send({
         name: 'book/purchased',
@@ -129,12 +137,29 @@ export async function POST(request: Request) {
 
       // Funnel: purchase completed (server-side, keyed on book id). Only the
       // book format is recorded, never customer/order PII.
-      await captureServer('purchase_completed', bookId, {
-        format: detectFormat(payload, bookId),
-      });
+      await captureServer('purchase_completed', bookId, { format });
     }
   } else if (topic === 'orders/cancelled' || topic === 'refunds/create') {
     const orderId = topic === 'refunds/create' ? payload.order_id : payload.id;
+
+    // A refund only cancels the book when the ORDER is fully refunded.
+    // Partial refunds (goodwill credits, shipping adjustments) are routine
+    // support actions and must never kill an in-production book.
+    if (topic === 'refunds/create') {
+      let financialStatus: string | null = null;
+      try {
+        financialStatus = await getOrderFinancialStatus(orderId);
+      } catch (err) {
+        console.error(`refunds/create: financial status lookup failed for ${orderId}`, err);
+      }
+      if (financialStatus !== 'REFUNDED') {
+        await opsAlert(
+          'Partial refund received (book NOT cancelled)',
+          `order=${orderId} financialStatus=${financialStatus ?? 'lookup failed'}\nNo automatic action taken. If this should cancel the book, cancel the order in Shopify or handle manually.`,
+        );
+        return NextResponse.json({ ok: true, partialRefund: true });
+      }
+    }
 
     // Books on this order: join table + legacy single-book column.
     const [{ data: claims }, { data: order }] = await Promise.all([

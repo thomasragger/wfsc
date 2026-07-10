@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { inngest } from "@/inngest/client";
 import { fetchBookBundle } from "@/lib/books";
+import { RATE_LIMIT_COPY, checkRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export const runtime = "nodejs";
@@ -16,6 +17,12 @@ type Params = { params: Promise<{ token: string }> };
 export async function POST(_request: Request, { params }: Params) {
   try {
     const { token } = await params;
+
+    // Each retry re-runs the paid preview pipeline: cap it per book.
+    const limit = await checkRateLimit("retry-book", token);
+    if (!limit.ok) {
+      return rateLimitResponse(RATE_LIMIT_COPY.retry, limit.retryAfter);
+    }
 
     const bundle = await fetchBookBundle(token);
     if (!bundle) {

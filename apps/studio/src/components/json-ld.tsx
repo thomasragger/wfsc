@@ -16,8 +16,11 @@ export function JsonLd({ data }: { data: JsonLdData }) {
   return (
     <script
       type="application/ld+json"
-      // Structured data is a trusted, server-built object, not user HTML.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      // JSON.stringify does not escape `<`, so a string value containing
+      // "</script>" would break out of this block. Escape it (< is valid
+      // JSON) so the component stays safe even if a field is ever fed
+      // customer-provided text like a book title.
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replaceAll("<", "\\u003c") }}
     />
   );
 }

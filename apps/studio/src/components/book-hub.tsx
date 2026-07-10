@@ -116,7 +116,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
       { kind: "title", title: book.title ?? t("defaultTitle"), styleName: book.style?.name ?? null },
       ...(dedication ? [{ kind: "dedication" as const, text: dedication, from: book.greetingFrom }] : []),
     ];
-  }, [book.greeting, book.greetingFrom, book.title, book.style, book.spreads]);
+  }, [book.greeting, book.greetingFrom, book.title, book.style, book.spreads, t]);
 
   const isPreview = book.status === "preview_ready";
 

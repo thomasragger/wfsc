@@ -1,4 +1,5 @@
 import { fetchBookBundle, type BookBundle } from "@/lib/books";
+import { signUrls } from "@/lib/storage";
 import { supabaseAdmin } from "@/lib/supabase";
 
 /**
@@ -63,13 +64,19 @@ export async function fetchSamples(): Promise<SampleSummary[]> {
       }
     }
 
-    return rows.map((r) => {
+    // Sample assets normally live in the public renders bucket (pass-through),
+    // but pipeline-generated covers land in private book-assets — sign so a
+    // sample never renders a 403 image.
+    const coverUrls = await signUrls(rows.map((r) => r.cover_image_url));
+    const mockupUrls = await signUrls(rows.map((r) => r.mockup_image_url));
+
+    return rows.map((r, i) => {
       const categoryId = r.template_id ? (templateToCategory.get(r.template_id) ?? null) : null;
       return {
         token: r.access_token,
         title: r.title,
-        coverImageUrl: r.cover_image_url,
-        mockupImageUrl: r.mockup_image_url,
+        coverImageUrl: coverUrls[i],
+        mockupImageUrl: mockupUrls[i],
         templateId: r.template_id,
         categoryId,
         categoryName: categoryId ? (categoryNames.get(categoryId) ?? null) : null,
