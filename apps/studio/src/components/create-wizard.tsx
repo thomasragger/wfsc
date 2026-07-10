@@ -20,6 +20,7 @@ import { PageTransition, StepTransition } from "@/components/ui/page-transition"
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { Skeleton, SkeletonGrid } from "@/components/ui/skeleton";
 import { StepProgress } from "@/components/ui/steps";
+import { BottomBar } from "@/components/ui/bottom-bar";
 import { Turnstile } from "@/components/ui/turnstile";
 import { PERSON_ROLES, type PersonRole } from "@/lib/book-payload";
 import {
@@ -633,9 +634,9 @@ export function CreateWizard() {
           {error ? <Alert className="mt-5">{error}</Alert> : null}
         </Card>
 
-        {/* Step navigation: fixed full-width bar at the viewport bottom so
-            Continue is never hidden, whatever the step's height. */}
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/10 bg-cream/95 px-4 py-3 backdrop-blur sm:px-6 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {/* Step navigation: portaled full-width bar pinned to the viewport
+            bottom so Continue is never hidden, whatever the step's height. */}
+        <BottomBar>
           <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
             {step > 0 ? (
               <Button variant="ghost" onClick={() => goTo(step - 1)}>
@@ -669,7 +670,7 @@ export function CreateWizard() {
               </Button>
             )}
           </div>
-        </div>
+        </BottomBar>
       </div>
     </PageTransition>
   );
@@ -751,17 +752,19 @@ function TemplateHero({
           {t("heroFreePreview")}
         </p>
 
-        {/* Mobile: fixed bottom action bar (safe-area aware) */}
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-cream/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden">
-          <div className="mx-auto flex w-full max-w-md items-center gap-2">
-            <Button variant="ghost" className="flex-1 whitespace-nowrap" onClick={onOwnMemory}>
-              {t("heroUseOwnMemory")}
-            </Button>
-            <Button className="flex-[1.3] whitespace-nowrap" onClick={onStart}>
-              {t("heroMakeThisBook")}
-            </Button>
-          </div>
-        </div>
+        {/* Mobile: pinned bottom action bar (portaled, safe-area aware) */}
+        <span className="lg:hidden">
+          <BottomBar>
+            <div className="mx-auto flex w-full max-w-md items-center gap-2">
+              <Button variant="ghost" className="flex-1 whitespace-nowrap" onClick={onOwnMemory}>
+                {t("heroUseOwnMemory")}
+              </Button>
+              <Button className="flex-[1.3] whitespace-nowrap" onClick={onStart}>
+                {t("heroMakeThisBook")}
+              </Button>
+            </div>
+          </BottomBar>
+        </span>
 
         {beats.length > 0 ? (
           <div className="mt-9">
