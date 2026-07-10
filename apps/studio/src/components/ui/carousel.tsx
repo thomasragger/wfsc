@@ -192,8 +192,11 @@ export function Carousel({
     };
   }, [wake]);
 
+  // direction: -1 = back (left arrow), 1 = forward (right arrow). Scrolling
+  // forward reveals later cards, which means translating the track further
+  // left, i.e. tx becomes MORE negative. Hence we subtract direction.
   function nudge(direction: 1 | -1) {
-    p.current.tx = Math.max(minX(), Math.min(0, p.current.tx + direction * visibleWidth() * 0.72));
+    p.current.tx = Math.max(minX(), Math.min(0, p.current.tx - direction * visibleWidth() * 0.72));
     wake();
   }
 
@@ -216,7 +219,15 @@ export function Carousel({
             : "-mx-6 px-6"
         } cursor-grab touch-pan-y select-none overflow-x-clip overflow-y-visible pb-10 pt-6`}
       >
-        <div ref={trackRef} className={`flex w-max ${itemGap}`} style={{ willChange: "transform" }}>
+        {/* fullBleed runs to the viewport's right edge with no wrap padding, so
+            the last card would rest flush against it. A trailing right pad on the
+            track adds to its scrollWidth, letting the rail scroll a little further
+            and leaving breathing room after the last card. */}
+        <div
+          ref={trackRef}
+          className={`flex w-max ${itemGap} ${fullBleed ? "pr-6 sm:pr-10" : ""}`.trim()}
+          style={{ willChange: "transform" }}
+        >
           {children}
         </div>
       </div>
