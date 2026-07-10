@@ -1,11 +1,12 @@
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
+import { Link } from "@/i18n/navigation";
 import { BookTile } from "@/components/ui/book-tile";
 import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { getCustomerToken } from "@/lib/customer-session";
+import { getCustomerRefreshToken, getCustomerToken } from "@/lib/customer-session";
 import { getCustomerProfile, isCustomerAccountsConfigured, type CustomerProfile } from "@/lib/shopify-customer";
 import { signUrls } from "@/lib/storage";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -50,12 +51,21 @@ async function savedBooksFor(email: string): Promise<SavedBook[]> {
 export default async function AccountPage() {
   const t = await getTranslations("account");
   const token = await getCustomerToken();
+
+  // Access tokens die in ~2h but the refresh cookie lives for 30 days: renew
+  // silently instead of showing the sign-in screen to a logged-in customer.
+  // Loop-safe: the refresh handler either sets a fresh access token (so this
+  // branch won't re-fire) or clears the refresh cookie on failure.
+  if (!token && (await getCustomerRefreshToken())) {
+    redirect("/account/refresh?next=/account");
+  }
+
   let profile: CustomerProfile | null = null;
   if (token) {
     try {
       profile = await getCustomerProfile(token);
     } catch {
-      profile = null; // token likely expired — show the signed-out state
+      profile = null; // token rejected — show the signed-out state
     }
   }
 
@@ -88,7 +98,11 @@ export default async function AccountPage() {
                     href={`/book/${encodeURIComponent(b.token)}`}
                     image={b.image}
                     title={b.title ?? t("bookFallbackTitle")}
-                    category={b.status === "preview_ready" ? t("previewReady") : b.status.replace(/_/g, " ")}
+                    category={
+                      b.status === "preview_ready"
+                        ? t("previewReady")
+                        : b.status.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase())
+                    }
                     size="md"
                     aspectClassName="aspect-square"
                   />

@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { Doodle } from "@/components/decor";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
@@ -74,9 +75,9 @@ export default async function ReturnsPage() {
         <Section title={t("secCancelTitle")}>
           <p>
             {t("cancelP1")}{" "}
-            <a href="/contact" className="font-semibold hover:text-coral">
+            <Link href="/contact" className="font-semibold hover:text-coral">
               {t("contactLink")}
-            </a>{" "}
+            </Link>{" "}
             {t("cancelP2")}
           </p>
         </Section>
@@ -92,9 +93,9 @@ export default async function ReturnsPage() {
               hello@warmfuzzystoryclub.com
             </a>{" "}
             {t("reachP2")}{" "}
-            <a href="/contact" className="font-semibold hover:text-coral">
+            <Link href="/contact" className="font-semibold hover:text-coral">
               {t("contactLink")}
-            </a>{" "}
+            </Link>{" "}
             {t("reachP3")}{" "}
             <Review>{t("reachReview")}</Review>
           </p>

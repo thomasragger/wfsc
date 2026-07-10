@@ -1,7 +1,7 @@
 import Image from "next/image";
-import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { Doodle } from "@/components/decor";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import type { AudienceCategory, OccasionCategory } from "@/lib/categories";

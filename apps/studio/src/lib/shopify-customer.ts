@@ -92,6 +92,25 @@ export async function exchangeCode(opts: {
   return { accessToken: json.access_token, refreshToken: json.refresh_token, expiresIn: json.expires_in };
 }
 
+/** Exchange a refresh token for a fresh access token (silent re-login). */
+export async function refreshTokens(refreshToken: string): Promise<CustomerTokens> {
+  const cfg = customerConfig();
+  if (!cfg) throw new Error("Customer accounts not configured");
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    client_id: cfg.clientId,
+    refresh_token: refreshToken,
+  });
+  const res = await fetch(endpoints(cfg.shopId).token, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  if (!res.ok) throw new Error(`token refresh failed ${res.status}: ${await res.text()}`);
+  const json = (await res.json()) as { access_token: string; refresh_token?: string; expires_in: number };
+  return { accessToken: json.access_token, refreshToken: json.refresh_token, expiresIn: json.expires_in };
+}
+
 export function logoutUrl(idTokenHint?: string): string | null {
   const cfg = customerConfig();
   if (!cfg) return null;

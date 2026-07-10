@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { Doodle } from "@/components/decor";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
@@ -55,9 +56,9 @@ export default async function TermsPage() {
             {t("partiesP1")}{" "}
             <Review>{t("partiesReview")}</Review>{" "}
             {t("partiesP2")}{" "}
-            <a href="/imprint" className="font-semibold hover:text-coral">
+            <Link href="/imprint" className="font-semibold hover:text-coral">
               {t("impressum")}
-            </a>
+            </Link>
             .
           </p>
         </Section>
@@ -73,9 +74,9 @@ export default async function TermsPage() {
         <Section title={t("secContentTitle")}>
           <p>
             {t("contentP1")}{" "}
-            <a href="/privacy" className="font-semibold hover:text-coral">
+            <Link href="/privacy" className="font-semibold hover:text-coral">
               {t("privacyLink")}
-            </a>{" "}
+            </Link>{" "}
             {t("contentP2")}
           </p>
         </Section>
@@ -94,9 +95,9 @@ export default async function TermsPage() {
         <Section title={t("secWithdrawalTitle")}>
           <p>
             {t("withdrawalP1")}{" "}
-            <a href="/returns" className="font-semibold hover:text-coral">
+            <Link href="/returns" className="font-semibold hover:text-coral">
               {t("returnsLink")}
-            </a>{" "}
+            </Link>{" "}
             {t("withdrawalP2")}
           </p>
         </Section>
@@ -119,9 +120,9 @@ export default async function TermsPage() {
         <Section title={t("secTalkTitle")}>
           <p>
             {t("talkP1")}{" "}
-            <a href="/contact" className="font-semibold hover:text-coral">
+            <Link href="/contact" className="font-semibold hover:text-coral">
               {t("contactLink")}
-            </a>{" "}
+            </Link>{" "}
             {t("talkP2")}
           </p>
         </Section>

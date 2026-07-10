@@ -1,10 +1,11 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { Link, useRouter } from "@/i18n/navigation";
 import { ArtPlaceholder, Sparkle } from "@/components/decor";
 import { Alert } from "@/components/ui/alert";
 import { BookTileVisual } from "@/components/ui/book-tile";
@@ -1231,9 +1232,9 @@ function FinishStep({
 
       <p className="rounded-2xl bg-lavender/60 p-4 text-xs leading-relaxed text-ink-soft">
         {t("finishConsent")}{" "}
-        <a href="/privacy" className="font-semibold text-ink underline hover:text-coral">
+        <Link href="/privacy" className="font-semibold text-ink underline hover:text-coral">
           {t("finishConsentLink")}
-        </a>
+        </Link>
         .
       </p>
     </section>

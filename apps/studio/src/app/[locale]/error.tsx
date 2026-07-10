@@ -3,9 +3,9 @@
 import * as Sentry from "@sentry/nextjs";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect } from "react";
 
+import { Link } from "@/i18n/navigation";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { Doodle } from "@/components/decor";
 import { ButtonLink } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
@@ -114,9 +115,9 @@ export default async function ContactPage() {
         <h2 className="font-display text-xl font-extrabold text-ink">{t("postTitle")}</h2>
         <p className="mt-2 text-ink-soft">
           {t("postP1")} <Review>{t("postReview")}</Review> {t("postP2")}{" "}
-          <a href="/imprint" className="font-semibold hover:text-coral">
+          <Link href="/imprint" className="font-semibold hover:text-coral">
             {t("impressum")}
-          </a>
+          </Link>
           .
         </p>
       </section>

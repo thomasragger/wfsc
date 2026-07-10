@@ -1,5 +1,5 @@
-import Link from "next/link";
 
+import { Link } from "@/i18n/navigation";
 import { maskClipId, pickCategoryMask } from "@/components/decor";
 import { PillLabel } from "@/components/ui/chip";
 

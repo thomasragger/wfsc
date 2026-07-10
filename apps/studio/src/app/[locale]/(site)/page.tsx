@@ -1,9 +1,9 @@
 import { Fragment } from "react";
 
 import Image from "next/image";
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { Doodle } from "@/components/decor";
 import { HeroAnimatedBackground } from "@/components/ui/animated-bg";
 import { BookTile, BookTileVisual } from "@/components/ui/book-tile";
@@ -354,8 +354,8 @@ export default async function HomePage() {
               <BookTile
                 key={tpl.id}
                 href={`/create?template=${encodeURIComponent(tpl.id)}`}
-                image={tpl.previewImageUrl ?? tpl.exampleImageUrl}
-                hoverImage={tpl.mockupImageUrl}
+                image={tpl.mockupImageUrl ?? tpl.previewImageUrl ?? tpl.exampleImageUrl}
+                hoverImage={tpl.mockupImageUrl ? tpl.previewImageUrl : null}
                 title={tpl.title}
                 tagline={tpl.tagline}
                 size="md"
@@ -443,8 +443,8 @@ export default async function HomePage() {
                       <BookTile
                         key={tpl.id}
                         href={`/create?template=${encodeURIComponent(tpl.id)}`}
-                        image={tpl.preview_image_url ?? tpl.example_image_url}
-                        hoverImage={tpl.mockup_image_url}
+                        image={tpl.mockup_image_url ?? tpl.preview_image_url ?? tpl.example_image_url}
+                        hoverImage={tpl.mockup_image_url ? tpl.preview_image_url : null}
                         title={tpl.title}
                         tagline={tpl.tagline}
                         size="lg"

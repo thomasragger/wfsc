@@ -1,5 +1,5 @@
-import Link from "next/link";
 
+import { Link } from "@/i18n/navigation";
 import { ArtPlaceholder } from "@/components/decor";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 

@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { Doodle } from "@/components/decor";
 import { Eyebrow } from "@/components/ui/eyebrow";
 
@@ -87,9 +88,9 @@ export default async function PrivacyPage() {
             {t("whoP3")}{" "}
             <Review>{t("whoReview2")}</Review>{" "}
             {t("whoP4")}{" "}
-            <a href="/imprint" className="font-semibold hover:text-coral">
+            <Link href="/imprint" className="font-semibold hover:text-coral">
               {t("impressum")}
-            </a>
+            </Link>
             .
           </p>
         </Section>

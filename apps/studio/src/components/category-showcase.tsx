@@ -1,7 +1,7 @@
 import Image from "next/image";
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { Doodle } from "@/components/decor";
 import { BookTile } from "@/components/ui/book-tile";
 import { ButtonLink } from "@/components/ui/button";
@@ -100,8 +100,8 @@ export async function CategoryShowcase({
               <BookTile
                 key={tpl.id}
                 href={`/create?template=${encodeURIComponent(tpl.id)}`}
-                image={tpl.previewImageUrl ?? tpl.exampleImageUrl}
-                hoverImage={tpl.mockupImageUrl}
+                image={tpl.mockupImageUrl ?? tpl.previewImageUrl ?? tpl.exampleImageUrl}
+                hoverImage={tpl.mockupImageUrl ? tpl.previewImageUrl : null}
                 title={tpl.title}
                 tagline={tpl.tagline}
                 size="md"

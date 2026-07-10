@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { Link } from "@/i18n/navigation";
 import { Doodle } from "@/components/decor";
 import { ButtonLink } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
@@ -52,9 +53,9 @@ export default async function AboutPage() {
           <p>{t("howP1")}</p>
           <p>
             {t("howP2")}{" "}
-            <a href="/artists" className="font-semibold hover:text-coral">
+            <Link href="/artists" className="font-semibold hover:text-coral">
               {t("artistsLink")}
-            </a>{" "}
+            </Link>{" "}
             {t("howP3")}
           </p>
         </Section>
@@ -62,9 +63,9 @@ export default async function AboutPage() {
         <Section title={t("secCareTitle")}>
           <p>
             {t("careP1")}{" "}
-            <a href="/privacy" className="font-semibold hover:text-coral">
+            <Link href="/privacy" className="font-semibold hover:text-coral">
               {t("privacyLink")}
-            </a>{" "}
+            </Link>{" "}
             {t("careP2")}
           </p>
           <p>{t("careP3")}</p>
@@ -73,9 +74,9 @@ export default async function AboutPage() {
         <Section title={t("secHelloTitle")}>
           <p>
             {t("helloP1")}{" "}
-            <a href="/contact" className="font-semibold hover:text-coral">
+            <Link href="/contact" className="font-semibold hover:text-coral">
               {t("contactLink")}
-            </a>{" "}
+            </Link>{" "}
             {t("helloP2")}
           </p>
         </Section>

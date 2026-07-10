@@ -6,8 +6,8 @@
  *   ghost     — quiet white pill for secondary actions
  * All new UI must come from src/components/ui/* — /styleguide is the living contract.
  */
-import Link from "next/link";
 
+import { Link } from "@/i18n/navigation";
 import { Spinner } from "@/components/ui/spinner";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost";
@@ -77,7 +77,7 @@ type ButtonLinkProps = {
   children: React.ReactNode;
 } & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "className" | "children">;
 
-/** Link styled as a button. Uses next/link for internal routes, <a> for external. */
+/** Link styled as a button. Uses the locale-aware Link for internal routes, <a> for external. */
 export function ButtonLink({
   href,
   variant = "primary",

@@ -2,9 +2,9 @@
 
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import Link from "next/link";
 import { useState } from "react";
 
+import { Link } from "@/i18n/navigation";
 import { CartButton } from "@/components/cart";
 import { ButtonLink } from "@/components/ui/button";
 import { IconChevronDown, IconClose, IconMenu, IconUser } from "@/components/ui/icons";

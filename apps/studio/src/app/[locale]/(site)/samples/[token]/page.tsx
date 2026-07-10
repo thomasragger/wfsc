@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
+import { Link } from "@/i18n/navigation";
 import { JsonLd, productJsonLd } from "@/components/json-ld";
 import { SampleViewer } from "@/components/sample-viewer";
 import { ButtonLink } from "@/components/ui/button";

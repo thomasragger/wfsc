@@ -3,8 +3,12 @@ import { cookies } from "next/headers";
 /** Cookie helpers for the signed-in customer session + OAuth PKCE transients. */
 
 const TOKEN = "wfsc_customer";
+const REFRESH = "wfsc_customer_refresh";
 const STATE = "wfsc_oauth_state";
 const VERIFIER = "wfsc_oauth_verifier";
+
+/** Refresh tokens outlive the ~2h access token; 30 days matches Shopify's. */
+const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 
 const secure = process.env.NODE_ENV === "production";
 
@@ -22,8 +26,24 @@ export async function setCustomerToken(token: string, maxAgeSeconds: number): Pr
   });
 }
 
+export async function getCustomerRefreshToken(): Promise<string | null> {
+  return (await cookies()).get(REFRESH)?.value ?? null;
+}
+
+export async function setCustomerRefreshToken(token: string): Promise<void> {
+  (await cookies()).set(REFRESH, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure,
+    path: "/",
+    maxAge: REFRESH_MAX_AGE,
+  });
+}
+
 export async function clearCustomerToken(): Promise<void> {
-  (await cookies()).delete(TOKEN);
+  const jar = await cookies();
+  jar.delete(TOKEN);
+  jar.delete(REFRESH);
 }
 
 export async function setOAuthTransients(state: string, verifier: string): Promise<void> {
