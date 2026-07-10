@@ -264,7 +264,8 @@
     "ctaTitle": "Imagine your family in these pages.",
     "ctaBodyTemplate": "Start from this very story idea and make it entirely yours.",
     "ctaBodyDefault": "It takes about five minutes to tell us your memory.",
-    "ctaButton": "Make your own"
+    "ctaButton": "Make your own",
+    "readBook": "Flip through the book"
   },
   "errors": {
     "notFound": {

@@ -4,14 +4,17 @@ import { useMemo, useState } from "react";
 
 import { useTranslations } from "next-intl";
 
+import { FONT_PAIRINGS } from "@wfsc/book-engine";
+
 import { Flipbook, type FlipPage } from "@/components/flipbook";
-import { ButtonLink } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 import type { BookPayload } from "@/lib/book-payload";
 
 /**
- * Read-only page-turning viewer for sample books: the full flipbook,
- * no editing, no checkout — just the story and a "make your own" CTA.
+ * Sample book page: a big cover hero (the reading itself happens in the
+ * fullscreen overlay reader), the make-your-own CTA pinned top-right above
+ * the fold, and the photo→character transformation cards underneath.
  */
 export function SampleViewer({
   book,
@@ -22,6 +25,7 @@ export function SampleViewer({
 }) {
   const t = useTranslations("sampleViewer");
   const [pageIndex, setPageIndex] = useState(0);
+  const [readerOpen, setReaderOpen] = useState(false);
 
   const pages: FlipPage[] = useMemo(() => {
     const greetingSpread = book.spreads.find((s) => s.kind === "greeting");
@@ -41,26 +45,64 @@ export function SampleViewer({
     : "/create";
 
   const cast = book.people.filter((p) => p.photoUrls[0] || p.characterSheetUrl);
+  const pairing = FONT_PAIRINGS[book.fontPairing];
 
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start">
-      {/* Left — the book, as big as the column allows */}
-      <div className="min-w-0">
-        <Flipbook book={book} pages={pages} index={pageIndex} onIndexChange={setPageIndex} />
-      </div>
+      {/* Left — cover hero; clicking it opens the overlay reader */}
+      <div className="flex min-w-0 flex-col items-center">
+        <button
+          type="button"
+          onClick={() => setReaderOpen(true)}
+          aria-label={t("readBook")}
+          className="group relative aspect-square w-full max-w-[min(34rem,70vh)] overflow-hidden rounded-2xl bg-lavender shadow-polaroid ring-8 ring-white transition-transform hover:scale-[1.01]"
+        >
+          {book.coverImageUrl ? (
+            <ProgressiveImage
+              src={book.coverImageUrl}
+              alt={book.title ?? t("defaultTitle")}
+              priority
+              className="h-full w-full"
+              imgClassName="h-full w-full object-cover"
+            />
+          ) : null}
+          {!book.coverHasTitle && book.title ? (
+            <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-ink/55 to-transparent px-[6%] pb-[10%] pt-[5%]">
+              <span
+                className="block text-center text-[clamp(1.2rem,3vw,2rem)] font-extrabold leading-tight text-white drop-shadow-sm"
+                style={{
+                  fontFamily: `'${pairing.display.family}', sans-serif`,
+                  fontWeight: pairing.display.weight,
+                }}
+              >
+                {book.title}
+              </span>
+            </div>
+          ) : null}
+          {/* Read affordance */}
+          <span className="absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-ink/50 to-transparent pb-5 pt-10">
+            <span className="rounded-full bg-white px-5 py-2.5 font-display text-sm font-bold text-ink shadow-fuzzy transition-colors group-hover:bg-marigold">
+              {t("readBook")}
+            </span>
+          </span>
+        </button>
 
-      {/* Right — sticky rail: cast transformation + make-your-own CTA */}
-      <aside className="flex flex-col gap-6 lg:sticky lg:top-24">
+        {/* Cast transformation below the cover */}
         {cast.length > 0 ? (
-          <section className="rounded-3xl bg-white/70 p-6 shadow-fuzzy ring-1 ring-ink/5">
-            <h2 className="font-display text-lg font-extrabold text-ink">{t("castTitle")}</h2>
-            <p className="mt-1.5 text-sm text-ink-soft">{t("castBody")}</p>
-            <div className="mt-5 flex flex-col gap-5">
+          <section className="mt-10 w-full">
+            <h2 className="text-center font-display text-2xl font-extrabold text-ink">
+              {t("castTitle")}
+            </h2>
+            <p className="mx-auto mt-2 max-w-md text-center text-sm text-ink-soft">{t("castBody")}</p>
+            <div className="mt-6 grid gap-5 sm:grid-cols-2">
               {cast.map((person) => (
-                <div key={person.id}>
-                  <div className="flex items-center gap-3">
+                <div
+                  key={person.id}
+                  className="rounded-3xl bg-white/70 p-5 shadow-fuzzy ring-1 ring-ink/5"
+                >
+                  <div className="flex items-center justify-center gap-3 sm:gap-4">
                     <figure className="flex-shrink-0 text-center">
-                      <div className="h-20 w-20 overflow-hidden rounded-2xl bg-lavender">
+                      <div className="h-24 w-24 overflow-hidden rounded-2xl bg-lavender sm:h-28 sm:w-28">
                         {person.photoUrls[0] ? (
                           <ProgressiveImage
                             src={person.photoUrls[0]}
@@ -70,13 +112,13 @@ export function SampleViewer({
                           />
                         ) : null}
                       </div>
-                      <figcaption className="mt-1 text-[0.6rem] font-semibold uppercase tracking-wide text-ink/40">
+                      <figcaption className="mt-1.5 text-[0.65rem] font-semibold uppercase tracking-wide text-ink/40">
                         {t("theirPhoto")}
                       </figcaption>
                     </figure>
 
                     <span
-                      className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-coral/15 text-sm text-coral"
+                      className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-coral/15 text-coral"
                       aria-hidden="true"
                     >
                       →
@@ -93,20 +135,21 @@ export function SampleViewer({
                           />
                         ) : null}
                       </div>
-                      <figcaption className="mt-1 text-[0.6rem] font-semibold uppercase tracking-wide text-ink/40">
+                      <figcaption className="mt-1.5 text-[0.65rem] font-semibold uppercase tracking-wide text-ink/40">
                         {t("characterSheet")}
                       </figcaption>
                     </figure>
                   </div>
-                  <p className="mt-1.5 text-center font-display text-sm font-bold text-ink">
-                    {person.name}
-                  </p>
+                  <p className="mt-3 text-center font-display font-bold text-ink">{person.name}</p>
                 </div>
               ))}
             </div>
           </section>
         ) : null}
+      </div>
 
+      {/* Right — sticky CTA, above the fold */}
+      <aside className="flex flex-col gap-4 lg:sticky lg:top-24">
         <section className="rounded-3xl bg-white p-6 text-center shadow-fuzzy ring-1 ring-ink/5">
           <p className="font-display text-lg font-extrabold text-ink">{t("ctaTitle")}</p>
           <p className="mt-2 text-sm text-ink-soft">
@@ -115,8 +158,23 @@ export function SampleViewer({
           <ButtonLink href={createHref} size="lg" className="mt-4 w-full">
             {t("ctaButton")}
           </ButtonLink>
+          <Button variant="ghost" className="mt-2 w-full" onClick={() => setReaderOpen(true)}>
+            {t("readBook")}
+          </Button>
         </section>
       </aside>
+
+      {/* The reader lives ONLY in the fullscreen overlay */}
+      {readerOpen ? (
+        <Flipbook
+          book={book}
+          pages={pages}
+          index={pageIndex}
+          onIndexChange={setPageIndex}
+          fullscreenOnly
+          onClose={() => setReaderOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

@@ -48,6 +48,10 @@ interface FlipbookProps {
   pages: FlipPage[];
   index: number;
   onIndexChange: (index: number) => void;
+  /** Render ONLY as a fullscreen overlay reader; `onClose` handles exit.
+   *  (Mount conditionally — `{open && <Flipbook fullscreenOnly …/>}`.) */
+  fullscreenOnly?: boolean;
+  onClose?: () => void;
 }
 
 /**
@@ -57,7 +61,14 @@ interface FlipbookProps {
  * to text-left. Illustrations are contain-fit on cream — a face is never
  * cropped. Keyboard arrows, swipe, and the dot rail all navigate.
  */
-export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
+export function Flipbook({
+  book,
+  pages,
+  index,
+  onIndexChange,
+  fullscreenOnly = false,
+  onClose,
+}: FlipbookProps) {
   const t = useTranslations("flipbook");
   // Book-locale translator for printed-page copy (see BOOK_MESSAGES above).
   const bookLocale = book.locale === "de" ? "de" : "en";
@@ -101,7 +112,19 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
   }, [leaving]);
 
   // Fullscreen overlay reading mode: same viewer, near-viewport size.
-  const [fullscreen, setFullscreen] = useState(false);
+  // In fullscreenOnly mode the overlay is the component's ONLY presentation
+  // and closing is delegated to the parent (which unmounts us).
+  const [fullscreenState, setFullscreenState] = useState(false);
+  const fullscreen = fullscreenOnly || fullscreenState;
+  const exitFullscreen = () => {
+    if (fullscreenOnly) onClose?.();
+    else setFullscreenState(false);
+  };
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // Keyboard paging + Escape need focus when the overlay mounts directly.
+    if (fullscreenOnly) rootRef.current?.focus();
+  }, [fullscreenOnly]);
   useEffect(() => {
     if (!fullscreen) return;
     const prev = document.body.style.overflow;
@@ -243,6 +266,7 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
           ? "fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-ink/90 p-4 backdrop-blur-sm sm:p-8"
           : "flex flex-col items-center gap-4"
       }
+      ref={rootRef}
       tabIndex={0}
       role="group"
       aria-label={t("bookPreview")}
@@ -250,12 +274,12 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
       onKeyDown={(e) => {
         if (e.key === "ArrowLeft" && clamped > 0) onIndexChange(clamped - 1);
         if (e.key === "ArrowRight" && clamped < pages.length - 1) onIndexChange(clamped + 1);
-        if (e.key === "Escape") setFullscreen(false);
+        if (e.key === "Escape") exitFullscreen();
       }}
       onClick={(e) => {
         // Backdrop click closes the overlay (clicks on the book don't bubble here
         // with a matching target).
-        if (fullscreen && e.target === e.currentTarget) setFullscreen(false);
+        if (fullscreen && e.target === e.currentTarget) exitFullscreen();
       }}
     >
       {/* React hoists this to <head>; loads the pairing's Google fonts. */}
@@ -272,7 +296,7 @@ export function Flipbook({ book, pages, index, onIndexChange }: FlipbookProps) {
         <button
           type="button"
           aria-label={fullscreen ? t("closeFullscreen") : t("viewLarger")}
-          onClick={() => setFullscreen((f) => !f)}
+          onClick={() => (fullscreen ? exitFullscreen() : setFullscreenState(true))}
           className="absolute -top-4 right-0 z-20 flex h-9 w-9 -translate-y-full items-center justify-center rounded-full bg-white text-ink shadow-fuzzy transition hover:bg-marigold"
         >
           {fullscreen ? (

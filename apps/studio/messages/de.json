@@ -265,7 +265,8 @@
     "ctaTitle": "Stell dir deine Familie auf diesen Seiten vor.",
     "ctaBodyTemplate": "Starte mit genau dieser Geschichten-Idee und mach sie ganz zu deiner eigenen.",
     "ctaBodyDefault": "Es dauert nur etwa fünf Minuten, uns deine Erinnerung zu erzählen.",
-    "ctaButton": "Mach dein eigenes"
+    "ctaButton": "Mach dein eigenes",
+    "readBook": "Blätter durchs Buch"
   },
   "errors": {
     "notFound": {
