@@ -53,29 +53,6 @@ export default async function StudioLayout({
 
       <main id="main-content" className="flex flex-1 flex-col">{children}</main>
 
-      <footer className="border-t border-ink/5 py-5 text-center text-xs text-ink-soft">
-        <p>{t("footerTagline")}</p>
-        <nav className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 font-semibold">
-          <Link href="/about" className="hover:text-coral">
-            {t("about")}
-          </Link>
-          <Link href="/contact" className="hover:text-coral">
-            {t("contact")}
-          </Link>
-          <Link href="/imprint" className="hover:text-coral">
-            {t("imprint")}
-          </Link>
-          <Link href="/privacy" className="hover:text-coral">
-            {t("privacy")}
-          </Link>
-          <Link href="/terms" className="hover:text-coral">
-            {t("terms")}
-          </Link>
-          <Link href="/returns" className="hover:text-coral">
-            {t("returns")}
-          </Link>
-        </nav>
-      </footer>
     </>
   );
 }

@@ -835,7 +835,7 @@
     "finishSignedFromPlaceholder": "Mum & Dad",
     "finishEmail": "Your email",
     "finishEmailPlaceholder": "you@example.com",
-    "finishConsent": "By continuing you agree that we may use the story and photos you provided to create your book, including processing them with trusted third-party AI partners (such as Anthropic and Replicate) to write the story and generate the illustrations. Your source photos are deleted 30 days after your book is delivered, and your memory text is kept only while your book exists. We use your email only for your preview link and order updates, never for newsletters or sharing. See our",
+    "finishConsent": "Yes, please use my story and photos to create this book. Details in our",
     "finishConsentLink": "privacy policy"
   }
 }

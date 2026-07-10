@@ -839,7 +839,7 @@
     "finishSignedFromPlaceholder": "Mama & Papa",
     "finishEmail": "Deine E-Mail",
     "finishEmailPlaceholder": "du@beispiel.de",
-    "finishConsent": "Mit dem Fortfahren erklärst du dich damit einverstanden, dass wir die von dir bereitgestellte Geschichte und Fotos verwenden dürfen, um dein Buch zu erstellen, einschließlich der Verarbeitung durch vertrauenswürdige KI-Partner (wie Anthropic und Replicate), um die Geschichte zu schreiben und die Illustrationen zu erzeugen. Deine Ausgangsfotos werden 30 Tage nach Auslieferung deines Buches gelöscht, und dein Erinnerungstext wird nur so lange aufbewahrt, wie dein Buch existiert. Wir nutzen deine E-Mail nur für deinen Vorschau-Link und Bestellaktualisierungen, niemals für Newsletter oder Weitergabe. Siehe unsere",
+    "finishConsent": "Ja, meine Geschichte und Fotos dürfen für dieses Buch verwendet werden. Details in unserer",
     "finishConsentLink": "Datenschutzerklärung"
   }
 }

@@ -154,6 +154,7 @@ function draftIsResumable(d: WizardDraft): boolean {
 
 export function CreateWizard() {
   const t = useTranslations("wizard");
+  const tChrome = useTranslations("studioChrome");
   const stepLabels = t.raw("steps") as string[];
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -175,6 +176,7 @@ export function CreateWizard() {
   const [stylesError, setStylesError] = useState<string | null>(null);
   const [styleId, setStyleId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
+  const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
@@ -384,11 +386,11 @@ export function CreateWizard() {
           !uploadsInFlight
         );
       case 3:
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+        return consent && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
       default:
         return false;
     }
-  }, [step, styleId, memoryText, people, uploadsInFlight, email]);
+  }, [step, styleId, memoryText, people, uploadsInFlight, email, consent]);
 
   function goTo(next: number) {
     if (next > step) track("wizard_step_completed", { step, step_name: STEPS[step] });
@@ -620,6 +622,8 @@ export function CreateWizard() {
                   greetingFrom={greetingFrom}
                   onGreetingFromChange={setGreetingFrom}
                   email={email}
+                consent={consent}
+                onConsentChange={setConsent}
                   onEmailChange={setEmail}
                 />
                 {/* Abuse control (O5). No-ops in dev: renders nothing and
@@ -670,6 +674,14 @@ export function CreateWizard() {
               </Button>
             )}
           </div>
+          {/* Micro-footer folded into the bar (the studio has no separate footer). */}
+          <nav className="mx-auto mt-2 flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-semibold text-ink-soft/80">
+            {(["about", "contact", "imprint", "privacy", "terms", "returns"] as const).map((k) => (
+              <Link key={k} href={`/${k === "about" ? "about" : k}`} className="hover:text-coral">
+                {tChrome(k)}
+              </Link>
+            ))}
+          </nav>
         </BottomBar>
       </div>
     </PageTransition>
@@ -1065,21 +1077,32 @@ function CastStep({
       </header>
 
       {/* Character cards: the uploaded photo becomes the character preview;
-          the last card adds another person. */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          the last card adds another person. Two-wide at baseline; from three
+          people the row becomes a swipeable carousel. */}
+      <div
+        className={
+          people.length >= 3
+            ? "-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            : "grid grid-cols-1 gap-4 sm:grid-cols-2"
+        }
+      >
         {people.map((person) => (
           <div
             key={person.key}
-            className="relative flex flex-col rounded-2xl border-2 border-ink/10 bg-white p-3"
+            className={`relative flex flex-col rounded-2xl border-2 border-ink/10 bg-white p-3 ${
+              people.length >= 3 ? "w-64 shrink-0 snap-start" : ""
+            }`}
           >
             {people.length > 1 ? (
               <button
                 type="button"
                 aria-label={t("castRemove")}
-                className="absolute -right-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-ink text-xs text-cream opacity-90 hover:bg-coral"
+                className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-ink shadow-sm ring-1 ring-ink/10 transition hover:bg-coral hover:text-white"
                 onClick={() => onRemove(person.key)}
               >
-                ×
+                <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                  <path d="M5 5l10 10M15 5L5 15" />
+                </svg>
               </button>
             ) : null}
 
@@ -1120,7 +1143,7 @@ function CastStep({
                     <button
                       type="button"
                       aria-label={t("castRemovePhoto")}
-                      className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-ink text-[9px] text-cream opacity-90 hover:bg-coral"
+                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] text-ink shadow-sm ring-1 ring-ink/10 transition hover:bg-coral hover:text-white"
                       onClick={() =>
                         onUpdate(person.key, { photoUrls: person.photoUrls.filter((u) => u !== url) })
                       }
@@ -1179,7 +1202,9 @@ function CastStep({
           <button
             type="button"
             onClick={onAdd}
-            className="flex min-h-[14rem] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink/20 text-ink-soft transition-colors hover:border-marigold hover:text-ink"
+            className={`flex min-h-[14rem] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink/20 text-ink-soft transition-colors hover:border-marigold hover:text-ink ${
+              people.length >= 3 ? "w-64 shrink-0 snap-start" : ""
+            }`}
           >
             <span className="text-2xl leading-none">+</span>
             <span className="text-xs font-semibold">{t("castAddPerson")}</span>
@@ -1202,6 +1227,8 @@ function FinishStep({
   onGreetingFromChange,
   email,
   onEmailChange,
+  consent,
+  onConsentChange,
 }: {
   template: TemplateSummary | null;
   title: string;
@@ -1212,6 +1239,8 @@ function FinishStep({
   onGreetingFromChange: (v: string) => void;
   email: string;
   onEmailChange: (v: string) => void;
+  consent: boolean;
+  onConsentChange: (v: boolean) => void;
 }) {
   const t = useTranslations("wizard");
   return (
@@ -1223,65 +1252,81 @@ function FinishStep({
         </p>
       </header>
 
-      <Field label={t("finishBookTitle")} htmlFor="title" optional>
-        <TextInput
-          id="title"
-          placeholder={template ? template.title : t("finishTitlePlaceholder")}
-          value={title}
-          onChange={(e) => onTitleChange(e.target.value)}
-          maxLength={120}
-        />
-      </Field>
+      {/* Two columns: the book's front matter left, delivery + consent right. */}
+      <div className="grid gap-5 lg:grid-cols-2 lg:gap-7">
+        <div className="flex flex-col gap-4">
+          <Field label={t("finishBookTitle")} htmlFor="title" optional>
+            <TextInput
+              id="title"
+              placeholder={template ? template.title : t("finishTitlePlaceholder")}
+              value={title}
+              onChange={(e) => onTitleChange(e.target.value)}
+              maxLength={120}
+            />
+          </Field>
 
-      <Field
-        label={t("finishNote")}
-        htmlFor="greeting"
-        optional
-        hint={t("finishNoteHint")}
-      >
-        <TextArea
-          id="greeting"
-          className="min-h-24 leading-relaxed"
-          placeholder={t("finishNotePlaceholder")}
-          value={greeting}
-          onChange={(e) => onGreetingChange(e.target.value)}
-          maxLength={600}
-        />
-      </Field>
+          <Field
+            label={t("finishNote")}
+            htmlFor="greeting"
+            optional
+            hint={t("finishNoteHint")}
+          >
+            <TextArea
+              id="greeting"
+              className="min-h-24 leading-relaxed"
+              placeholder={t("finishNotePlaceholder")}
+              value={greeting}
+              onChange={(e) => onGreetingChange(e.target.value)}
+              maxLength={600}
+            />
+          </Field>
 
-      <Field
-        label={t("finishSignedFrom")}
-        htmlFor="greeting-from"
-        optional
-        hint={t("finishSignedFromHint")}
-      >
-        <TextInput
-          id="greeting-from"
-          placeholder={t("finishSignedFromPlaceholder")}
-          value={greetingFrom}
-          onChange={(e) => onGreetingFromChange(e.target.value)}
-          maxLength={80}
-        />
-      </Field>
+          <Field
+            label={t("finishSignedFrom")}
+            htmlFor="greeting-from"
+            optional
+            hint={t("finishSignedFromHint")}
+          >
+            <TextInput
+              id="greeting-from"
+              placeholder={t("finishSignedFromPlaceholder")}
+              value={greetingFrom}
+              onChange={(e) => onGreetingFromChange(e.target.value)}
+              maxLength={80}
+            />
+          </Field>
+        </div>
 
-      <Field label={t("finishEmail")} htmlFor="email">
-        <TextInput
-          id="email"
-          type="email"
-          placeholder={t("finishEmailPlaceholder")}
-          value={email}
-          onChange={(e) => onEmailChange(e.target.value)}
-          autoComplete="email"
-        />
-      </Field>
+        <div className="flex flex-col gap-4">
+          <Field label={t("finishEmail")} htmlFor="email">
+            <TextInput
+              id="email"
+              type="email"
+              placeholder={t("finishEmailPlaceholder")}
+              value={email}
+              onChange={(e) => onEmailChange(e.target.value)}
+              autoComplete="email"
+            />
+          </Field>
 
-      <p className="rounded-2xl bg-lavender/60 p-4 text-xs leading-relaxed text-ink-soft">
-        {t("finishConsent")}{" "}
-        <Link href="/privacy" className="font-semibold text-ink underline hover:text-coral">
-          {t("finishConsentLink")}
-        </Link>
-        .
-      </p>
+          {/* Explicit privacy opt-in — gates the submit button. */}
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-lavender/60 p-4 text-xs leading-relaxed text-ink-soft">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => onConsentChange(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-coral"
+            />
+            <span>
+              {t("finishConsent")}{" "}
+              <Link href="/privacy" className="font-semibold text-ink underline hover:text-coral">
+                {t("finishConsentLink")}
+              </Link>
+              .
+            </span>
+          </label>
+        </div>
+      </div>
     </section>
   );
 }
