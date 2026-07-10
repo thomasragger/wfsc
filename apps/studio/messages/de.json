@@ -840,6 +840,7 @@
     "finishEmail": "Deine E-Mail",
     "finishEmailPlaceholder": "du@beispiel.de",
     "finishConsent": "Ja, meine Geschichte und Fotos dürfen für dieses Buch verwendet werden. Details in unserer",
-    "finishConsentLink": "Datenschutzerklärung"
+    "finishConsentLink": "Datenschutzerklärung",
+    "finishPreviewLabel": "So beginnt dein Buch"
   }
 }

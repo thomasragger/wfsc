@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { FONT_PAIRINGS, SCRIPT_FONT, fontStylesheetUrl } from "@wfsc/book-engine";
+
 import { Link, useRouter } from "@/i18n/navigation";
 import { ArtPlaceholder, Sparkle } from "@/components/decor";
 import { Alert } from "@/components/ui/alert";
@@ -572,117 +574,222 @@ export function CreateWizard() {
   }
 
   // ---------------------------------------------------------------- stepper
+  // The back action is shared by the rail (lg+) and the portaled bottom bar
+  // (<lg): step 0 with a template goes back to the hero, otherwise to the
+  // previous step. Rendered fresh in each place so both stay in sync.
+  const backButton = (variant: "ghost", className: string) =>
+    step > 0 ? (
+      <Button variant={variant} className={className} onClick={() => goTo(step - 1)}>
+        {t("back")}
+      </Button>
+    ) : template ? (
+      <Button variant={variant} className={className} onClick={() => setStarted(false)}>
+        {t("back")}
+      </Button>
+    ) : null;
+
+  const forwardButton = (className: string) =>
+    step < STEPS.length - 1 ? (
+      <Button
+        variant="secondary"
+        className={className}
+        disabled={!canContinue}
+        pending={step === 2 && uploadsInFlight}
+        pendingLabel={t("uploadingPhotos")}
+        onClick={() => goTo(step + 1)}
+      >
+        {t("continue")}
+      </Button>
+    ) : (
+      <Button
+        className={className}
+        disabled={!canContinue || (turnstileRequired && !turnstileToken)}
+        pending={submitting}
+        pendingLabel={t("creatingPreview")}
+        onClick={() => void submit()}
+      >
+        {t("createPreview")}
+      </Button>
+    );
+
   return (
     <PageTransition>
-      {/* pb clears the fixed bottom navigation bar */}
-      <div ref={topRef} className="scroll-mt-24 pb-20">
-        <StepProgress steps={stepLabels} current={step} className="mb-6" />
+      {/* pb clears the fixed bottom navigation bar on <lg (the rail replaces it on lg+). */}
+      <div ref={topRef} className="scroll-mt-24 pb-20 lg:pb-4">
+        {/* Horizontal progress only on <lg; the rail carries it on lg+. */}
+        <StepProgress steps={stepLabels} current={step} className="mb-6 lg:hidden" />
 
-        <Card className="overflow-hidden p-5 sm:p-7">
-          <StepTransition stepKey={step} direction={direction}>
-            {step === 0 && (
-              <StyleStep
-                styles={styles}
-                stylesError={stylesError}
-                styleId={styleId}
-                onSelect={setStyleId}
-                selectedStyle={selectedStyle}
-                recommendedId={template?.suggestedStyleId ?? null}
-              />
-            )}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8">
+          {/* main step column */}
+          <div className="min-w-0">
+            <Card className="overflow-hidden p-5 sm:p-7">
+              <StepTransition stepKey={step} direction={direction}>
+                {step === 0 && (
+                  <StyleStep
+                    styles={styles}
+                    stylesError={stylesError}
+                    styleId={styleId}
+                    onSelect={setStyleId}
+                    selectedStyle={selectedStyle}
+                    recommendedId={template?.suggestedStyleId ?? null}
+                  />
+                )}
 
-            {step === 1 && (
-              <StoryStep
-                template={template}
-                memoryText={memoryText}
-                onMemoryChange={setMemoryText}
-                targetAge={targetAge}
-                onAgeChange={setTargetAge}
-              />
-            )}
+                {step === 1 && (
+                  <StoryStep
+                    template={template}
+                    memoryText={memoryText}
+                    onMemoryChange={setMemoryText}
+                    targetAge={targetAge}
+                    onAgeChange={setTargetAge}
+                  />
+                )}
 
-            {step === 2 && (
-              <CastStep
-                people={people}
-                onAdd={() => setPeople((prev) => [...prev, newPerson("other")])}
-                onRemove={(key) => setPeople((prev) => prev.filter((p) => p.key !== key))}
-                onUpdate={updatePerson}
-                onAddPhotos={addPhotos}
-              />
-            )}
+                {step === 2 && (
+                  <CastStep
+                    people={people}
+                    onAdd={() => setPeople((prev) => [...prev, newPerson("other")])}
+                    onRemove={(key) => setPeople((prev) => prev.filter((p) => p.key !== key))}
+                    onUpdate={updatePerson}
+                    onAddPhotos={addPhotos}
+                  />
+                )}
 
-            {step === 3 && (
-              <>
-                <FinishStep
-                  template={template}
-                  title={title}
-                  onTitleChange={setTitle}
-                  greeting={greeting}
-                  onGreetingChange={setGreeting}
-                  greetingFrom={greetingFrom}
-                  onGreetingFromChange={setGreetingFrom}
-                  email={email}
-                consent={consent}
-                onConsentChange={setConsent}
-                  onEmailChange={setEmail}
-                />
-                {/* Abuse control (O5). No-ops in dev: renders nothing and
-                    reports an empty token, which the server accepts. */}
-                <div className="mt-5 flex justify-center">
-                  <Turnstile onVerify={setTurnstileToken} action="create-book" />
-                </div>
-              </>
-            )}
-          </StepTransition>
+                {step === 3 && (
+                  <>
+                    <FinishStep
+                      template={template}
+                      title={title}
+                      onTitleChange={setTitle}
+                      greeting={greeting}
+                      onGreetingChange={setGreeting}
+                      greetingFrom={greetingFrom}
+                      onGreetingFromChange={setGreetingFrom}
+                      email={email}
+                      consent={consent}
+                      onConsentChange={setConsent}
+                      onEmailChange={setEmail}
+                    />
+                    {/* Abuse control (O5). No-ops in dev: renders nothing and
+                        reports an empty token, which the server accepts. */}
+                    <div className="mt-5 flex justify-center">
+                      <Turnstile onVerify={setTurnstileToken} action="create-book" />
+                    </div>
+                  </>
+                )}
+              </StepTransition>
 
-          {error ? <Alert className="mt-5">{error}</Alert> : null}
-        </Card>
-
-        {/* Step navigation: portaled full-width bar pinned to the viewport
-            bottom so Continue is never hidden, whatever the step's height. */}
-        <BottomBar>
-          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
-            {step > 0 ? (
-              <Button variant="ghost" onClick={() => goTo(step - 1)}>
-                {t("back")}
-              </Button>
-            ) : template ? (
-              <Button variant="ghost" onClick={() => setStarted(false)}>
-                {t("back")}
-              </Button>
-            ) : (
-              <span />
-            )}
-            {step < STEPS.length - 1 ? (
-              <Button
-                variant="secondary"
-                disabled={!canContinue}
-                pending={step === 2 && uploadsInFlight}
-                pendingLabel={t("uploadingPhotos")}
-                onClick={() => goTo(step + 1)}
-              >
-                {t("continue")}
-              </Button>
-            ) : (
-              <Button
-                disabled={!canContinue || (turnstileRequired && !turnstileToken)}
-                pending={submitting}
-                pendingLabel={t("creatingPreview")}
-                onClick={() => void submit()}
-              >
-                {t("createPreview")}
-              </Button>
-            )}
+              {error ? <Alert className="mt-5">{error}</Alert> : null}
+            </Card>
           </div>
-          {/* Micro-footer folded into the bar (the studio has no separate footer). */}
-          <nav className="mx-auto mt-2 flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-semibold text-ink-soft/80">
-            {(["about", "contact", "imprint", "privacy", "terms", "returns"] as const).map((k) => (
-              <Link key={k} href={`/${k === "about" ? "about" : k}`} className="hover:text-coral">
-                {tChrome(k)}
-              </Link>
-            ))}
-          </nav>
-        </BottomBar>
+
+          {/* Right rail (lg+ only): step list + actions + trust note. On <lg the
+              portaled BottomBar below carries the actions instead. */}
+          <aside className="hidden lg:block">
+            <div className="lg:sticky lg:top-24">
+              <Card className="p-5">
+                <ol className="flex flex-col gap-1" aria-label={stepLabels.join(", ")}>
+                  {stepLabels.map((label, i) => {
+                    const done = i < step;
+                    const active = i === step;
+                    return (
+                      <li
+                        key={label}
+                        className={`flex items-center gap-3 rounded-xl px-2 py-2 ${
+                          active ? "bg-coral/5" : ""
+                        }`}
+                      >
+                        <span
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-display text-sm font-bold ${
+                            active
+                              ? "bg-coral text-white"
+                              : done
+                                ? "bg-sage text-cream"
+                                : "bg-white text-ink-soft ring-2 ring-ink/10"
+                          }`}
+                          aria-current={active ? "step" : undefined}
+                        >
+                          {done ? "✓" : i + 1}
+                        </span>
+                        <span
+                          className={`text-sm font-semibold ${active ? "text-ink" : "text-ink-soft"}`}
+                        >
+                          {label}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
+
+                <div className="mt-5 flex flex-col gap-2.5">
+                  {forwardButton("w-full")}
+                  {backButton("ghost", "w-full")}
+                </div>
+
+                <p className="mt-4 text-center text-xs text-ink-soft">{t("heroFreePreview")}</p>
+              </Card>
+
+              {/* The bottom bar's micro-footer legal links, mirrored under the rail
+                  (the studio has no separate footer). */}
+              <nav className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-semibold text-ink-soft/80">
+                {(["about", "contact", "imprint", "privacy", "terms", "returns"] as const).map((k) => (
+                  <Link key={k} href={`/${k === "about" ? "about" : k}`} className="hover:text-coral">
+                    {tChrome(k)}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          </aside>
+        </div>
+
+        {/* Step navigation on <lg: portaled full-width bar pinned to the viewport
+            bottom so Continue is never hidden, whatever the step's height. Hidden
+            on lg+ where the rail replaces it. */}
+        <span className="lg:hidden">
+          <BottomBar>
+            <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3">
+              {step > 0 ? (
+                <Button variant="ghost" onClick={() => goTo(step - 1)}>
+                  {t("back")}
+                </Button>
+              ) : template ? (
+                <Button variant="ghost" onClick={() => setStarted(false)}>
+                  {t("back")}
+                </Button>
+              ) : (
+                <span />
+              )}
+              {step < STEPS.length - 1 ? (
+                <Button
+                  variant="secondary"
+                  disabled={!canContinue}
+                  pending={step === 2 && uploadsInFlight}
+                  pendingLabel={t("uploadingPhotos")}
+                  onClick={() => goTo(step + 1)}
+                >
+                  {t("continue")}
+                </Button>
+              ) : (
+                <Button
+                  disabled={!canContinue || (turnstileRequired && !turnstileToken)}
+                  pending={submitting}
+                  pendingLabel={t("creatingPreview")}
+                  onClick={() => void submit()}
+                >
+                  {t("createPreview")}
+                </Button>
+              )}
+            </div>
+            {/* Micro-footer folded into the bar (the studio has no separate footer). */}
+            <nav className="mx-auto mt-2 flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] font-semibold text-ink-soft/80">
+              {(["about", "contact", "imprint", "privacy", "terms", "returns"] as const).map((k) => (
+                <Link key={k} href={`/${k === "about" ? "about" : k}`} className="hover:text-coral">
+                  {tChrome(k)}
+                </Link>
+              ))}
+            </nav>
+          </BottomBar>
+        </span>
       </div>
     </PageTransition>
   );
@@ -980,20 +1087,29 @@ function StoryStep({
       </header>
 
       <div className={hasBeats ? "grid gap-6 lg:grid-cols-2 lg:items-start" : ""}>
-        {/* Left: the memory input + age — always up top. */}
+        {/* Left: the memory input + age — always up top. The memory field is
+            dressed as a page in a diary: a paper card with faint ruled lines,
+            the label/hint styled as a diary prompt. Still a real <textarea>. */}
         <div className="flex flex-col gap-5">
-          <Field
-            label={template ? t("memoryLabelTemplate") : t("memoryLabelOwn")}
-            htmlFor="memory"
-            hint={
-              template
-                ? t("memoryHintTemplate")
-                : t("memoryHintOwn", { prompt: memoryPrompts[1] })
-            }
-          >
-            <TextArea
+          <Card className="bg-white p-5 sm:p-6">
+            <label
+              htmlFor="memory"
+              className="block font-display text-lg font-extrabold text-ink"
+            >
+              {template ? t("memoryLabelTemplate") : t("memoryLabelOwn")}
+            </label>
+            <p className="mt-1 text-sm italic leading-relaxed text-ink-soft">
+              {template ? t("memoryHintTemplate") : t("memoryHintOwn", { prompt: memoryPrompts[1] })}
+            </p>
+            <textarea
               id="memory"
-              className="min-h-36 leading-relaxed"
+              className="mt-4 block min-h-48 w-full resize-y border-transparent bg-transparent p-0 font-body text-[1.05rem] leading-8 text-ink placeholder:text-ink-soft/50 focus:outline-none focus:ring-0"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(to bottom, transparent 0, transparent calc(2rem - 1px), rgb(118 30 11 / 0.1) calc(2rem - 1px), rgb(118 30 11 / 0.1) 2rem)",
+                backgroundAttachment: "local",
+                lineHeight: "2rem",
+              }}
               placeholder={
                 template
                   ? t("memoryPlaceholderTemplate", { noun: templateNoun(template.title) })
@@ -1002,7 +1118,7 @@ function StoryStep({
               value={memoryText}
               onChange={(e) => onMemoryChange(e.target.value)}
             />
-          </Field>
+          </Card>
 
           <div>
             <p className="mb-1.5 text-sm font-bold text-ink">
@@ -1077,20 +1193,20 @@ function CastStep({
       </header>
 
       {/* Character cards: the uploaded photo becomes the character preview;
-          the last card adds another person. Two-wide at baseline; from three
-          people the row becomes a swipeable carousel. */}
+          the last card adds another person. Three-up on sm+ (add-person card
+          in-grid); on <sm three or more people become a swipeable carousel. */}
       <div
         className={
           people.length >= 3
-            ? "-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            : "grid grid-cols-1 gap-4 sm:grid-cols-2"
+            ? "-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0"
+            : "grid grid-cols-2 gap-4 sm:grid-cols-3"
         }
       >
         {people.map((person) => (
           <div
             key={person.key}
-            className={`relative flex flex-col rounded-2xl border-2 border-ink/10 bg-white p-3 ${
-              people.length >= 3 ? "w-64 shrink-0 snap-start" : ""
+            className={`relative flex flex-col rounded-2xl border-2 border-ink/10 bg-white p-2.5 ${
+              people.length >= 3 ? "w-56 shrink-0 snap-start sm:w-auto sm:shrink" : ""
             }`}
           >
             {people.length > 1 ? (
@@ -1179,14 +1295,14 @@ function CastStep({
               placeholder={t("castNamePlaceholder")}
               value={person.name}
               maxLength={80}
-              className="mt-2"
+              className="mt-2 py-2 text-sm"
               onChange={(e) => onUpdate(person.key, { name: e.target.value })}
             />
             <Select
               id={`role-${person.key}`}
               aria-label={t("castRole")}
               value={person.role}
-              className="mt-1.5"
+              className="mt-1.5 py-2 text-sm"
               onChange={(e) => onUpdate(person.key, { role: e.target.value as PersonRole })}
             >
               {PERSON_ROLES.map((role) => (
@@ -1202,8 +1318,8 @@ function CastStep({
           <button
             type="button"
             onClick={onAdd}
-            className={`flex min-h-[14rem] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink/20 text-ink-soft transition-colors hover:border-marigold hover:text-ink ${
-              people.length >= 3 ? "w-64 shrink-0 snap-start" : ""
+            className={`flex min-h-[12rem] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink/20 text-ink-soft transition-colors hover:border-marigold hover:text-ink ${
+              people.length >= 3 ? "w-56 shrink-0 snap-start sm:w-auto sm:shrink" : ""
             }`}
           >
             <span className="text-2xl leading-none">+</span>
@@ -1243,8 +1359,31 @@ function FinishStep({
   onConsentChange: (v: boolean) => void;
 }) {
   const t = useTranslations("wizard");
+  // Printed-page copy lives in the flipbook namespace; resolved against the
+  // current UI locale (matching the person filling in the form).
+  const tFlip = useTranslations("flipbook");
+
+  // Front-matter previews reuse the book's own font language. The wizard has no
+  // font picker, so we render in the default "storybook" pairing (display face
+  // for the title) and the shared script face for the dedication, exactly like
+  // the flipbook. Fonts load via the same Google Fonts stylesheet the flipbook uses.
+  const pairing = FONT_PAIRINGS.storybook;
+  const displayFont = {
+    fontFamily: `'${pairing.display.family}', sans-serif`,
+    fontWeight: pairing.display.weight,
+  };
+  const scriptFont = {
+    fontFamily: `'${SCRIPT_FONT.family}', cursive`,
+    fontWeight: SCRIPT_FONT.weight,
+  };
+
+  const titleText = title.trim() || (template ? template.title : t("finishTitlePlaceholder"));
+
   return (
     <section className="flex flex-col gap-5">
+      {/* React hoists this to <head>; loads the pairing + script Google fonts. */}
+      <link rel="stylesheet" href={fontStylesheetUrl(pairing)} />
+
       <header>
         <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">{t("finishTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
@@ -1252,8 +1391,9 @@ function FinishStep({
         </p>
       </header>
 
-      {/* Two columns: the book's front matter left, delivery + consent right. */}
-      <div className="grid gap-5 lg:grid-cols-2 lg:gap-7">
+      {/* The book's front matter as living pages: inputs on the left, live title
+          + dedication page previews on the right (they update as you type). */}
+      <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
         <div className="flex flex-col gap-4">
           <Field label={t("finishBookTitle")} htmlFor="title" optional>
             <TextInput
@@ -1297,36 +1437,106 @@ function FinishStep({
           </Field>
         </div>
 
+        {/* Live previews of the two printed front-matter pages. */}
         <div className="flex flex-col gap-4">
-          <Field label={t("finishEmail")} htmlFor="email">
-            <TextInput
-              id="email"
-              type="email"
-              placeholder={t("finishEmailPlaceholder")}
-              value={email}
-              onChange={(e) => onEmailChange(e.target.value)}
-              autoComplete="email"
-            />
-          </Field>
+          <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
+            {t("finishPreviewLabel")}
+          </p>
 
-          {/* Explicit privacy opt-in — gates the submit button. */}
-          <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-lavender/60 p-4 text-xs leading-relaxed text-ink-soft">
-            <input
-              type="checkbox"
-              checked={consent}
-              onChange={(e) => onConsentChange(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-coral"
-            />
-            <span>
-              {t("finishConsent")}{" "}
-              <Link href="/privacy" className="font-semibold text-ink underline hover:text-coral">
-                {t("finishConsentLink")}
-              </Link>
-              .
-            </span>
-          </label>
+          {/* Title page */}
+          <FinishPreviewPage caption={tFlip("titlePage")}>
+            <div className="flex h-full flex-col items-center justify-center gap-2 px-[12%] pb-[14%] text-center">
+              <h3
+                className="font-display text-[clamp(1.05rem,3.4vw,1.6rem)] font-extrabold leading-tight text-ink"
+                style={displayFont}
+              >
+                {titleText}
+              </h3>
+              <Sparkle className="text-marigold" size={16} />
+            </div>
+            <p className="absolute inset-x-0 bottom-[7%] text-center text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-ink/40">
+              {tFlip("imprint")}
+            </p>
+          </FinishPreviewPage>
+
+          {/* Dedication page */}
+          <FinishPreviewPage caption={tFlip("dedication")}>
+            <div className="flex h-full flex-col items-center justify-center gap-3 px-[11%] text-center">
+              <p className="text-[0.58rem] font-semibold uppercase tracking-[0.2em] text-ink/35">
+                {tFlip("dedication")}
+              </p>
+              <p
+                className="whitespace-pre-line text-[clamp(1rem,3.6vw,1.5rem)] leading-snug text-ink"
+                style={scriptFont}
+              >
+                {greeting.trim() || tFlip("dedicationPlaceholder")}
+              </p>
+              {greetingFrom.trim() ? (
+                <p
+                  className="text-[clamp(0.9rem,3.2vw,1.3rem)] text-ink-soft"
+                  style={scriptFont}
+                >
+                  {tFlip("dedicationFrom", { name: greetingFrom.trim() })}
+                </p>
+              ) : null}
+            </div>
+          </FinishPreviewPage>
         </div>
       </div>
+
+      {/* Delivery + consent, clearly after the front matter. */}
+      <div className="grid gap-4 border-t border-ink/10 pt-5 sm:grid-cols-2 sm:items-start">
+        <Field label={t("finishEmail")} htmlFor="email">
+          <TextInput
+            id="email"
+            type="email"
+            placeholder={t("finishEmailPlaceholder")}
+            value={email}
+            onChange={(e) => onEmailChange(e.target.value)}
+            autoComplete="email"
+          />
+        </Field>
+
+        {/* Explicit privacy opt-in — gates the submit button. */}
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-lavender/60 p-4 text-xs leading-relaxed text-ink-soft">
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => onConsentChange(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-coral"
+          />
+          <span>
+            {t("finishConsent")}{" "}
+            <Link href="/privacy" className="font-semibold text-ink underline hover:text-coral">
+              {t("finishConsentLink")}
+            </Link>
+            .
+          </span>
+        </label>
+      </div>
     </section>
+  );
+}
+
+/**
+ * A single front-matter page preview: cream page with the flipbook's PageFrame
+ * chrome (white ring + soft shadow), aspect-square, with a small caption below.
+ */
+function FinishPreviewPage({
+  caption,
+  children,
+}: {
+  caption: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <figure className="m-0">
+      <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-cream shadow-polaroid ring-8 ring-white">
+        {children}
+      </div>
+      <figcaption className="mt-2 text-center text-[11px] font-semibold uppercase tracking-wide text-ink-soft/80">
+        {caption}
+      </figcaption>
+    </figure>
   );
 }
