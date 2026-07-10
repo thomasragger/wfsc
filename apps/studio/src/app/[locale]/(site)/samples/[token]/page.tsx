@@ -119,7 +119,8 @@ export default async function SampleBookPage({
                   href={`/samples/${encodeURIComponent(s.token)}`}
                   image={s.mockupImageUrl ?? s.coverImageUrl}
                   title={s.title ?? t("detailFallbackTitle")}
-                  subtitle={s.categoryName}
+                  subtitle={s.templateTagline}
+                  tag={s.categoryName}
                   ctaLabel={t("cardCta")}
                 />
               ))}

@@ -48,7 +48,8 @@ export default async function SamplesPage() {
                 href={`/samples/${encodeURIComponent(sample.token)}`}
                 image={sample.mockupImageUrl ?? sample.coverImageUrl ?? `/categories/${art.photo}.jpg`}
                 title={sample.title ?? t("detailFallbackTitle")}
-                subtitle={sample.categoryName}
+                subtitle={sample.templateTagline}
+                tag={sample.categoryName}
                 ctaLabel={t("cardCta")}
               />
             );

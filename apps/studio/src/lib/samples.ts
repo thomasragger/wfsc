@@ -18,6 +18,8 @@ export interface SampleSummary {
    *  this over coverImageUrl anywhere a book is shown as a physical object. */
   mockupImageUrl: string | null;
   templateId: string | null;
+  /** The source template's tagline — the card description. */
+  templateTagline: string | null;
   categoryId: string | null;
   categoryName: string | null;
 }
@@ -50,15 +52,18 @@ export async function fetchSamples(): Promise<SampleSummary[]> {
 
     // Resolve template -> category -> category name (best effort).
     const templateToCategory = new Map<string, string>();
+    const templateTaglines = new Map<string, string | null>();
     const categoryNames = new Map<string, string>();
     const templateIds = [...new Set(rows.map((r) => r.template_id).filter((v): v is string => !!v))];
     if (templateIds.length > 0) {
       const { data: tpls } = await db
         .from("story_templates")
-        .select("id, category_id")
+        .select("id, category_id, tagline, translations")
         .in("id", templateIds);
-      for (const t of (tpls ?? []) as { id: string; category_id: string }[]) {
+      for (const raw of (tpls ?? []) as Record<string, unknown>[]) {
+        const t = localizeRow(raw, locale) as { id: string; category_id: string; tagline: string | null };
         templateToCategory.set(t.id, t.category_id);
+        templateTaglines.set(t.id, t.tagline ?? null);
       }
       const categoryIds = [...new Set(templateToCategory.values())];
       if (categoryIds.length > 0) {
@@ -86,6 +91,7 @@ export async function fetchSamples(): Promise<SampleSummary[]> {
         coverImageUrl: coverUrls[i],
         mockupImageUrl: mockupUrls[i],
         templateId: r.template_id,
+        templateTagline: r.template_id ? (templateTaglines.get(r.template_id) ?? null) : null,
         categoryId,
         categoryName: categoryId ? (categoryNames.get(categoryId) ?? null) : null,
       };

@@ -19,6 +19,7 @@ export function ProductCard({
   hoverImage = null,
   title,
   subtitle,
+  tag,
   ctaLabel,
   priority = false,
 }: {
@@ -30,6 +31,8 @@ export function ProductCard({
   hoverImage?: string | null;
   title: string;
   subtitle?: string | null;
+  /** Small pill pinned to the art's top-right corner (e.g. the category). */
+  tag?: string | null;
   ctaLabel: string;
   priority?: boolean;
 }) {
@@ -58,6 +61,11 @@ export function ProductCard({
               imgClassName="h-full w-full object-cover"
             />
           </div>
+        ) : null}
+        {tag ? (
+          <span className="absolute right-3 top-3 z-10 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-ink shadow-sm">
+            {tag}
+          </span>
         ) : null}
       </div>
       <div className="flex flex-1 flex-col p-4 text-left">
