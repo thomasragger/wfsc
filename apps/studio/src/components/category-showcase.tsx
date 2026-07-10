@@ -51,7 +51,7 @@ export async function CategoryShowcase({
         {/* Soft white wash over the saturated gradient so the dark title/
             tagline stay legible. */}
         {gradient ? <div className="absolute inset-0 bg-cream/45" aria-hidden="true" /> : null}
-        <div className="relative mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 sm:py-20">
+        <div className="relative mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
           <div className="flex flex-col items-center gap-6 text-center lg:flex-row lg:items-center lg:gap-10 lg:text-left">
             {heroImageUrl ? (
               <div className="h-28 w-28 shrink-0 overflow-hidden rounded-full ring-4 ring-white shadow-polaroid sm:h-36 sm:w-36">
