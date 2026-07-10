@@ -15,8 +15,8 @@ generated*/
 .vercel
 .env*
 
-# restyle progress journal (generated)
-scripts/.restyle-progress.json
+# admin-cli state, progress journals and scratch (generated)
+.wfsc-admin/
 
 # agent worktrees
 .claude/worktrees/
