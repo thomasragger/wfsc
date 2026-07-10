@@ -54,7 +54,7 @@ export default async function OpengraphImage() {
         >
           {logo ? (
             // Satori needs explicit dimensions (1216x527 source, ratio 2.307).
-            // eslint-disable-next-line @next/next/no-img-element
+             
             <img src={logo} alt="" width={330} height={143} style={{ width: "330px", height: "143px" }} />
           ) : (
             <div
@@ -118,7 +118,7 @@ export default async function OpengraphImage() {
           }}
         >
           {mockups.map((src, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
+             
             <img
               key={i}
               src={src}
