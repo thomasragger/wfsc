@@ -255,7 +255,7 @@ function CarouselArrow({
       onClick={disabled ? undefined : onClick}
       className={`absolute top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink shadow-fuzzy transition-all duration-200 hover:-translate-y-[calc(50%+2px)] hover:shadow-polaroid focus-visible:outline-3 focus-visible:outline-cobalt ${
         direction === "left" ? "-left-2 sm:-left-4" : "-right-2 sm:-right-4"
-      } ${disabled ? "pointer-events-none opacity-30" : "opacity-100 hover:bg-marigold"}`}
+      } ${disabled ? "pointer-events-none opacity-30" : "cursor-pointer opacity-100 hover:bg-marigold"}`}
     >
       {direction === "left" ? <IconChevronLeft /> : <IconChevronRight />}
     </button>
