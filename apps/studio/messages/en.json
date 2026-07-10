@@ -708,7 +708,12 @@
     "signInCta": "Sign in with Shopify",
     "inboxHeading": "Your book lives in your inbox",
     "inboxBody": "No account needed. When you create a book, we email you a private link to preview, edit, and order it anytime. Keep that email safe and your story is always one click away.",
-    "inboxCta": "Start your book"
+    "inboxCta": "Start your book",
+    "viewOrder": "View order",
+    "addressTitle": "Delivery address",
+    "addressNone": "No saved address yet. You'll add one during checkout.",
+    "manageAccount": "Manage account details",
+    "manageAccountNote": "Addresses and personal details live in your secure Shopify account."
   },
   "cart": {
     "heading": "Your cart",

@@ -2,12 +2,18 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import { Link } from "@/i18n/navigation";
-import { BookTile } from "@/components/ui/book-tile";
+import { ArtPlaceholder } from "@/components/decor";
+import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { ButtonLink } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { getCustomerRefreshToken, getCustomerToken } from "@/lib/customer-session";
-import { getCustomerProfile, isCustomerAccountsConfigured, type CustomerProfile } from "@/lib/shopify-customer";
+import {
+  accountPortalUrl,
+  getCustomerProfile,
+  isCustomerAccountsConfigured,
+  type CustomerProfile,
+} from "@/lib/shopify-customer";
 import { signUrls } from "@/lib/storage";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -22,6 +28,7 @@ interface SavedBook {
   token: string;
   title: string | null;
   image: string | null;
+  coverHasTitle: boolean;
   status: string;
 }
 
@@ -29,7 +36,7 @@ async function savedBooksFor(email: string): Promise<SavedBook[]> {
   try {
     const { data } = await supabaseAdmin()
       .from("books")
-      .select("access_token, title, cover_image_url, mockup_image_url, status, created_at")
+      .select("access_token, title, cover_image_url, mockup_image_url, cover_has_title, status, created_at")
       .eq("email", email)
       .eq("is_sample", false)
       .order("created_at", { ascending: false });
@@ -41,11 +48,26 @@ async function savedBooksFor(email: string): Promise<SavedBook[]> {
       token: b.access_token as string,
       title: (b.title ?? null) as string | null,
       image: images[i],
+      // Mockups always carry the lettered title; raw covers only sometimes.
+      coverHasTitle: Boolean(b.mockup_image_url) || Boolean(b.cover_has_title),
       status: b.status as string,
     }));
   } catch {
     return [];
   }
+}
+
+const STATUS_TONE: Record<string, string> = {
+  preview_ready: "bg-marigold/20 text-ink",
+  ready_for_review: "bg-marigold/20 text-ink",
+  shipped: "bg-sage/20 text-ink",
+  approved: "bg-sage/20 text-ink",
+  submitted_to_print: "bg-sage/20 text-ink",
+  cancelled: "bg-ink/5 text-ink-soft",
+};
+
+function humanize(value: string): string {
+  return value.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
 
 export default async function AccountPage() {
@@ -70,11 +92,13 @@ export default async function AccountPage() {
   }
 
   const savedBooks = profile?.email ? await savedBooksFor(profile.email) : [];
+  const portalUrl = accountPortalUrl();
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
+    <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
       {profile ? (
         <>
+          {/* ----------------------------------------------------- header */}
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <Eyebrow>{t("eyebrow")}</Eyebrow>
@@ -83,67 +107,149 @@ export default async function AccountPage() {
               </h1>
               {profile.email ? <p className="mt-1 text-ink-soft">{profile.email}</p> : null}
             </div>
-            <Link href="/account/logout" className="text-sm font-semibold text-coral hover:underline">
+            <ButtonLink href="/account/logout" variant="ghost" size="sm">
               {t("signOut")}
-            </Link>
+            </ButtonLink>
           </div>
 
+          {/* ------------------------------------------------- your books */}
           <section className="mt-12">
             <h2 className="font-display text-2xl font-extrabold text-ink">{t("yourBooks")}</h2>
             {savedBooks.length > 0 ? (
-              <div className="mt-6 grid grid-cols-2 justify-items-center gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
+              <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
                 {savedBooks.map((b) => (
-                  <BookTile
+                  <Link
                     key={b.token}
                     href={`/book/${encodeURIComponent(b.token)}`}
-                    image={b.image}
-                    title={b.title ?? t("bookFallbackTitle")}
-                    category={
-                      b.status === "preview_ready"
-                        ? t("previewReady")
-                        : b.status.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase())
-                    }
-                    size="md"
-                    aspectClassName="aspect-square"
-                  />
+                    className="group flex flex-col"
+                  >
+                    <div className="tile-lift relative aspect-square w-full overflow-hidden rounded-3xl bg-lavender shadow-fuzzy ring-1 ring-ink/5">
+                      {b.image ? (
+                        <ProgressiveImage
+                          src={b.image}
+                          alt=""
+                          className="h-full w-full"
+                          imgClassName="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <ArtPlaceholder />
+                      )}
+                      {/* Title on the cover when the artwork doesn't carry it */}
+                      {!b.coverHasTitle && b.title ? (
+                        <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-ink/55 to-transparent px-4 pb-8 pt-4">
+                          <p className="text-center font-display text-xl font-extrabold leading-tight text-white drop-shadow-sm">
+                            {b.title}
+                          </p>
+                        </div>
+                      ) : null}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <p className="min-w-0 truncate font-display font-bold text-ink group-hover:text-coral">
+                        {b.title ?? t("bookFallbackTitle")}
+                      </p>
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                          STATUS_TONE[b.status] ?? "bg-lavender text-ink"
+                        }`}
+                      >
+                        {b.status === "preview_ready" ? t("previewReady") : humanize(b.status)}
+                      </span>
+                    </div>
+                  </Link>
                 ))}
               </div>
             ) : (
-              <p className="mt-3 text-ink-soft">
-                {t("noBookYet")}{" "}
-                <Link href="/create" className="font-semibold text-coral hover:underline">
-                  {t("startFirst")}
-                </Link>
-              </p>
+              <Card className="mt-6 p-6">
+                <p className="text-ink-soft">
+                  {t("noBookYet")}{" "}
+                  <Link href="/create" className="font-semibold text-coral hover:underline">
+                    {t("startFirst")}
+                  </Link>
+                </p>
+              </Card>
             )}
           </section>
 
-          <section className="mt-12">
-            <h2 className="font-display text-2xl font-extrabold text-ink">{t("orderHistory")}</h2>
-            {profile.orders.length > 0 ? (
-              <ul className="mt-4 divide-y divide-ink/5 rounded-3xl border border-ink/5 bg-white">
-                {profile.orders.map((o) => (
-                  <li key={o.id} className="flex items-center justify-between gap-4 px-5 py-4">
-                    <div>
-                      <p className="font-display font-bold text-ink">{o.name}</p>
-                      {o.processedAt ? (
-                        <p className="text-xs text-ink-soft">
-                          {new Date(o.processedAt).toLocaleDateString()}
-                        </p>
-                      ) : null}
-                    </div>
-                    {o.total ? (
-                      <p className="font-display font-extrabold text-ink">
-                        {o.total.amount} {o.total.currencyCode}
-                      </p>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-3 text-ink-soft">{t("noOrders")}</p>
-            )}
-          </section>
+          {/* ------------------------------------------ orders + address */}
+          <div className="mt-12 grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+            <section>
+              <h2 className="font-display text-2xl font-extrabold text-ink">{t("orderHistory")}</h2>
+              {profile.orders.length > 0 ? (
+                <ul className="mt-4 divide-y divide-ink/5 overflow-hidden rounded-3xl border border-ink/5 bg-white shadow-fuzzy">
+                  {profile.orders.map((o) => (
+                    <li key={o.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2.5">
+                          <p className="font-display font-bold text-ink">{o.name}</p>
+                          {o.financialStatus ? (
+                            <span className="rounded-full bg-sage/20 px-2.5 py-0.5 text-[11px] font-bold text-ink">
+                              {humanize(o.financialStatus.toLowerCase())}
+                            </span>
+                          ) : null}
+                        </div>
+                        {o.processedAt ? (
+                          <p className="mt-0.5 text-xs text-ink-soft">
+                            {new Date(o.processedAt).toLocaleDateString()}
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-4">
+                        {o.total ? (
+                          <p className="font-display font-extrabold text-ink">
+                            {o.total.amount} {o.total.currencyCode}
+                          </p>
+                        ) : null}
+                        {o.statusPageUrl ? (
+                          <a
+                            href={o.statusPageUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-semibold text-coral hover:underline"
+                          >
+                            {t("viewOrder")}
+                          </a>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <Card className="mt-4 p-6">
+                  <p className="text-ink-soft">{t("noOrders")}</p>
+                </Card>
+              )}
+            </section>
+
+            <aside>
+              <h2 className="font-display text-2xl font-extrabold text-ink">{t("addressTitle")}</h2>
+              <Card className="mt-4 p-5">
+                {profile.address && profile.address.length > 0 ? (
+                  <p className="text-sm leading-relaxed text-ink">
+                    {profile.address.map((line, i) => (
+                      <span key={i} className="block">
+                        {line}
+                      </span>
+                    ))}
+                  </p>
+                ) : (
+                  <p className="text-sm text-ink-soft">{t("addressNone")}</p>
+                )}
+                {portalUrl ? (
+                  <>
+                    <a
+                      href={portalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-4 inline-block text-sm font-semibold text-coral hover:underline"
+                    >
+                      {t("manageAccount")}
+                    </a>
+                    <p className="mt-1 text-xs text-ink-soft">{t("manageAccountNote")}</p>
+                  </>
+                ) : null}
+              </Card>
+            </aside>
+          </div>
         </>
       ) : isCustomerAccountsConfigured() ? (
         <div className="mx-auto max-w-md py-10 text-center">

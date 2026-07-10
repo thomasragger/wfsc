@@ -380,28 +380,26 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
           ) : null}
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
-          {/* Left — the book */}
-          <div className="min-w-0">
-            <Flipbook book={viewBook} pages={pages} index={pageIndex} onIndexChange={setPageIndex} />
-          </div>
+        {/* The book gets the full width (it's the star); cast confirmation
+            with big character-sheet tiles sits underneath, next to checkout. */}
+        <div className="flex flex-col gap-10">
+          <Flipbook book={viewBook} pages={pages} index={pageIndex} onIndexChange={setPageIndex} />
 
-          {/* Right — action rail (sticky on desktop) */}
-          <aside className="flex flex-col gap-5 lg:sticky lg:top-24">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
             {book.people.length > 0 ? (
-              <Card className="p-5">
-                <h2 className="font-display text-base font-extrabold text-ink">{t("preview.castTitle")}</h2>
-                <p className="mt-1 text-xs text-ink-soft">
+              <Card className="p-6">
+                <h2 className="font-display text-lg font-extrabold text-ink">{t("preview.castTitle")}</h2>
+                <p className="mt-1 text-sm text-ink-soft">
                   {t("preview.castBody")}
                 </p>
-                <ul className="mt-4 flex flex-col gap-2.5">
+                <ul className="mt-5 grid grid-cols-2 gap-5 sm:grid-cols-3">
                   {book.people.map((person) => {
                     const confirmed = confirmedPeople.has(person.id);
                     return (
-                      <li key={person.id} className="flex items-center gap-3">
+                      <li key={person.id} className="flex flex-col">
                         <button
                           type="button"
-                          className="group/av relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-lavender ring-2 ring-white disabled:cursor-default"
+                          className="group/av relative aspect-square w-full overflow-hidden rounded-2xl bg-lavender ring-2 ring-white disabled:cursor-default"
                           disabled={!person.characterSheetUrl}
                           aria-label={t("preview.viewUpClose", { name: person.name })}
                           onClick={() => person.characterSheetUrl && setZoomed(person)}
@@ -414,7 +412,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                                 alt={t("preview.characterAlt", { name: person.name })}
                                 className="h-full w-full object-cover"
                               />
-                              <span className="absolute inset-0 flex items-center justify-center bg-ink/0 text-[10px] font-bold text-transparent transition-colors group-hover/av:bg-ink/40 group-hover/av:text-white">
+                              <span className="absolute inset-0 flex items-center justify-center bg-ink/0 text-xs font-bold text-transparent transition-colors group-hover/av:bg-ink/40 group-hover/av:text-white">
                                 {t("preview.view")}
                               </span>
                             </>
@@ -422,27 +420,29 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                             <ArtPlaceholder />
                           )}
                         </button>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-display text-sm font-bold text-ink">{person.name}</p>
-                          {person.role ? <p className="text-[11px] text-ink-soft">{person.role}</p> : null}
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate font-display text-sm font-bold text-ink">{person.name}</p>
+                            {person.role ? <p className="text-[11px] text-ink-soft">{person.role}</p> : null}
+                          </div>
+                          <button
+                            type="button"
+                            aria-pressed={confirmed}
+                            className={`shrink-0 rounded-full px-3 py-1.5 font-display text-xs font-bold transition-colors ${
+                              confirmed ? "bg-sage text-cream" : "bg-marigold text-ink hover:bg-marigold-deep"
+                            }`}
+                            onClick={() =>
+                              setConfirmedPeople((prev) => {
+                                const next = new Set(prev);
+                                if (confirmed) next.delete(person.id);
+                                else next.add(person.id);
+                                return next;
+                              })
+                            }
+                          >
+                            {confirmed ? t("preview.looksRightYes") : t("preview.looksRight")}
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          aria-pressed={confirmed}
-                          className={`shrink-0 rounded-full px-3 py-1.5 font-display text-xs font-bold transition-colors ${
-                            confirmed ? "bg-sage text-cream" : "bg-marigold text-ink hover:bg-marigold-deep"
-                          }`}
-                          onClick={() =>
-                            setConfirmedPeople((prev) => {
-                              const next = new Set(prev);
-                              if (confirmed) next.delete(person.id);
-                              else next.add(person.id);
-                              return next;
-                            })
-                          }
-                        >
-                          {confirmed ? t("preview.looksRightYes") : t("preview.looksRight")}
-                        </button>
                       </li>
                     );
                   })}
@@ -450,7 +450,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
               </Card>
             ) : null}
 
-            <Card className="p-5" id="unlock">
+            <Card className="p-5 lg:sticky lg:top-24" id="unlock">
               <h2 className="font-display text-base font-extrabold text-ink">{t("preview.unlockTitle")}</h2>
               <div className="mt-4 flex flex-col gap-3" role="radiogroup" aria-label={t("preview.formatGroupLabel")}>
                 {FORMATS.map((f) => {
@@ -491,7 +491,7 @@ export function BookHub({ token, initial }: { token: string; initial: BookPayloa
                   : t("preview.confirmCastFirst")}
               </p>
             </Card>
-          </aside>
+          </div>
         </div>
 
         {zoomed?.characterSheetUrl ? (

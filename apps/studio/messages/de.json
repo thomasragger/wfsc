@@ -712,7 +712,12 @@
     "signInCta": "Mit Shopify anmelden",
     "inboxHeading": "Dein Buch lebt in deinem Postfach",
     "inboxBody": "Kein Konto nötig. Wenn du ein Buch erstellst, schicken wir dir per E-Mail einen privaten Link zum Ansehen, Bearbeiten und Bestellen, jederzeit. Bewahr diese E-Mail gut auf, dann ist deine Geschichte immer nur einen Klick entfernt.",
-    "inboxCta": "Starte dein Buch"
+    "inboxCta": "Starte dein Buch",
+    "viewOrder": "Bestellung ansehen",
+    "addressTitle": "Lieferadresse",
+    "addressNone": "Noch keine gespeicherte Adresse. Du gibst sie beim Bezahlen an.",
+    "manageAccount": "Kontodaten verwalten",
+    "manageAccountNote": "Adressen und persönliche Daten verwaltest du in deinem sicheren Shopify-Konto."
   },
   "cart": {
     "heading": "Dein Warenkorb",

@@ -122,12 +122,24 @@ export function logoutUrl(idTokenHint?: string): string | null {
 export interface CustomerProfile {
   firstName: string | null;
   email: string | null;
+  /** Formatted default shipping address lines, when the customer has one. */
+  address: string[] | null;
   orders: {
     id: string;
     name: string;
     processedAt: string | null;
     total: { amount: string; currencyCode: string } | null;
+    financialStatus: string | null;
+    /** Shopify-hosted order status page (tracking etc.). */
+    statusPageUrl: string | null;
   }[];
+}
+
+/** Shopify's hosted account portal — where addresses/details are managed. */
+export function accountPortalUrl(): string | null {
+  const cfg = customerConfig();
+  if (!cfg) return null;
+  return `https://shopify.com/${cfg.shopId}/account`;
 }
 
 /** Fetch the signed-in customer's profile + recent orders. */
@@ -139,11 +151,14 @@ export async function getCustomerProfile(accessToken: string): Promise<CustomerP
       customer {
         firstName
         emailAddress { emailAddress }
+        defaultAddress { formatted }
         orders(first: 25, sortKey: PROCESSED_AT, reverse: true) {
           nodes {
             id
             name
             processedAt
+            financialStatus
+            statusPageUrl
             totalPrice { amount currencyCode }
           }
         }
@@ -161,19 +176,36 @@ export async function getCustomerProfile(accessToken: string): Promise<CustomerP
       customer?: {
         firstName: string | null;
         emailAddress?: { emailAddress: string | null };
-        orders?: { nodes: { id: string; name: string; processedAt: string | null; totalPrice: { amount: string; currencyCode: string } | null }[] };
+        defaultAddress?: { formatted: string[] | null } | null;
+        orders?: {
+          nodes: {
+            id: string;
+            name: string;
+            processedAt: string | null;
+            financialStatus?: string | null;
+            statusPageUrl?: string | null;
+            totalPrice: { amount: string; currencyCode: string } | null;
+          }[];
+        };
       };
     };
+    errors?: { message: string }[];
   };
   const c = json.data?.customer;
+  // Treat "no customer at all" as an auth failure so the caller can fall back
+  // to the signed-out state instead of rendering an empty page.
+  if (!c) throw new Error(json.errors?.[0]?.message ?? "customer query returned no data");
   return {
-    firstName: c?.firstName ?? null,
-    email: c?.emailAddress?.emailAddress ?? null,
-    orders: (c?.orders?.nodes ?? []).map((o) => ({
+    firstName: c.firstName ?? null,
+    email: c.emailAddress?.emailAddress ?? null,
+    address: c.defaultAddress?.formatted ?? null,
+    orders: (c.orders?.nodes ?? []).map((o) => ({
       id: o.id,
       name: o.name,
       processedAt: o.processedAt,
       total: o.totalPrice,
+      financialStatus: o.financialStatus ?? null,
+      statusPageUrl: o.statusPageUrl ?? null,
     })),
   };
 }
