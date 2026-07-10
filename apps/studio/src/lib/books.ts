@@ -33,6 +33,8 @@ export interface BookRow {
   cover_image_url: string | null;
   approved_at: string | null;
   created_at: string;
+  is_sample: boolean | null;
+  translations: Record<string, Record<string, unknown>> | null;
 }
 
 interface PersonRow {
@@ -53,6 +55,7 @@ interface SpreadRow {
   layout: string;
   image_url: string | null;
   regen_note: string | null;
+  translations: Record<string, Record<string, unknown>> | null;
 }
 
 interface StyleRow {
@@ -68,7 +71,7 @@ export interface BookBundle {
 }
 
 const BOOK_COLUMNS =
-  "id, access_token, email, status, title, memory_text, template_id, style_id, format, locale, font_pairing, greeting, greeting_from, cover_has_title, page_count, cover_image_url, approved_at, created_at";
+  "id, access_token, email, status, title, memory_text, template_id, style_id, format, locale, font_pairing, greeting, greeting_from, cover_has_title, page_count, cover_image_url, approved_at, created_at, is_sample, translations";
 
 /**
  * Load a book (with people, spreads, style) by its access token.
@@ -84,6 +87,7 @@ export async function fetchBookBundle(token: string): Promise<BookBundle | null>
   if (error) throw new Error(error.message);
   if (!data) return null;
   const book = data as BookRow;
+  const locale = await resolveLocale();
 
   const [peopleRes, spreadsRes, styleRes] = await Promise.all([
     db
@@ -93,7 +97,7 @@ export async function fetchBookBundle(token: string): Promise<BookBundle | null>
       .order("sort_order", { ascending: true }),
     db
       .from("book_spreads")
-      .select("id, position, kind, text, layout, image_url, regen_note")
+      .select("id, position, kind, text, layout, image_url, regen_note, translations")
       .eq("book_id", book.id)
       .order("position", { ascending: true }),
     book.style_id
@@ -107,13 +111,22 @@ export async function fetchBookBundle(token: string): Promise<BookBundle | null>
 
   const people = (peopleRes.data ?? []) as PersonRow[];
   const spreads = (spreadsRes.data ?? []) as SpreadRow[];
-  const style = styleRes.data
-    ? (localizeRow(styleRes.data, await resolveLocale()) as unknown as StyleRow)
-    : null;
+  const style = styleRes.data ? (localizeRow(styleRes.data, locale) as unknown as StyleRow) : null;
+
+  // Sample books carry per-locale overlays (title, greeting, each spread's text,
+  // and localized cover/mockup URLs) in their `translations` jsonb; overlay the
+  // VIEWER locale before signing/serializing. Customer books are authored in
+  // their own language (books.locale), so they are never overlaid.
+  const localBook = book.is_sample
+    ? (localizeRow(book as unknown as Record<string, unknown>, locale) as unknown as BookRow)
+    : book;
+  const localSpreads = book.is_sample
+    ? spreads.map((s) => localizeRow(s as unknown as Record<string, unknown>, locale) as unknown as SpreadRow)
+    : spreads;
 
   return {
-    book,
-    payload: await serializeBook(book, people, spreads, style),
+    book: localBook,
+    payload: await serializeBook(localBook, people, localSpreads, style),
   };
 }
 

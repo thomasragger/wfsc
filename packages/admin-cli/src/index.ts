@@ -15,6 +15,8 @@ import { importSample } from './commands/import-sample.ts';
 import { finalizeSamples } from './commands/finalize-samples.ts';
 import { addSampleCast } from './commands/add-sample-cast.ts';
 import { restyleSamples } from './commands/restyle-samples.ts';
+import { translateSamples } from './commands/translate-samples.ts';
+import { letterSamples } from './commands/letter-samples.ts';
 import { syncShopify } from './commands/sync-shopify.ts';
 import { shopifySetup } from './commands/shopify-setup.ts';
 import { shopifyBoard } from './commands/shopify-board.ts';
@@ -35,7 +37,7 @@ const GROUPS: { title: string; commands: Command[] }[] = [
   },
   {
     title: 'Samples',
-    commands: [generateSamples, importSample, finalizeSamples, addSampleCast, restyleSamples],
+    commands: [generateSamples, importSample, finalizeSamples, addSampleCast, restyleSamples, translateSamples, letterSamples],
   },
   {
     title: 'Commerce',

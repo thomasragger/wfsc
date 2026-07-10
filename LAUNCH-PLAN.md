@@ -338,6 +338,38 @@ Acceptance: with the `de` locale, zero English strings anywhere in the
 create → wait → review → edit → approve → read journey; `pnpm lint` and en/de
 key parity clean; paywall/dedication strings reviewed by Thomas.
 
+### O10 — German localization: showcase sample books — `launch/o10-german-samples`
+
+O7/O9 localized the chrome and journey copy, but the six showcase sample books
+(the `books.is_sample = true` gallery) still rendered their English title,
+spread text and lettered covers to German visitors. O10 extends the catalog
+translations pattern (0012_i18n.sql) to book content.
+
+1. Migration `0014_sample_translations.sql`: `translations jsonb` on `books`
+   and `book_spreads`, same overlay shape as the catalog tables. German cover
+   images live INSIDE `translations.de` as `cover_image_url` / `mockup_image_url`
+   so `localizeRow` swaps them with no site-code change.
+2. Admin CLI `translate-samples`: one coherent Claude call per book (opus,
+   forced tool output) translating title, dedication greeting and every spread
+   together so voice, rhythm and recurring phrases stay consistent. du-Form,
+   umlauts, character names kept. Idempotent on `translations.de.title`.
+3. Admin CLI `letter-samples --locale de`: no title-less original survives in a
+   reconstructable path (finalize-samples overwrote the cover and restyle may
+   have changed the art), so it img2img-replaces the English lettering on the
+   current cover with the German title, keeps everything else identical, then
+   rebuilds the 3D mockup (same recipe as letter-titles). URLs land in
+   `translations.de.{cover_image_url,mockup_image_url}`. Resumable via a
+   `.wfsc-admin/letter-samples.de.json` progress file.
+4. Readers: `lib/books.ts` selects `is_sample` + `translations` (book and
+   spreads) and overlays the viewer locale via `localizeRow` before signing and
+   serializing, but ONLY for sample books; customer books stay in their own
+   authored language. `lib/samples.ts` overlays title plus the localized
+   cover/mockup URLs on the gallery.
+
+Acceptance: `tsc --noEmit` and `pnpm lint` clean; every sample book renders
+title, greeting, all spread text and cover art in German for a `de` visitor;
+customer books untouched.
+
 ---
 
 ## Sequencing

@@ -1,4 +1,6 @@
 import { fetchBookBundle, type BookBundle } from "@/lib/books";
+import { resolveLocale } from "@/i18n/request";
+import { localizeRow } from "@/lib/i18n-content";
 import { signUrls } from "@/lib/storage";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -26,6 +28,7 @@ interface SampleRow {
   cover_image_url: string | null;
   mockup_image_url: string | null;
   template_id: string | null;
+  translations: Record<string, Record<string, unknown>> | null;
 }
 
 export async function fetchSamples(): Promise<SampleSummary[]> {
@@ -33,12 +36,17 @@ export async function fetchSamples(): Promise<SampleSummary[]> {
     const db = supabaseAdmin();
     const { data, error } = await db
       .from("books")
-      .select("access_token, title, cover_image_url, mockup_image_url, template_id")
+      .select("access_token, title, cover_image_url, mockup_image_url, template_id, translations")
       .eq("is_sample", true)
       .order("created_at", { ascending: true });
     if (error) return [];
-    const rows = (data ?? []) as SampleRow[];
-    if (rows.length === 0) return [];
+    const raw = (data ?? []) as SampleRow[];
+    if (raw.length === 0) return [];
+
+    // Overlay the viewer locale: title plus the localized cover/mockup URLs the
+    // admin CLI stored inside translations.<locale> (see letter-samples).
+    const locale = await resolveLocale();
+    const rows = raw.map((r) => localizeRow(r as unknown as Record<string, unknown>, locale) as unknown as SampleRow);
 
     // Resolve template -> category -> category name (best effort).
     const templateToCategory = new Map<string, string>();
