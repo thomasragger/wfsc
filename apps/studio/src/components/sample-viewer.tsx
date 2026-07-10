@@ -174,6 +174,7 @@ export function SampleViewer({
               {t("readBook")}
             </Button>
           </div>
+          <p className="mt-3 text-center text-xs text-ink-soft">{t("fromPrice")}</p>
         </section>
       </aside>
 

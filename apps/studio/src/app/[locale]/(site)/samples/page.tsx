@@ -39,7 +39,7 @@ export default async function SamplesPage() {
         />
       ) : (
         // One fuller grid reads better than one-book-per-category rows.
-        <div className="mt-14 grid grid-cols-2 justify-items-center gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="mt-14 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 sm:gap-x-8">
           {samples.map((sample) => {
             const art = categoryArt(sample.categoryId ?? "kids", sample.categoryName ?? "Kids");
             return (
@@ -49,7 +49,7 @@ export default async function SamplesPage() {
                 image={sample.mockupImageUrl ?? sample.coverImageUrl ?? `/categories/${art.photo}.jpg`}
                 title={sample.title ?? "A sample story"}
                 category={sample.categoryName}
-                size="md"
+                size="fill"
                 aspectClassName="aspect-square"
               />
             );

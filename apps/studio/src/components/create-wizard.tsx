@@ -702,9 +702,12 @@ function TemplateHero({
       ? null
       : t("agesRange", { min: template.ageMin ?? 0, max: template.ageMax ?? 8 });
   return (
-    <section aria-label={t("heroAriaLabel", { title: template.title })} className="grid gap-8 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
+    <section
+      aria-label={t("heroAriaLabel", { title: template.title })}
+      className="grid gap-10 pb-24 lg:grid-cols-[minmax(0,26rem)_1fr] lg:items-start lg:pb-0"
+    >
       {/* The book, shown as the real object */}
-      <div className="mx-auto w-full max-w-xs lg:sticky lg:top-24">
+      <div className="mx-auto w-full max-w-sm lg:sticky lg:top-24 lg:max-w-none">
         <BookTileVisual
           image={template.mockupImageUrl ?? template.previewImageUrl ?? template.exampleImageUrl ?? null}
           alt={template.title}
@@ -741,7 +744,9 @@ function TemplateHero({
           </div>
         ) : null}
 
-        <div className="mt-7 flex max-w-xs flex-col gap-3">
+        {/* In-flow CTAs on desktop; on mobile the fixed bottom bar (below)
+            keeps the action reachable without scrolling past the beats. */}
+        <div className="mt-7 hidden max-w-xs flex-col gap-3 lg:flex">
           <Button size="lg" className="w-full whitespace-nowrap" onClick={onStart}>
             {t("heroMakeThisBook")}
           </Button>
@@ -749,9 +754,21 @@ function TemplateHero({
             {t("heroUseOwnMemory")}
           </Button>
         </div>
-        <p className="mt-3 text-xs text-ink-soft">
+        <p className="mt-3 hidden text-xs text-ink-soft lg:block">
           {t("heroFreePreview")}
         </p>
+
+        {/* Mobile: fixed bottom action bar (safe-area aware) */}
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-ink/10 bg-cream/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur lg:hidden">
+          <div className="mx-auto flex w-full max-w-md items-center gap-2">
+            <Button variant="ghost" className="flex-1 whitespace-nowrap" onClick={onOwnMemory}>
+              {t("heroUseOwnMemory")}
+            </Button>
+            <Button className="flex-[1.3] whitespace-nowrap" onClick={onStart}>
+              {t("heroMakeThisBook")}
+            </Button>
+          </div>
+        </div>
 
         {beats.length > 0 ? (
           <div className="mt-9">

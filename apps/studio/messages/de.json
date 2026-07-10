@@ -31,7 +31,8 @@
     "closingCta": "Jetzt selbst gestalten",
     "allSamples": "Alle Beispielbücher",
     "detailFallbackTitle": "Ein Beispielbuch",
-    "illustratedIn": "Illustriert im {style}-Stil"
+    "illustratedIn": "Illustriert im {style}-Stil",
+    "moreTitle": "Noch mehr Bücher zum Durchblättern"
   },
   "bookHub": {
     "defaultTitle": "Dein Bilderbuch",
@@ -269,7 +270,8 @@
     "ctaBodyTemplate": "Starte mit genau dieser Geschichten-Idee und mach sie ganz zu deiner eigenen.",
     "ctaBodyDefault": "Es dauert nur etwa fünf Minuten, uns deine Erinnerung zu erzählen.",
     "ctaButton": "Mach dein eigenes",
-    "readBook": "Blätter durchs Buch"
+    "readBook": "Blätter durchs Buch",
+    "fromPrice": "Ab 39 €, gedruckt und bis an deine Tür geliefert."
   },
   "errors": {
     "notFound": {

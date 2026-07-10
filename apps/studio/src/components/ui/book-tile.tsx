@@ -24,6 +24,9 @@ export const BOOK_TILE_SIZES = {
   sm: "w-40 sm:w-48",
   md: "w-52 sm:w-60",
   lg: "w-56 sm:w-64",
+  /** Fill the grid cell — use in CSS grids so the columns own the geometry
+   *  (fixed widths centered in variable cells produce ragged gutters). */
+  fill: "w-full",
 } as const;
 
 export type BookTileSize = keyof typeof BOOK_TILE_SIZES;

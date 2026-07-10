@@ -30,7 +30,8 @@
     "closingCta": "Make your own",
     "allSamples": "All sample books",
     "detailFallbackTitle": "A sample storybook",
-    "illustratedIn": "Illustrated in the {style} style"
+    "illustratedIn": "Illustrated in the {style} style",
+    "moreTitle": "More books to flip through"
   },
   "bookHub": {
     "defaultTitle": "Your storybook",
@@ -268,7 +269,8 @@
     "ctaBodyTemplate": "Start from this very story idea and make it entirely yours.",
     "ctaBodyDefault": "It takes about five minutes to tell us your memory.",
     "ctaButton": "Make your own",
-    "readBook": "Flip through the book"
+    "readBook": "Flip through the book",
+    "fromPrice": "From €39, printed and shipped to your door."
   },
   "errors": {
     "notFound": {

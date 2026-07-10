@@ -95,7 +95,7 @@ export async function CategoryShowcase({
 
       <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
         {templates.length > 0 ? (
-          <div className="grid grid-cols-2 justify-items-center gap-x-4 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 sm:gap-x-8">
             {templates.map((tpl) => (
               <BookTile
                 key={tpl.id}
@@ -104,7 +104,7 @@ export async function CategoryShowcase({
                 hoverImage={tpl.mockupImageUrl ? tpl.previewImageUrl : null}
                 title={tpl.title}
                 tagline={tpl.tagline}
-                size="md"
+                size="fill"
                 aspectClassName="aspect-square"
               />
             ))}

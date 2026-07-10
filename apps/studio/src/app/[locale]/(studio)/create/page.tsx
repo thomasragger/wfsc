@@ -11,7 +11,7 @@ export async function generateMetadata() {
 
 export default function CreatePage() {
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
+    <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       <Suspense
         fallback={
           <SkeletonGrid count={2} className="grid gap-6" itemClassName="h-48 rounded-3xl" />
