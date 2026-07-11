@@ -1975,7 +1975,9 @@ function TapedNote({
  * grow, or shrink. */
 function MemoryNoteCard({ text }: { text: string }) {
   return (
-    <TapedNote tilt="-1.5deg" className="h-[14.5rem] w-full max-w-[19rem] overflow-hidden">
+    // No overflow-hidden on the card: it would clip the tape overhang. The
+    // inner paragraph clamps, so content can never escape the fixed height.
+    <TapedNote tilt="-1.5deg" className="h-[14.5rem] w-full max-w-[19rem]">
       <p
         className="overflow-hidden font-body text-[0.9rem] text-ink/85"
         style={{
@@ -1999,7 +2001,7 @@ function TitleNoteCard({ label, title }: { label: string; title: string }) {
   return (
     <TapedNote
       tilt="1.5deg"
-      className="flex h-[11.5rem] w-full max-w-[17rem] flex-col items-center justify-center overflow-hidden py-6 text-center"
+      className="flex h-[11.5rem] w-full max-w-[17rem] flex-col items-center justify-center py-6 text-center"
     >
       <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-ink/40">{label}</p>
       <p
@@ -2027,7 +2029,7 @@ function DedicationNoteCard({
   return (
     <TapedNote
       tilt="-1deg"
-      className="flex h-[15rem] w-full max-w-[18rem] flex-col items-center justify-center overflow-hidden py-6 text-center"
+      className="flex h-[15rem] w-full max-w-[18rem] flex-col items-center justify-center py-6 text-center"
     >
       <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-ink/40">{label}</p>
       <p
@@ -2336,7 +2338,12 @@ function BookSoFar({
         {pages.length === 0 ? (
           // Empty scrapbook: same fixed stage, a small friendly note inside.
           <div className="flex aspect-square w-full items-center justify-center px-5 pb-5 pt-4">
-            <TapedNote tilt="-2deg" className="max-w-[15rem] py-6 text-center">
+            {/* Same footprint as the memory note it will swap into, so the
+                post-it keeps its size the moment typing starts. */}
+            <TapedNote
+              tilt="-2deg"
+              className="flex h-[14.5rem] w-full max-w-[19rem] items-center justify-center text-center"
+            >
               <p className="text-sm leading-relaxed text-ink-soft">{t("bookSoFarEmpty")}</p>
             </TapedNote>
           </div>
