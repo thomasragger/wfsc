@@ -155,7 +155,7 @@ function emailLayout(parts: LayoutParts): string {
   const paragraphs = parts.paragraphsHtml
     .map(
       (p) =>
-        `<p style="margin: 0 0 16px; font-family: ${FONT}; font-size: 16px; line-height: 1.6; color: ${INK};">${p}</p>`,
+        `<p style="margin: 0 auto 16px; max-width: 460px; font-family: ${FONT}; font-size: 16px; line-height: 1.6; color: ${INK}; text-wrap: pretty;">${p}</p>`,
     )
     .join('\n');
 
@@ -173,13 +173,13 @@ function emailLayout(parts: LayoutParts): string {
     : '';
 
   const privacy = parts.privacyNote
-    ? `<p style="margin: 20px 0 0; font-family: ${FONT}; font-size: 13px; line-height: 1.5; color: ${MUTED};">${esc(
+    ? `<p style="margin: 20px auto 0; max-width: 440px; font-family: ${FONT}; font-size: 13px; line-height: 1.5; color: ${MUTED}; text-wrap: pretty;">${esc(
         parts.privacyNote,
       )}</p>`
     : '';
 
   const contact = parts.contactNote
-    ? `<p style="margin: 20px 0 0; font-family: ${FONT}; font-size: 13px; line-height: 1.5; color: ${MUTED};">${esc(
+    ? `<p style="margin: 20px auto 0; max-width: 440px; font-family: ${FONT}; font-size: 13px; line-height: 1.5; color: ${MUTED}; text-wrap: pretty;">${esc(
         parts.contactNote,
       )}</p>`
     : '';
@@ -209,8 +209,8 @@ function emailLayout(parts: LayoutParts): string {
             <td style="background-color: ${CARD}; border-radius: 24px; padding: 40px 36px; text-align: center;">
               <img src="${mascotSrc}" alt="${esc(
                 parts.mascot.alt,
-              )}" width="96" style="display: block; width: 96px; height: auto; margin: 0 auto 20px; border: 0;">
-              <h1 style="margin: 0 0 18px; font-family: ${FONT}; font-size: 26px; line-height: 1.3; font-weight: 700; color: ${INK};">${esc(
+              )}" width="144" style="display: block; width: 144px; max-width: 45%; height: auto; margin: 0 auto 22px; border: 0;">
+              <h1 style="margin: 0 auto 18px; max-width: 460px; font-family: ${FONT}; font-size: 26px; line-height: 1.3; font-weight: 700; color: ${INK}; text-wrap: balance;">${esc(
                 parts.heading,
               )}</h1>
               ${paragraphs}
@@ -387,7 +387,7 @@ export const generationDelayedCopy: Record<string, NoticeEmailCopy> = {
   en: {
     subject: '{title} is taking a little longer',
     preheader: 'Your book needs a bit more time. We are on it; nothing is needed from you.',
-    mascotAlt: 'A Warm Fuzzy Story Club friend at work on a book',
+    mascotAlt: 'A Warm Fuzzy Story Club friend painting a storybook at an easel',
     heading: 'A little more time',
     paragraphs: [
       '{title} is taking a little longer to illustrate than usual. Our team is already looking into it, and there is nothing you need to do.',
@@ -399,7 +399,7 @@ export const generationDelayedCopy: Record<string, NoticeEmailCopy> = {
   de: {
     subject: '{title} dauert ein bisschen länger',
     preheader: 'Dein Buch braucht noch etwas Zeit. Wir kümmern uns darum, du musst nichts tun.',
-    mascotAlt: 'Ein Freund vom Warm Fuzzy Story Club arbeitet an einem Buch',
+    mascotAlt: 'Ein Freund vom Warm Fuzzy Story Club malt ein Bilderbuch an einer Staffelei',
     heading: 'Noch ein bisschen Zeit',
     paragraphs: [
       '{title} braucht beim Illustrieren länger als sonst. Unser Team schaut es sich schon an, und du musst nichts weiter tun.',
@@ -500,7 +500,7 @@ export function generationDelayedEmail(book: EmailBook): RenderedEmail {
     html: emailLayout({
       lang: book.locale ?? 'en',
       preheader: fillText(copy.preheader, title),
-      mascot: { file: 'story.png', alt: copy.mascotAlt },
+      mascot: { file: 'paint.png', alt: copy.mascotAlt },
       heading: copy.heading,
       paragraphsHtml: copy.paragraphs.map((p) => fillHtml(p, title)),
       contactNote: copy.contact,

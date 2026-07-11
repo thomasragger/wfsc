@@ -98,6 +98,9 @@ importers:
       replicate:
         specifier: ^1.4.0
         version: 1.4.0
+      sharp:
+        specifier: ^0.34.5
+        version: 0.34.5
     devDependencies:
       '@types/node':
         specifier: ^22
