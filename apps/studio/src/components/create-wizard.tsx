@@ -16,7 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Carousel } from "@/components/ui/carousel";
 import { Chip, PillLabel } from "@/components/ui/chip";
+import { CoverArt } from "@/components/ui/cover-art";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { IconChevronLeft, IconChevronRight } from "@/components/ui/icons";
 import { Field, Select, TextArea, TextInput } from "@/components/ui/input";
 import { PageTransition, StepTransition } from "@/components/ui/page-transition";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
@@ -617,7 +619,7 @@ export function CreateWizard() {
         {/* Horizontal progress only on <lg; the rail carries it on lg+. */}
         <StepProgress steps={stepLabels} current={step} className="mb-6 lg:hidden" />
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,25rem)] lg:items-start lg:gap-8">
           {/* main step column */}
           <div className="min-w-0">
             <Card className="overflow-hidden p-5 sm:p-7">
@@ -681,59 +683,49 @@ export function CreateWizard() {
             </Card>
           </div>
 
-          {/* Right rail (lg+ only): step list + actions + trust note, then the
-              evolving "book so far" preview. On <lg the inline nav under the
-              step card carries the actions instead. `lg:self-stretch` makes the
-              aside fill the full grid-row height so the inner sticky div has
-              room to travel (grid `lg:items-start` would otherwise shrink it to
-              content height and sticky would never engage). */}
+          {/* Right rail (lg+ only): a slim actions card on top (Continue stays
+              in view without scrolling), then the evolving book preview as the
+              rail's visual anchor. On <lg the inline nav under the step card
+              carries the actions and the carousel renders full-width below the
+              card instead. `lg:self-stretch` makes the aside fill the full
+              grid-row height so the inner sticky div has room to travel (grid
+              `lg:items-start` would otherwise shrink it to content height and
+              sticky would never engage). */}
           <aside className="hidden lg:block lg:self-stretch">
             <div className="lg:sticky lg:top-24">
-              <Card className="p-5">
-                <ol className="flex flex-col gap-1" aria-label={stepLabels.join(", ")}>
-                  {stepLabels.map((label, i) => {
-                    const done = i < step;
-                    const active = i === step;
-                    return (
-                      <li
+              <Card className="p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="min-w-0 truncate font-display text-sm font-bold text-ink">
+                    {stepLabels[step]}
+                  </p>
+                  {/* Condensed step progress: one pill per step. */}
+                  <div
+                    className="flex shrink-0 items-center gap-1.5"
+                    role="img"
+                    aria-label={t("stepCount", { current: step + 1, total: STEPS.length })}
+                  >
+                    {stepLabels.map((label, i) => (
+                      <span
                         key={label}
-                        className={`flex items-center gap-3 rounded-xl px-2 py-2 ${
-                          active ? "bg-coral/5" : ""
+                        title={label}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          i === step ? "w-6 bg-coral" : i < step ? "w-2 bg-sage" : "w-2 bg-ink/15"
                         }`}
-                      >
-                        <span
-                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-display text-sm font-bold ${
-                            active
-                              ? "bg-coral text-white"
-                              : done
-                                ? "bg-sage text-cream"
-                                : "bg-white text-ink-soft ring-2 ring-ink/10"
-                          }`}
-                          aria-current={active ? "step" : undefined}
-                        >
-                          {done ? "✓" : i + 1}
-                        </span>
-                        <span
-                          className={`text-sm font-semibold ${active ? "text-ink" : "text-ink-soft"}`}
-                        >
-                          {label}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ol>
-
-                <div className="mt-5 flex flex-col gap-2.5">
-                  {forwardButton("w-full")}
-                  {backButton("ghost", "w-full")}
+                      />
+                    ))}
+                  </div>
                 </div>
-
-                <p className="mt-4 text-center text-xs text-ink-soft">{t("heroFreePreview")}</p>
+                <div className="mt-3 flex items-center gap-2">
+                  {backButton("ghost", "shrink-0")}
+                  {forwardButton("min-w-0 flex-1 whitespace-nowrap")}
+                </div>
+                <p className="mt-3 text-center text-xs text-ink-soft">{t("heroFreePreview")}</p>
               </Card>
 
-              {/* The book, growing with every choice, right below the rail. */}
+              {/* The book itself, one big page at a time, growing with every choice. */}
               <BookSoFar
-                layout="rail"
+                className="mt-6"
+                showEmpty
                 selectedStyle={selectedStyle}
                 template={template}
                 memoryText={memoryText}
@@ -746,20 +738,18 @@ export function CreateWizard() {
           </aside>
         </div>
 
-        {/* The evolving book on <lg: a compact horizontal strip above the inline
-            nav (front matter lives in the Finish step's own previews there). */}
-        <div className="mt-6 lg:hidden">
-          <BookSoFar
-            layout="strip"
-            selectedStyle={selectedStyle}
-            template={template}
-            memoryText={memoryText}
-            people={people}
-            title={title}
-            greeting={greeting}
-            greetingFrom={greetingFrom}
-          />
-        </div>
+        {/* The evolving book on <lg: the same big one-page carousel between the
+            step card and the inline nav (hidden entirely while it has no pages). */}
+        <BookSoFar
+          className="mx-auto mt-6 w-full max-w-md lg:hidden"
+          selectedStyle={selectedStyle}
+          template={template}
+          memoryText={memoryText}
+          people={people}
+          title={title}
+          greeting={greeting}
+          greetingFrom={greetingFrom}
+        />
 
         {/* Step navigation on <lg: inline under the step card (the rail carries
             the actions on lg+). */}
@@ -1328,21 +1318,9 @@ function FinishStep({
   onConsentChange: (v: boolean) => void;
 }) {
   const t = useTranslations("wizard");
-  // Printed-page copy lives in the flipbook namespace; resolved against the
-  // current UI locale (matching the person filling in the form).
-  const tFlip = useTranslations("flipbook");
-
-  // Front-matter previews reuse the book's own font language. The wizard has no
-  // font picker, so we render in the default "storybook" pairing (display face
-  // for the title) and the shared script face for the dedication, exactly like
-  // the flipbook. Fonts load via the same Google Fonts stylesheet the flipbook uses.
-  const titleText = title.trim() || (template ? template.title : t("finishTitlePlaceholder"));
 
   return (
-    <section className="flex flex-col gap-6">
-      {/* React hoists this to <head>; loads the pairing + script Google fonts. */}
-      <link rel="stylesheet" href={fontStylesheetUrl(FM_PAIRING)} />
-
+    <section className="flex flex-col gap-5">
       <header>
         <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">{t("finishTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
@@ -1350,32 +1328,9 @@ function FinishStep({
         </p>
       </header>
 
-      {/* Live front-matter previews. On lg+ the right-rail "book so far" panel
-          carries these and stays in view while you type, so here they show only
-          on <lg — side by side, full width, above the inputs. */}
-      <div className="lg:hidden">
-        <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
-          {t("finishPreviewLabel")}
-        </p>
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <FinishPreviewPage caption={tFlip("titlePage")}>
-            <TitlePageInner title={titleText} imprint={tFlip("imprint")} />
-          </FinishPreviewPage>
-          <FinishPreviewPage caption={tFlip("dedication")}>
-            <DedicationPageInner
-              label={tFlip("dedication")}
-              greeting={greeting}
-              placeholder={tFlip("dedicationPlaceholder")}
-              fromText={
-                greetingFrom.trim() ? tFlip("dedicationFrom", { name: greetingFrom.trim() }) : null
-              }
-            />
-          </FinishPreviewPage>
-        </div>
-      </div>
-
-      {/* Front-matter inputs. Comfortable single column; the live preview is the
-          rail (lg+) or the strip above (<lg). */}
+      {/* Front-matter inputs. Comfortable single column; the live title +
+          dedication pages appear in the "book so far" carousel (right rail on
+          lg+, full-width below the card on <lg), auto-advancing as you type. */}
       <div className="flex flex-col gap-4">
         <Field label={t("finishBookTitle")} htmlFor="title" optional>
           <TextInput
@@ -1448,34 +1403,10 @@ function FinishStep({
   );
 }
 
-/**
- * A single front-matter page preview: cream page with the flipbook's PageFrame
- * chrome (white ring + soft shadow), aspect-square, with a small caption below.
- */
-function FinishPreviewPage({
-  caption,
-  children,
-}: {
-  caption: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <figure className="m-0">
-      <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-cream shadow-polaroid ring-8 ring-white">
-        {children}
-      </div>
-      <figcaption className="mt-2 text-center text-[11px] font-semibold uppercase tracking-wide text-ink-soft/80">
-        {caption}
-      </figcaption>
-    </figure>
-  );
-}
-
 /* --------------------------------------------------------------- book so far */
-// The front-matter pages render in the book's own font language (no font picker
-// in the wizard, so we use the default "storybook" pairing + the shared script
-// face, exactly like the flipbook). Shared here so the Finish step's inline
-// previews and the "book so far" panel stay identical.
+// The book pages render in the book's own font language (no font picker in the
+// wizard, so we use the default "storybook" pairing + the shared script face,
+// exactly like the flipbook and the sample page's cover).
 const FM_PAIRING = FONT_PAIRINGS.storybook;
 const FM_DISPLAY = {
   fontFamily: `'${FM_PAIRING.display.family}', sans-serif`,
@@ -1490,16 +1421,16 @@ const FM_SCRIPT = {
 function TitlePageInner({ title, imprint }: { title: string; imprint: string }) {
   return (
     <>
-      <div className="flex h-full flex-col items-center justify-center gap-2 px-[12%] pb-[14%] text-center">
+      <div className="flex h-full flex-col items-center justify-center gap-3 px-[12%] pb-[12%] text-center">
         <h3
-          className="font-display text-[clamp(1rem,3.4vw,1.6rem)] font-extrabold leading-tight text-ink"
+          className="line-clamp-4 text-balance font-display text-[1.45rem] font-extrabold leading-tight text-ink"
           style={FM_DISPLAY}
         >
           {title}
         </h3>
-        <Sparkle className="text-marigold" size={16} />
+        <Sparkle className="text-marigold" size={20} />
       </div>
-      <p className="absolute inset-x-0 bottom-[7%] text-center text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-ink/40">
+      <p className="absolute inset-x-0 bottom-[7%] text-center text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-ink/40">
         {imprint}
       </p>
     </>
@@ -1520,15 +1451,15 @@ function DedicationPageInner({
 }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 px-[11%] text-center">
-      <p className="text-[0.58rem] font-semibold uppercase tracking-[0.2em] text-ink/35">{label}</p>
+      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-ink/35">{label}</p>
       <p
-        className="whitespace-pre-line text-[clamp(0.95rem,3.6vw,1.5rem)] leading-snug text-ink"
+        className="line-clamp-6 whitespace-pre-line text-[1.3rem] leading-snug text-ink"
         style={FM_SCRIPT}
       >
         {greeting.trim() || placeholder}
       </p>
       {fromText ? (
-        <p className="text-[clamp(0.85rem,3.2vw,1.3rem)] text-ink-soft" style={FM_SCRIPT}>
+        <p className="text-[1.05rem] text-ink-soft" style={FM_SCRIPT}>
           {fromText}
         </p>
       ) : null}
@@ -1536,54 +1467,19 @@ function DedicationPageInner({
   );
 }
 
-/** The book cover: the chosen style's art, with the title over a soft scrim. */
-function CoverPageInner({
-  image,
-  title,
-  alt,
-}: {
-  image: string | null;
-  title: string;
-  alt: string;
-}) {
-  return (
-    <>
-      {image ? (
-        <ProgressiveImage
-          src={image}
-          alt={alt}
-          className="absolute inset-0 h-full w-full"
-          imgClassName="h-full w-full object-cover"
-        />
-      ) : (
-        <ArtPlaceholder />
-      )}
-      <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-ink/75 via-ink/25 to-transparent" />
-      <div className="absolute inset-x-0 bottom-[8%] px-[10%] text-center">
-        <h3
-          className="font-display text-[clamp(0.8rem,3vw,1.3rem)] font-extrabold leading-tight text-white drop-shadow"
-          style={FM_DISPLAY}
-        >
-          {title}
-        </h3>
-      </div>
-    </>
-  );
-}
-
-/** The typed memory as a manuscript snippet on faint ruled lines. */
+/** The typed memory as a manuscript page on faint ruled lines. */
 function StoryPageInner({ text }: { text: string }) {
   return (
-    <div className="flex h-full flex-col px-[12%] pb-[12%] pt-[16%]">
+    <div className="flex h-full flex-col px-[12%] pb-[12%] pt-[14%]">
       <p
         className="overflow-hidden font-body text-ink/85"
         style={{
-          fontSize: "0.68rem",
-          lineHeight: "1.15rem",
+          fontSize: "0.85rem",
+          lineHeight: "1.5rem",
           backgroundImage:
-            "repeating-linear-gradient(to bottom, transparent 0, transparent calc(1.15rem - 1px), rgb(118 30 11 / 0.12) calc(1.15rem - 1px), rgb(118 30 11 / 0.12) 1.15rem)",
+            "repeating-linear-gradient(to bottom, transparent 0, transparent calc(1.5rem - 1px), rgb(118 30 11 / 0.12) calc(1.5rem - 1px), rgb(118 30 11 / 0.12) 1.5rem)",
           display: "-webkit-box",
-          WebkitLineClamp: 8,
+          WebkitLineClamp: 10,
           WebkitBoxOrient: "vertical",
         }}
       >
@@ -1604,9 +1500,9 @@ function CastPageInner({
   const shown = members.slice(0, 4);
   const names = members.map((m) => m.name).filter((n) => n.length > 0);
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-2.5 px-[10%] text-center">
-      <p className="text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-ink/40">{label}</p>
-      <div className="flex flex-wrap items-center justify-center gap-1.5">
+    <div className="flex h-full flex-col items-center justify-center gap-4 px-[10%] text-center">
+      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-ink/40">{label}</p>
+      <div className="flex flex-wrap items-center justify-center gap-2.5">
         {shown.map((m) =>
           m.photo ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -1614,12 +1510,12 @@ function CastPageInner({
               key={m.key}
               src={m.photo}
               alt=""
-              className="h-8 w-8 rounded-full object-cover shadow-sm ring-2 ring-white"
+              className="h-16 w-16 rounded-full object-cover shadow-sm ring-4 ring-white"
             />
           ) : (
             <span
               key={m.key}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-lavender font-display text-[0.7rem] font-bold text-ink ring-2 ring-white"
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-lavender font-display text-xl font-bold text-ink ring-4 ring-white"
               aria-hidden="true"
             >
               {m.name.slice(0, 1).toUpperCase() || "?"}
@@ -1628,7 +1524,7 @@ function CastPageInner({
         )}
       </div>
       {names.length > 0 ? (
-        <p className="font-display text-[0.62rem] font-bold leading-tight text-ink">
+        <p className="font-display text-[0.95rem] font-bold leading-snug text-ink">
           {names.join(", ")}
         </p>
       ) : null}
@@ -1636,15 +1532,51 @@ function CastPageInner({
   );
 }
 
+/** Prev/next arrow for the book-so-far carousel; fades out at the ends. */
+function BookNavArrow({
+  direction,
+  label,
+  disabled,
+  onClick,
+}: {
+  direction: "prev" | "next";
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={`absolute top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink shadow-fuzzy ring-1 ring-ink/5 transition hover:bg-marigold disabled:pointer-events-none disabled:opacity-0 ${
+        direction === "prev" ? "left-0" : "right-0"
+      }`}
+    >
+      {direction === "prev" ? (
+        <IconChevronLeft className="h-4 w-4" />
+      ) : (
+        <IconChevronRight className="h-4 w-4" />
+      )}
+    </button>
+  );
+}
+
 /**
- * The persistent "your book so far" preview: a small stack (rail, lg+) or strip
- * (<lg) of mini front/front-matter pages that grows as the wizard is filled in.
- * Purely presentational — every value comes from the wizard's own state. Only
- * pages with real content render; front-matter pages (title/dedication) show in
- * the rail only, since <lg the Finish step carries its own larger previews.
+ * The persistent "your book so far" preview — the wizard's companion book,
+ * presented like the sample page's hero: ONE big page at a time (CoverArt for
+ * the cover, cream page / white ring / polaroid shadow for the rest) in a
+ * gentle slide carousel with arrows, swipe and dots. Purely presentational —
+ * every value comes from the wizard's own state; pages exist only once they
+ * have real content. When a new page appears the carousel auto-advances to it
+ * so the user sees their choice land in the book. While empty it renders a
+ * page-sized placeholder when `showEmpty` is set (desktop rail), otherwise
+ * nothing (mobile).
  */
 function BookSoFar({
-  layout,
+  className = "",
+  showEmpty = false,
   selectedStyle,
   template,
   memoryText,
@@ -1653,7 +1585,8 @@ function BookSoFar({
   greeting,
   greetingFrom,
 }: {
-  layout: "rail" | "strip";
+  className?: string;
+  showEmpty?: boolean;
   selectedStyle: StyleSummary | null;
   template: TemplateSummary | null;
   memoryText: string;
@@ -1665,52 +1598,51 @@ function BookSoFar({
   const t = useTranslations("wizard");
   const tFlip = useTranslations("flipbook");
 
-  const includeFrontMatter = layout === "rail";
+  const [index, setIndex] = useState(0);
+  const [seenKeys, setSeenKeys] = useState<string[] | null>(null);
+  const swipeStart = useRef<number | null>(null);
+
   const coverTitle = title.trim() || template?.title || t("bookSoFarCoverTitle");
   const castMembers = people
     .filter((p) => p.photoUrls[0] || p.name.trim())
     .map((p) => ({ key: p.key, name: p.name.trim(), photo: p.photoUrls[0] ?? null }));
 
+  // Non-cover pages share the flipbook's page chrome (cream page, white ring,
+  // polaroid shadow); the cover uses the design system's CoverArt directly.
+  const framed = (inner: React.ReactNode) => (
+    <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-cream shadow-polaroid ring-8 ring-white">
+      {inner}
+    </div>
+  );
+
+  // Pages in the book's own order; each appears once it has real content.
   const pages: { key: string; caption: string; node: React.ReactNode }[] = [];
   if (selectedStyle) {
     pages.push({
       key: "cover",
       caption: tFlip("cover"),
       node: (
-        <CoverPageInner
-          image={selectedStyle.previewImageUrl}
-          title={coverTitle}
+        <CoverArt
+          src={selectedStyle.previewImageUrl}
           alt={t("styleCardAlt", { name: selectedStyle.name })}
+          title={coverTitle}
+          titleStyle={FM_DISPLAY}
         />
       ),
     });
   }
-  if (memoryText.trim()) {
-    pages.push({
-      key: "story",
-      caption: t("bookSoFarStory"),
-      node: <StoryPageInner text={memoryText.trim()} />,
-    });
-  }
-  if (castMembers.length > 0) {
-    pages.push({
-      key: "cast",
-      caption: t("bookSoFarCast"),
-      node: <CastPageInner label={t("bookSoFarCastStarring")} members={castMembers} />,
-    });
-  }
-  if (includeFrontMatter && title.trim()) {
+  if (title.trim()) {
     pages.push({
       key: "title",
       caption: tFlip("titlePage"),
-      node: <TitlePageInner title={title.trim()} imprint={tFlip("imprint")} />,
+      node: framed(<TitlePageInner title={title.trim()} imprint={tFlip("imprint")} />),
     });
   }
-  if (includeFrontMatter && greeting.trim()) {
+  if (greeting.trim()) {
     pages.push({
       key: "dedication",
       caption: tFlip("dedication"),
-      node: (
+      node: framed(
         <DedicationPageInner
           label={tFlip("dedication")}
           greeting={greeting}
@@ -1718,56 +1650,148 @@ function BookSoFar({
           fromText={
             greetingFrom.trim() ? tFlip("dedicationFrom", { name: greetingFrom.trim() }) : null
           }
-        />
+        />,
       ),
     });
   }
+  if (memoryText.trim()) {
+    pages.push({
+      key: "story",
+      caption: t("bookSoFarStory"),
+      node: framed(<StoryPageInner text={memoryText.trim()} />),
+    });
+  }
+  if (castMembers.length > 0) {
+    pages.push({
+      key: "cast",
+      caption: t("bookSoFarCast"),
+      node: framed(<CastPageInner label={t("bookSoFarCastStarring")} members={castMembers} />),
+    });
+  }
 
-  // Loads the pairing + script Google fonts whenever the panel is on screen
-  // (React hoists + dedupes this <link> with the Finish step's identical one).
-  const fontLink = <link rel="stylesheet" href={fontStylesheetUrl(FM_PAIRING)} />;
+  // Auto-advance: when a page newly appears, slide to it so the user's choice
+  // visibly lands in the book. State is adjusted during render (React's
+  // documented "adjust state when props change" pattern), so the track moves
+  // in the same commit the new page mounts in. The very first render with
+  // content (including a resumed draft) records the pages without advancing,
+  // keeping the book cover-led like the sample page.
+  const keys = pages.map((p) => p.key);
+  if (seenKeys === null ? keys.length > 0 : seenKeys.join("\n") !== keys.join("\n")) {
+    if (seenKeys !== null) {
+      let appeared = -1;
+      keys.forEach((k, i) => {
+        if (!seenKeys.includes(k)) appeared = i;
+      });
+      if (appeared >= 0) setIndex(appeared);
+      else if (index >= keys.length) setIndex(Math.max(0, keys.length - 1));
+    }
+    setSeenKeys(keys);
+  }
+  const current = Math.min(index, Math.max(0, pages.length - 1));
 
-  if (layout === "strip") {
-    if (pages.length === 0) return null;
+  const heading = (
+    <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-ink-soft/80">
+      {t("bookSoFarHeading")}
+    </p>
+  );
+
+  if (pages.length === 0) {
+    if (!showEmpty) return null;
     return (
-      <section aria-label={t("bookSoFarHeading")}>
-        {fontLink}
-        <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wide text-ink-soft/80">
-          {t("bookSoFarHeading")}
-        </p>
-        <div className="-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {pages.map((page) => (
-            <div key={page.key} className="animate-page-in w-28 shrink-0 snap-start">
-              <FinishPreviewPage caption={page.caption}>{page.node}</FinishPreviewPage>
-            </div>
-          ))}
+      <section aria-label={t("bookSoFarHeading")} className={className}>
+        {heading}
+        <div className="mt-4 flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-ink/15 px-10 text-center">
+          <Sparkle className="text-marigold/70" size={26} />
+          <p className="text-sm leading-relaxed text-ink-soft/80">{t("bookSoFarEmpty")}</p>
         </div>
       </section>
     );
   }
 
+  const goTo = (i: number) => setIndex(Math.max(0, Math.min(pages.length - 1, i)));
+
   return (
-    <section aria-label={t("bookSoFarHeading")} className="mt-5">
-      {fontLink}
-      <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-ink-soft/80">
-        {t("bookSoFarHeading")}
-      </p>
-      {pages.length === 0 ? (
-        <div className="mt-3 rounded-2xl border-2 border-dashed border-ink/10 px-5 py-8 text-center text-xs leading-relaxed text-ink-soft/70">
-          {t("bookSoFarEmpty")}
+    <section aria-label={t("bookSoFarHeading")} className={className}>
+      {/* React hoists this to <head>; loads the pairing + script Google fonts. */}
+      <link rel="stylesheet" href={fontStylesheetUrl(FM_PAIRING)} />
+      {heading}
+
+      <div className="relative">
+        {/* The viewport clips the sliding track; each slide carries padding so
+            the page's white ring + polaroid shadow paint uncut. touch-pan-y
+            leaves vertical scrolling native while we read horizontal swipes. */}
+        <div
+          className="touch-pan-y select-none overflow-hidden"
+          onPointerDown={(e) => {
+            swipeStart.current = e.clientX;
+            e.currentTarget.setPointerCapture(e.pointerId);
+          }}
+          onPointerUp={(e) => {
+            const start = swipeStart.current;
+            swipeStart.current = null;
+            if (start === null) return;
+            const dx = e.clientX - start;
+            if (dx <= -40) goTo(current + 1);
+            else if (dx >= 40) goTo(current - 1);
+          }}
+          onPointerCancel={() => {
+            swipeStart.current = null;
+          }}
+        >
+          <div
+            className="flex transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            style={{ transform: `translateX(-${current * 100}%)` }}
+          >
+            {pages.map((page, i) => (
+              <div
+                key={page.key}
+                className="w-full shrink-0 px-3 pb-9 pt-4"
+                aria-hidden={i !== current}
+              >
+                {page.node}
+              </div>
+            ))}
+          </div>
         </div>
-      ) : (
-        <div className="mt-3 flex flex-col items-center gap-4">
+
+        {pages.length > 1 ? (
+          <>
+            <BookNavArrow
+              direction="prev"
+              label={tFlip("previousPage")}
+              disabled={current === 0}
+              onClick={() => goTo(current - 1)}
+            />
+            <BookNavArrow
+              direction="next"
+              label={tFlip("nextPage")}
+              disabled={current === pages.length - 1}
+              onClick={() => goTo(current + 1)}
+            />
+          </>
+        ) : null}
+      </div>
+
+      {/* Caption of the visible page + one dot per page. */}
+      <p className="-mt-3 text-center font-display text-sm font-bold text-ink">
+        {pages[current].caption}
+      </p>
+      {pages.length > 1 ? (
+        <div className="mt-2.5 flex justify-center gap-1.5">
           {pages.map((page, i) => (
-            <div
+            <button
               key={page.key}
-              className={`animate-page-in w-full max-w-[11rem] ${i % 2 === 0 ? "-rotate-1" : "rotate-1"}`}
-            >
-              <FinishPreviewPage caption={page.caption}>{page.node}</FinishPreviewPage>
-            </div>
+              type="button"
+              aria-label={page.caption}
+              aria-current={i === current ? "true" : undefined}
+              onClick={() => goTo(i)}
+              className={`h-2.5 rounded-full transition-all duration-300 ${
+                i === current ? "w-6 bg-coral" : "w-2.5 bg-ink/15 hover:bg-ink/30"
+              }`}
+            />
           ))}
         </div>
-      )}
+      ) : null}
     </section>
   );
 }

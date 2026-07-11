@@ -837,7 +837,7 @@
     "finishEmailPlaceholder": "you@example.com",
     "finishConsent": "Yes, please use my story and photos to create this book. Details in our",
     "finishConsentLink": "privacy policy",
-    "finishPreviewLabel": "How your book begins",
+    "stepCount": "Step {current} of {total}",
     "bookSoFarHeading": "Your book so far",
     "bookSoFarEmpty": "Your book will appear here as you make each choice.",
     "bookSoFarStory": "Your story",
