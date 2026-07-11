@@ -5,6 +5,13 @@ import type { EnrichedCart } from "@/lib/cart";
 
 /** Thin typed fetch helpers for the Studio API, used by client components. */
 
+/** A real sample book in a style: enough to show a cover and open the reader. */
+export interface SampleBookRef {
+  token: string;
+  title: string | null;
+  coverUrl: string | null;
+}
+
 export interface StyleSummary {
   id: string;
   name: string;
@@ -12,8 +19,8 @@ export interface StyleSummary {
   previewImageUrl: string | null;
   /** Curated in-style reference illustrations for a richer style preview. */
   referenceImageUrls: string[];
-  /** Up to 2 REAL rendered spreads from sample books in this style. */
-  sampleSpreadUrls: string[];
+  /** Up to 2 REAL sample books in this style, readable in the overlay. */
+  sampleBooks: SampleBookRef[];
 }
 
 export interface TemplateSummary {

@@ -9,6 +9,7 @@ import { FONT_PAIRINGS, SCRIPT_FONT, fontStylesheetUrl } from "@wfsc/book-engine
 
 import { Link, useRouter } from "@/i18n/navigation";
 import { ArtPlaceholder, Sparkle } from "@/components/decor";
+import { Flipbook, type FlipPage } from "@/components/flipbook";
 import { Alert } from "@/components/ui/alert";
 import { BookTileVisual } from "@/components/ui/book-tile";
 import { ProductCard } from "@/components/ui/product-card";
@@ -22,20 +23,23 @@ import { Field, Select, TextInput } from "@/components/ui/input";
 import { PageTransition, StepTransition } from "@/components/ui/page-transition";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { Skeleton, SkeletonGrid } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { StepProgress } from "@/components/ui/steps";
 import { BottomBar } from "@/components/ui/bottom-bar";
 import { Turnstile } from "@/components/ui/turnstile";
-import { PERSON_ROLES, type PersonRole } from "@/lib/book-payload";
+import { PERSON_ROLES, type BookPayload, type PersonRole } from "@/lib/book-payload";
 import {
   createBook,
+  getBook,
   getCategoryTemplates,
   getStyles,
   getTemplate,
   suggestFrontMatter,
-  uploadPhoto,
   type CategorySummary,
+  type SampleBookRef,
   type StyleSummary,
   type TemplateSummary,
+  uploadPhoto,
 } from "@/lib/client-api";
 
 // One focused decision per screen (Typeform/Duolingo-style). The template
@@ -210,6 +214,21 @@ export function CreateWizard() {
   const stepScrollRef = useRef<HTMLDivElement>(null);
   // Auto-suggested title: fetched at most once per wizard session.
   const [autoTitleTried, setAutoTitleTried] = useState(false);
+
+  // Scrapbook spotlight: title/dedication advance the carousel only on
+  // DISCRETE moments (a suggestion landing = pulse, finishing an edit on
+  // blur = quiet), never per keystroke. The counter makes each request
+  // unique so repeat moments re-trigger.
+  const spotlightCount = useRef(0);
+  const [spotlight, setSpotlight] = useState<{
+    page: string;
+    nonce: string;
+    pulse: boolean;
+  } | null>(null);
+  const requestSpotlight = (page: "title" | "dedication", pulse: boolean) => {
+    spotlightCount.current += 1;
+    setSpotlight({ page, nonce: `s${spotlightCount.current}`, pulse });
+  };
 
   // Draft-saved flash: bumped (debounced) after localStorage writes settle,
   // cleared again by the timeout effect below. Non-zero = indicator visible.
@@ -803,6 +822,7 @@ export function CreateWizard() {
                       targetAge={targetAge}
                       titleAutoSuggest={!autoTitleTried}
                       onTitleAutoSuggest={() => setAutoTitleTried(true)}
+                      onSpotlight={requestSpotlight}
                     />
                   ))}
               </StepTransition>
@@ -868,13 +888,14 @@ export function CreateWizard() {
               </Card>
 
               {/* The scrapbook of ingredients, growing with every choice —
-                  anchored here on every step, review included. mt-auto pins
-                  its bottom edge to the shell's bottom; the width cap keeps
-                  the square stage short enough to fit 730px-tall viewports,
-                  and the fixed stage/caption/dot rows mean the block's
-                  footprint is identical empty or full (no jumping). */}
+                  anchored here on every step, review included. my-auto floats
+                  the whole block (stage + caption + dots) centered in the
+                  free space between the actions card and the shell's bottom;
+                  the width cap keeps the square stage short enough to fit
+                  730px-tall viewports, and the fixed stage/caption/dot rows
+                  mean the block's footprint is identical empty or full. */}
               <BookSoFar
-                className="mx-auto mt-auto w-full max-w-[18rem] pt-5"
+                className="mx-auto my-auto w-full max-w-[18rem] py-5"
                 showEmpty
                 selectedStyle={selectedStyle}
                 memoryText={memoryText}
@@ -883,6 +904,7 @@ export function CreateWizard() {
                 greeting={greeting}
                 greetingFrom={greetingFrom}
                 onEdit={editFromScrapbook}
+                spotlight={spotlight}
               />
             </div>
           </aside>
@@ -899,6 +921,7 @@ export function CreateWizard() {
           greeting={greeting}
           greetingFrom={greetingFrom}
           onEdit={editFromScrapbook}
+          spotlight={spotlight}
         />
 
         {/* Step navigation on <lg: inline under the step card (the rail carries
@@ -1054,6 +1077,51 @@ function StyleStep({
   recommendedId: string | null;
 }) {
   const t = useTranslations("wizard");
+  const tFlip = useTranslations("flipbook");
+
+  // The fullscreen sample-book reader (same overlay as the /samples pages):
+  // the full BookPayload is fetched lazily when a cover is tapped.
+  const [readerBook, setReaderBook] = useState<BookPayload | null>(null);
+  const [readerIndex, setReaderIndex] = useState(0);
+  const [loadingToken, setLoadingToken] = useState<string | null>(null);
+
+  async function openSample(sample: SampleBookRef) {
+    if (loadingToken) return;
+    setLoadingToken(sample.token);
+    try {
+      const book = await getBook(sample.token);
+      setReaderIndex(0);
+      setReaderBook(book);
+    } catch {
+      // quiet failure: the thumbnail simply stays a thumbnail
+    } finally {
+      setLoadingToken(null);
+    }
+  }
+
+  // Same page construction as the public sample page (sample-viewer), minus
+  // anything without a rendered image, so the wizard overlay can never show a
+  // locked/unlock-CTA spread — no dead buttons, no navigation away.
+  const readerPages: FlipPage[] = useMemo(() => {
+    if (!readerBook) return [];
+    const greetingSpread = readerBook.spreads.find((s) => s.kind === "greeting");
+    const dedication = readerBook.greeting ?? greetingSpread?.text ?? null;
+    return [
+      { kind: "cover" as const },
+      {
+        kind: "title" as const,
+        title: readerBook.title ?? tFlip("defaultTitle"),
+        styleName: readerBook.style?.name ?? null,
+      },
+      ...(dedication
+        ? [{ kind: "dedication" as const, text: dedication, from: readerBook.greetingFrom }]
+        : []),
+      ...readerBook.spreads
+        .filter((s) => s.kind !== "cover" && s.kind !== "greeting" && s.imageUrl !== null)
+        .map((spread) => ({ kind: "spread" as const, spread })),
+    ];
+  }, [readerBook, tFlip]);
+
   return (
     <section className="flex flex-col gap-5 lg:h-full lg:gap-4">
       <header>
@@ -1063,7 +1131,7 @@ function StyleStep({
         </p>
       </header>
 
-      {/* Picker + real sample pages center vertically as a group on lg+. */}
+      {/* Picker + real sample books center vertically as a group on lg+. */}
       <div className="flex flex-col gap-5 lg:min-h-0 lg:flex-1 lg:justify-center lg:gap-4">
         {styles === null && !stylesError ? (
           <SkeletonGrid count={3} className="grid gap-4 sm:grid-cols-3" itemClassName="h-52" />
@@ -1089,27 +1157,67 @@ function StyleStep({
           </div>
         ) : null}
 
-        {/* Honest proof: real rendered spreads from sample books in the chosen
-            style. Omitted gracefully for styles without sample books. */}
-        {selectedStyle && selectedStyle.sampleSpreadUrls.length > 0 ? (
+        {/* Honest proof: REAL books made in the chosen style, readable in the
+            fullscreen overlay. Omitted for styles without sample books. */}
+        {selectedStyle && selectedStyle.sampleBooks.length > 0 ? (
           <div key={selectedStyle.id} className="animate-page-in">
             <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
               {t("styleSampleHeading")}
             </p>
-            <div className="mt-3 grid max-w-sm grid-cols-2 gap-3 lg:max-w-[17rem]">
-              {selectedStyle.sampleSpreadUrls.map((url) => (
-                <ProgressiveImage
-                  key={url}
-                  src={url}
-                  alt={t("styleSampleAlt", { name: selectedStyle.name })}
-                  className="aspect-square w-full rounded-xl shadow-fuzzy ring-4 ring-white"
-                  imgClassName="h-full w-full object-cover"
-                />
+            <div className="mt-2 flex flex-wrap gap-3">
+              {selectedStyle.sampleBooks.map((sample) => (
+                <button
+                  key={sample.token}
+                  type="button"
+                  onClick={() => void openSample(sample)}
+                  disabled={loadingToken !== null}
+                  aria-busy={loadingToken === sample.token}
+                  className="group flex items-center gap-3 rounded-2xl bg-white/70 p-2 pr-4 text-left ring-1 ring-ink/10 transition hover:bg-white hover:shadow-fuzzy focus-visible:outline-3 focus-visible:outline-cobalt disabled:opacity-70"
+                >
+                  <span className="relative block h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-lavender">
+                    {sample.coverUrl ? (
+                      <ProgressiveImage
+                        src={sample.coverUrl}
+                        alt=""
+                        className="h-full w-full"
+                        imgClassName="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <ArtPlaceholder />
+                    )}
+                    {loadingToken === sample.token ? (
+                      <span className="absolute inset-0 flex items-center justify-center bg-white/70">
+                        <Spinner size="sm" />
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="line-clamp-2 block font-display text-sm font-bold leading-snug text-ink">
+                      {sample.title ?? tFlip("defaultTitle")}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] font-semibold text-coral">
+                      {t("styleSampleRead")}
+                    </span>
+                  </span>
+                </button>
               ))}
             </div>
           </div>
         ) : null}
       </div>
+
+      {/* The full existing reader experience (page flipping, Escape/backdrop
+          close), portaled to <body> by the Flipbook itself. */}
+      {readerBook ? (
+        <Flipbook
+          book={readerBook}
+          pages={readerPages}
+          index={readerIndex}
+          onIndexChange={setReaderIndex}
+          fullscreenOnly
+          onClose={() => setReaderBook(null)}
+        />
+      ) : null}
     </section>
   );
 }
@@ -1144,6 +1252,9 @@ function StyleCard({
   };
 
   return (
+    // Image-dominant tile: the art IS the card, filling it edge-to-edge with
+    // object-cover; name + selected check ride a scrim over the art's lower
+    // edge. One row of these, bigger on lg where the art is the star.
     <button
       type="button"
       role="radio"
@@ -1153,11 +1264,11 @@ function StyleCard({
       onMouseLeave={leave}
       onFocus={() => setHovered(true)}
       onBlur={leave}
-      className={`tile-lift group relative w-56 shrink-0 overflow-hidden rounded-2xl border-2 bg-white text-left lg:w-48 ${
+      className={`tile-lift group relative w-56 shrink-0 overflow-hidden rounded-2xl border-2 bg-white text-left lg:w-64 ${
         selected ? "border-coral" : "border-transparent hover:border-marigold"
       }`}
     >
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-lavender">
+      <div className="relative aspect-[3/2] w-full overflow-hidden bg-lavender">
         {style.previewImageUrl ? (
           <ProgressiveImage
             src={style.previewImageUrl}
@@ -1180,28 +1291,26 @@ function StyleCard({
             <img src={url} alt="" className="h-full w-full object-cover" />
           </div>
         ))}
+        {/* Name + selected check on a scrim over the art's lower edge. */}
+        <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-ink/70 via-ink/25 to-transparent px-3 pb-2.5 pt-8">
+          <span className="font-display text-sm font-bold text-white drop-shadow">
+            {style.name}
+          </span>
+          <span
+            className={`mb-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+              selected ? "bg-coral text-white" : "bg-white/40 text-transparent"
+            }`}
+            aria-hidden="true"
+          >
+            ✓
+          </span>
+        </div>
       </div>
       {recommended ? (
         <span className="absolute left-3 top-3 rounded-full bg-marigold px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-ink shadow-sm">
           {t("styleRecommended")}
         </span>
       ) : null}
-      <div className="flex items-start justify-between gap-2 p-4">
-        <div>
-          <p className="font-display font-bold text-ink">{style.name}</p>
-          {style.description ? (
-            <p className="mt-0.5 line-clamp-3 text-xs leading-relaxed text-ink-soft lg:line-clamp-2">{style.description}</p>
-          ) : null}
-        </div>
-        <span
-          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-            selected ? "bg-coral text-white" : "bg-ink/10 text-transparent"
-          }`}
-          aria-hidden="true"
-        >
-          ✓
-        </span>
-      </div>
     </button>
   );
 }
@@ -1548,6 +1657,7 @@ function FinishStep({
   targetAge,
   titleAutoSuggest,
   onTitleAutoSuggest,
+  onSpotlight,
 }: {
   template: TemplateSummary | null;
   title: string;
@@ -1561,6 +1671,9 @@ function FinishStep({
   /** Auto-suggest a title on arrival, at most once per wizard session. */
   titleAutoSuggest: boolean;
   onTitleAutoSuggest: () => void;
+  /** Ask the scrapbook to show a card: pulse=true for applied suggestions,
+   *  false for the quiet advance after the user finishes editing (blur). */
+  onSpotlight: (page: "title" | "dedication", pulse: boolean) => void;
 }) {
   const t = useTranslations("wizard");
 
@@ -1576,26 +1689,34 @@ function FinishStep({
         </p>
       </header>
 
-      {/* Writable note cards, vertically centered in the available space on
-          lg+: the user writes straight onto the card. pt-3 keeps the tape
-          strips fully visible. */}
-      <div className="mx-auto grid w-full max-w-2xl gap-x-8 gap-y-7 pt-3 lg:min-h-0 lg:flex-1 lg:content-center lg:grid-cols-2 lg:items-start">
-        <div>
+      {/* Writable note cards, staggered like post-its pinned to a wall
+          (title up-left, dedication down-right, opposite tilts), centered as
+          a composition on lg+. pt-3 keeps the tape strips fully visible. */}
+      <div className="mx-auto grid w-full max-w-2xl gap-x-8 gap-y-7 pt-3 lg:min-h-0 lg:flex-1 lg:content-center lg:grid-cols-2 lg:items-start lg:gap-x-4">
+        <div className="lg:mb-12">
           <WritableNoteCard
             id="title"
             label={t("finishBookTitle")}
-            tilt="-1deg"
+            tilt="-1.5deg"
             value={title}
             onChange={onTitleChange}
+            onBlur={() => {
+              if (title.trim()) onSpotlight("title", false);
+            }}
             placeholder={template ? template.title : t("finishTitlePlaceholder")}
             maxLength={120}
+            rows={3}
+            noNewlines
             textStyle={FM_DISPLAY}
             textClassName="font-display text-xl font-extrabold leading-tight"
           />
           <SuggestLine
             kind="title"
             value={title}
-            onApply={onTitleChange}
+            onApply={(v) => {
+              onTitleChange(v);
+              onSpotlight("title", true);
+            }}
             memoryText={memoryText}
             templateTitle={template?.title}
             castNames={castNames}
@@ -1605,23 +1726,29 @@ function FinishStep({
           />
         </div>
 
-        <div>
+        <div className="lg:mt-12">
           <WritableNoteCard
             id="greeting"
             label={t("finishNote")}
-            tilt="1deg"
+            tilt="1.5deg"
             value={greeting}
             onChange={onGreetingChange}
+            onBlur={() => {
+              if (greeting.trim()) onSpotlight("dedication", false);
+            }}
             placeholder={t("finishNotePlaceholder")}
             maxLength={600}
-            multiline
+            rows={4}
             textStyle={FM_SCRIPT}
             textClassName="text-lg leading-relaxed"
           />
           <SuggestLine
             kind="dedication"
             value={greeting}
-            onApply={onGreetingChange}
+            onApply={(v) => {
+              onGreetingChange(v);
+              onSpotlight("dedication", true);
+            }}
             memoryText={memoryText}
             templateTitle={template?.title}
             castNames={castNames}
@@ -1651,9 +1778,11 @@ function WritableNoteCard({
   tilt,
   value,
   onChange,
+  onBlur,
   placeholder,
   maxLength,
-  multiline = false,
+  rows = 4,
+  noNewlines = false,
   textStyle,
   textClassName = "",
 }: {
@@ -1662,14 +1791,20 @@ function WritableNoteCard({
   tilt: string;
   value: string;
   onChange: (v: string) => void;
+  /** Fired when the user leaves the field (used for quiet scrapbook focus). */
+  onBlur?: () => void;
   placeholder: string;
   maxLength: number;
-  multiline?: boolean;
+  rows?: number;
+  /** For values without line breaks (book titles): the text still WRAPS over
+   *  the reserved rows, but Enter acts as "done" and pasted newlines become
+   *  spaces. */
+  noNewlines?: boolean;
   textStyle: React.CSSProperties;
   textClassName?: string;
 }) {
   const fieldClass =
-    `block w-full border-0 bg-transparent text-center text-ink placeholder:text-ink/25 focus:outline-none focus:ring-0 ${textClassName}`.trim();
+    `block w-full resize-none border-0 bg-transparent text-center text-ink placeholder:text-ink/25 focus:outline-none focus:ring-0 ${textClassName}`.trim();
   return (
     <div
       className="relative rounded-lg bg-white px-6 pb-6 pt-7 shadow-fuzzy ring-1 ring-ink/5 transition-shadow focus-within:ring-2 focus-within:ring-marigold/70"
@@ -1682,29 +1817,25 @@ function WritableNoteCard({
       >
         {label}
       </label>
-      {multiline ? (
-        <textarea
-          id={id}
-          rows={4}
-          value={value}
-          maxLength={maxLength}
-          placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
-          className={`${fieldClass} resize-none`}
-          style={textStyle}
-        />
-      ) : (
-        <input
-          id={id}
-          type="text"
-          value={value}
-          maxLength={maxLength}
-          placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
-          className={fieldClass}
-          style={textStyle}
-        />
-      )}
+      <textarea
+        id={id}
+        rows={rows}
+        value={value}
+        maxLength={maxLength}
+        placeholder={placeholder}
+        onChange={(e) =>
+          onChange(noNewlines ? e.target.value.replace(/\r?\n/g, " ") : e.target.value)
+        }
+        onBlur={onBlur}
+        onKeyDown={(e) => {
+          if (noNewlines && e.key === "Enter") {
+            e.preventDefault();
+            e.currentTarget.blur(); // Enter = done, not a line break
+          }
+        }}
+        className={fieldClass}
+        style={textStyle}
+      />
     </div>
   );
 }
@@ -2152,6 +2283,7 @@ function BookSoFar({
   greeting,
   greetingFrom,
   onEdit,
+  spotlight = null,
 }: {
   className?: string;
   showEmpty?: boolean;
@@ -2163,6 +2295,9 @@ function BookSoFar({
   greetingFrom: string;
   /** Cards double as shortcuts to the step where the ingredient is edited. */
   onEdit?: (target: StepId) => void;
+  /** A discrete request to show a card: pulse for applied suggestions, quiet
+   *  (jump only, and only when not already current) for finished edits. */
+  spotlight?: { page: string; nonce: string; pulse: boolean } | null;
 }) {
   const t = useTranslations("wizard");
   const tFlip = useTranslations("flipbook");
@@ -2288,6 +2423,28 @@ function BookSoFar({
       const styleIndex = keys.indexOf("style");
       if (styleIndex >= 0) setIndex(styleIndex);
       setFlourish({ page: "style", nonce: selectedStyle.id });
+    }
+  }
+
+  // Spotlight requests from the review step: a suggestion landing on the
+  // title/dedication card jumps to it WITH the celebrate pulse; finishing an
+  // edit (blur) jumps quietly, and only when that card isn't already showing.
+  // Same render-time adjustment pattern; the initializer swallows anything
+  // requested before this instance mounted.
+  const spotKey = spotlight ? `${spotlight.page}:${spotlight.nonce}` : null;
+  const [lastSpotKey, setLastSpotKey] = useState<string | null>(spotKey);
+  if (spotKey !== lastSpotKey) {
+    setLastSpotKey(spotKey);
+    if (spotlight) {
+      const spotIndex = keys.indexOf(spotlight.page);
+      if (spotIndex >= 0) {
+        if (spotlight.pulse) {
+          setIndex(spotIndex);
+          setFlourish({ page: spotlight.page, nonce: spotlight.nonce });
+        } else if (spotIndex !== index) {
+          setIndex(spotIndex);
+        }
+      }
     }
   }
 

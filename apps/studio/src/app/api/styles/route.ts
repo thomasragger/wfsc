@@ -8,58 +8,67 @@ import { supabaseAdmin } from "@/lib/supabase";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** How many real sample spreads to attach per style. */
-const SAMPLE_SPREADS_PER_STYLE = 2;
+/** How many real sample books to attach per style. */
+const SAMPLE_BOOKS_PER_STYLE = 2;
+
+interface SampleBookRef {
+  token: string;
+  title: string | null;
+  coverUrl: string | null;
+}
 
 /**
- * Up to 2 REAL rendered spread images per style, pulled from sample books
- * (books.is_sample) in that style. Lets the wizard show honest "pages from
- * real books in this style" next to the picker. Degrades to empty lists on
- * any error (missing column, no samples yet).
+ * Up to 2 REAL sample books per style (books.is_sample): public token, title
+ * and cover thumbnail, kept deliberately light — the wizard fetches the full
+ * book payload lazily when the reader overlay opens. Degrades to empty lists
+ * on any error (missing column, no samples yet).
  */
-async function sampleSpreadsByStyle(styleIds: string[]): Promise<Map<string, string[]>> {
-  const byStyle = new Map<string, string[]>();
+async function sampleBooksByStyle(
+  styleIds: string[],
+  locale: string,
+): Promise<Map<string, SampleBookRef[]>> {
+  const byStyle = new Map<string, SampleBookRef[]>();
   if (styleIds.length === 0) return byStyle;
   try {
     const db = supabaseAdmin();
-    const { data: sampleBooks, error: booksError } = await db
+    const { data, error } = await db
       .from("books")
-      .select("id, style_id")
+      .select("access_token, title, cover_image_url, style_id, translations, created_at")
       .eq("is_sample", true)
-      .in("style_id", styleIds);
-    if (booksError || !sampleBooks?.length) return byStyle;
+      .in("style_id", styleIds)
+      .order("created_at", { ascending: true });
+    if (error || !data?.length) return byStyle;
 
-    const styleByBook = new Map(sampleBooks.map((b) => [b.id as string, b.style_id as string]));
-    const { data: spreads, error: spreadsError } = await db
-      .from("book_spreads")
-      .select("book_id, image_url, position")
-      .in("book_id", [...styleByBook.keys()])
-      .eq("kind", "story")
-      .not("image_url", "is", null)
-      .order("position", { ascending: true });
-    if (spreadsError || !spreads?.length) return byStyle;
+    // Localize titles / cover variants the same way the samples gallery does.
+    const rows = data.map((raw) => {
+      const localized = localizeRow(raw as Record<string, unknown>, locale) as {
+        access_token: string;
+        title: string | null;
+        cover_image_url: string | null;
+        style_id: string;
+      };
+      return localized;
+    });
 
-    for (const s of spreads) {
-      const styleId = styleByBook.get(s.book_id as string);
-      if (!styleId || !s.image_url) continue;
-      const urls = byStyle.get(styleId) ?? [];
-      if (urls.length >= SAMPLE_SPREADS_PER_STYLE) continue;
-      urls.push(s.image_url as string);
-      byStyle.set(styleId, urls);
+    const picked: { styleId: string; row: (typeof rows)[number] }[] = [];
+    for (const row of rows) {
+      const count = picked.filter((p) => p.styleId === row.style_id).length;
+      if (count >= SAMPLE_BOOKS_PER_STYLE) continue;
+      picked.push({ styleId: row.style_id, row });
     }
 
-    // Sample spreads normally live in the public renders bucket (signUrls
-    // passes those through); anything in a private bucket gets signed so the
-    // wizard never renders a 403 image.
-    const flat = [...byStyle.entries()].flatMap(([styleId, urls]) =>
-      urls.map((url) => ({ styleId, url })),
-    );
-    const signed = await signUrls(flat.map((f) => f.url));
-    byStyle.clear();
-    flat.forEach((f, i) => {
-      const url = signed[i];
-      if (!url) return;
-      byStyle.set(f.styleId, [...(byStyle.get(f.styleId) ?? []), url]);
+    // Sample covers normally live in the public renders bucket (signUrls
+    // passes those through); pipeline-generated covers in private buckets
+    // get signed so the wizard never renders a 403 image.
+    const covers = await signUrls(picked.map((p) => p.row.cover_image_url));
+    picked.forEach((p, i) => {
+      const list = byStyle.get(p.styleId) ?? [];
+      list.push({
+        token: p.row.access_token,
+        title: p.row.title ?? null,
+        coverUrl: covers[i] ?? null,
+      });
+      byStyle.set(p.styleId, list);
     });
     return byStyle;
   } catch {
@@ -80,7 +89,10 @@ export async function GET() {
     if (error) throw new Error(error.message);
 
     const rows = (data ?? []).map((row) => localizeRow(row, locale));
-    const samples = await sampleSpreadsByStyle(rows.map((s) => s.id as string));
+    const samples = await sampleBooksByStyle(
+      rows.map((s) => s.id as string),
+      locale,
+    );
 
     return NextResponse.json({
       styles: rows.map((s) => ({
@@ -89,7 +101,7 @@ export async function GET() {
         description: (s.description ?? null) as string | null,
         previewImageUrl: (s.preview_image_url ?? null) as string | null,
         referenceImageUrls: (s.reference_image_urls ?? []) as string[],
-        sampleSpreadUrls: samples.get(s.id as string) ?? [],
+        sampleBooks: samples.get(s.id as string) ?? [],
       })),
     });
   } catch (err) {
