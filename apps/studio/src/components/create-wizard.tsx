@@ -1387,7 +1387,13 @@ function StoryStep({
             {/* The tape strip doubles as the note's label. */}
             <label
               htmlFor="memory"
-              className="absolute -top-3 left-1/2 -translate-x-1/2 rotate-[-3deg] whitespace-nowrap rounded-[2px] bg-marigold/40 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-ink/70 shadow-sm"
+              className="absolute -top-3 left-1/2 -translate-x-1/2 rotate-[-3deg] whitespace-nowrap rounded-[2px] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-ink/70 shadow-sm"
+              // Solid white under the translucent tape: the focus ring must not
+              // shine through where the tape crosses the card edge.
+              style={{
+                background:
+                  "linear-gradient(rgb(246 183 60 / 0.4), rgb(246 183 60 / 0.4)), #fff",
+              }}
             >
               {template ? t("memoryLabelTemplate") : t("memoryLabelOwn")}
             </label>
@@ -1836,10 +1842,15 @@ function WritableNoteCard({
       className="relative rounded-lg bg-white px-6 pb-6 pt-7 shadow-fuzzy ring-1 ring-ink/5 transition-shadow focus-within:ring-2 focus-within:ring-marigold/70"
       style={{ rotate: tilt }}
     >
-      {/* The tape strip doubles as the card's label. */}
+      {/* The tape strip doubles as the card's label. Solid white under the
+          translucent tape so the focus ring can't shine through it. */}
       <label
         htmlFor={id}
-        className="absolute -top-3 left-1/2 -translate-x-1/2 rotate-[-3deg] whitespace-nowrap rounded-[2px] bg-marigold/40 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-ink/70 shadow-sm"
+        className="absolute -top-3 left-1/2 -translate-x-1/2 rotate-[-3deg] whitespace-nowrap rounded-[2px] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-ink/70 shadow-sm"
+        style={{
+          background:
+            "linear-gradient(rgb(246 183 60 / 0.4), rgb(246 183 60 / 0.4)), #fff",
+        }}
       >
         {label}
       </label>
