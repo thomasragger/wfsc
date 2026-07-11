@@ -17,6 +17,11 @@ const DACH = new Set(["DE", "AT", "CH", "LI"]);
  * first-visit detection, then hand off to next-intl for prefixing/redirects.
  */
 export default function middleware(request: NextRequest) {
+  // The internal admin area (/admin) lives OUTSIDE the locale tree: it must
+  // never be locale-prefixed or redirected. It is also excluded by the matcher
+  // below; this early return is belt-and-braces.
+  if (request.nextUrl.pathname.startsWith("/admin")) return;
+
   // Expose the request path to server components (hreflang alternates in the
   // [locale] layout read this). Harmless if the runtime ignores the mutation.
   try {
@@ -36,5 +41,5 @@ export default function middleware(request: NextRequest) {
 export const config = {
   // Skip API routes, the Sentry tunnel, the root OG image, Next internals and
   // any file with an extension (favicon, images, sitemap.xml, robots.txt …).
-  matcher: ["/((?!api|monitoring|opengraph-image|_next|_vercel|.*\\..*).*)"],
+  matcher: ["/((?!api|admin|monitoring|opengraph-image|_next|_vercel|.*\\..*).*)"],
 };

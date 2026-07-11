@@ -27,7 +27,8 @@ export type RateLimitKind =
   | "retry-book"
   | "checkout-ip"
   | "cart-ip"
-  | "suggest-ip";
+  | "suggest-ip"
+  | "admin-login";
 
 const LIMITS: Record<RateLimitKind, { windowSeconds: number; max: number }> = {
   // Each create triggers paid preview generation.
@@ -44,6 +45,8 @@ const LIMITS: Record<RateLimitKind, { windowSeconds: number; max: number }> = {
   "cart-ip": { windowSeconds: 60 * 60, max: 20 },
   // Each suggestion request is a (small) paid LLM call.
   "suggest-ip": { windowSeconds: 60 * 60, max: 10 },
+  // Internal admin passphrase: strict brute-force guard, 5 attempts/hour/IP.
+  "admin-login": { windowSeconds: 60 * 60, max: 5 },
 };
 
 export interface RateLimitResult {
