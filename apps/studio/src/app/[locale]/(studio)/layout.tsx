@@ -17,8 +17,12 @@ export default async function StudioLayout({
 }>) {
   const [t, locale] = await Promise.all([getTranslations("studioChrome"), getLocale()]);
   return (
-    <>
-      <header className="sticky top-0 z-40 border-b border-ink/5 bg-cream/85 backdrop-blur-md">
+    // On lg+ the studio is a bounded viewport column (header / main / footer
+    // always on screen, zero body scroll): the create wizard fills the middle
+    // as a fixed workspace, while /book/* content scrolls INSIDE main. On <lg
+    // everything stays a normal scrolling document.
+    <div className="flex min-h-dvh flex-1 flex-col lg:h-dvh lg:min-h-0">
+      <header className="sticky top-0 z-40 shrink-0 border-b border-ink/5 bg-cream/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link
             href="/"
@@ -51,10 +55,12 @@ export default async function StudioLayout({
         </div>
       </header>
 
-      <main id="main-content" className="flex flex-1 flex-col">{children}</main>
+      <main id="main-content" className="flex flex-1 flex-col lg:min-h-0 lg:overflow-y-auto">
+        {children}
+      </main>
 
-      <footer className="border-t border-ink/10 bg-cream">
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-ink-soft sm:flex-row sm:px-6">
+      <footer className="shrink-0 border-t border-ink/10 bg-cream">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-ink-soft sm:flex-row sm:px-6 lg:py-3">
           <p className="font-semibold">{t("footerTagline")}</p>
           <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-semibold">
             {(["about", "contact", "imprint", "privacy", "terms", "returns"] as const).map((k) => (
@@ -65,6 +71,6 @@ export default async function StudioLayout({
           </nav>
         </div>
       </footer>
-    </>
+    </div>
   );
 }

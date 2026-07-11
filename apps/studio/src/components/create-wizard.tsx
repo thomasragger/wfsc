@@ -710,15 +710,15 @@ export function CreateWizard() {
     );
 
   return (
-    <PageTransition>
-      {/* App shell on lg+: the wizard is a fixed workspace filling the
-          viewport below the h-16 studio header (plus the page's own top
-          padding); the step column scrolls internally when a step ever
-          exceeds it, and the rail stays fully visible. The studio footer
-          simply sits below the fold. Normal document scrolling on <lg. */}
+    <PageTransition className="lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+      {/* App shell on lg+: the studio layout is a bounded viewport column
+          (header / main / footer, zero body scroll) and the wizard fills the
+          main area exactly; the step column scrolls internally in the rare
+          case a step exceeds it, and the rail stays fully visible. Normal
+          document scrolling on <lg. */}
       <div
         ref={topRef}
-        className="scroll-mt-24 pb-4 lg:flex lg:h-[calc(100dvh-6rem)] lg:min-h-0 lg:flex-col lg:pb-0"
+        className="scroll-mt-24 pb-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:pb-0"
       >
         {/* Horizontal progress only on <lg; the rail carries it on lg+. */}
         <StepProgress steps={stepLabels} current={step} className="mb-5 lg:hidden" />
@@ -726,13 +726,14 @@ export function CreateWizard() {
         <div className="grid gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,25rem)] lg:gap-8">
           {/* main step column */}
           <div className="min-w-0 lg:flex lg:min-h-0 lg:flex-col">
-            <Card className="overflow-hidden p-5 sm:p-7 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+            <Card className="overflow-hidden p-5 sm:p-7 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:p-5">
               {/* Internal scroll area (lg+). The negative-margin/padding pair
-                  gives tilted cards' shadows and tape overhangs room instead
-                  of clipping them at the scroll box edge. */}
+                  gives tilted cards' shadows and tape overhangs (which reach
+                  ~1rem above a note card) room instead of clipping them at
+                  the scroll box edge. */}
               <div
                 ref={stepScrollRef}
-                className="lg:-mx-2 lg:-my-1 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:px-2 lg:py-1"
+                className="lg:-mx-2 lg:-mt-4 lg:-mb-1 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:px-2 lg:pb-1 lg:pt-4"
               >
               {/* flex-1 (with default min-height:auto) lets short steps fill
                   the shell so the story note can stretch, while taller steps
@@ -869,9 +870,11 @@ export function CreateWizard() {
               {/* The scrapbook of ingredients, growing with every choice —
                   anchored here on every step, review included. mt-auto pins
                   its bottom edge to the shell's bottom; the width cap keeps
-                  the square stage short enough to fit 730px-tall viewports. */}
+                  the square stage short enough to fit 730px-tall viewports,
+                  and the fixed stage/caption/dot rows mean the block's
+                  footprint is identical empty or full (no jumping). */}
               <BookSoFar
-                className="mx-auto mt-auto w-full max-w-[20rem] pt-6"
+                className="mx-auto mt-auto w-full max-w-[18rem] pt-5"
                 showEmpty
                 selectedStyle={selectedStyle}
                 memoryText={memoryText}
@@ -1052,7 +1055,7 @@ function StyleStep({
 }) {
   const t = useTranslations("wizard");
   return (
-    <section className="flex flex-col gap-5 lg:gap-4">
+    <section className="flex flex-col gap-5 lg:h-full lg:gap-4">
       <header>
         <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">{t("styleTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
@@ -1060,50 +1063,53 @@ function StyleStep({
         </p>
       </header>
 
-      {styles === null && !stylesError ? (
-        <SkeletonGrid count={3} className="grid gap-4 sm:grid-cols-3" itemClassName="h-52" />
-      ) : null}
+      {/* Picker + real sample pages center vertically as a group on lg+. */}
+      <div className="flex flex-col gap-5 lg:min-h-0 lg:flex-1 lg:justify-center lg:gap-4">
+        {styles === null && !stylesError ? (
+          <SkeletonGrid count={3} className="grid gap-4 sm:grid-cols-3" itemClassName="h-52" />
+        ) : null}
 
-      {stylesError ? (
-        <Alert>{t("styleError")}</Alert>
-      ) : null}
+        {stylesError ? (
+          <Alert>{t("styleError")}</Alert>
+        ) : null}
 
-      {styles ? (
-        <div role="radiogroup" aria-label={t("styleRadioLabel")}>
-          <Carousel ariaLabel={t("styleRadioLabel")} itemGap="gap-4">
-            {styles.map((style) => (
-              <StyleCard
-                key={style.id}
-                style={style}
-                selected={styleId === style.id}
-                recommended={recommendedId === style.id}
-                onSelect={() => onSelect(style.id)}
-              />
-            ))}
-          </Carousel>
-        </div>
-      ) : null}
-
-      {/* Honest proof: real rendered spreads from sample books in the chosen
-          style. Omitted gracefully for styles without sample books. */}
-      {selectedStyle && selectedStyle.sampleSpreadUrls.length > 0 ? (
-        <div key={selectedStyle.id} className="animate-page-in">
-          <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
-            {t("styleSampleHeading")}
-          </p>
-          <div className="mt-3 grid max-w-sm grid-cols-2 gap-3 lg:max-w-xs">
-            {selectedStyle.sampleSpreadUrls.map((url) => (
-              <ProgressiveImage
-                key={url}
-                src={url}
-                alt={t("styleSampleAlt", { name: selectedStyle.name })}
-                className="aspect-square w-full rounded-xl shadow-fuzzy ring-4 ring-white"
-                imgClassName="h-full w-full object-cover"
-              />
-            ))}
+        {styles ? (
+          <div role="radiogroup" aria-label={t("styleRadioLabel")}>
+            <Carousel ariaLabel={t("styleRadioLabel")} itemGap="gap-4">
+              {styles.map((style) => (
+                <StyleCard
+                  key={style.id}
+                  style={style}
+                  selected={styleId === style.id}
+                  recommended={recommendedId === style.id}
+                  onSelect={() => onSelect(style.id)}
+                />
+              ))}
+            </Carousel>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+
+        {/* Honest proof: real rendered spreads from sample books in the chosen
+            style. Omitted gracefully for styles without sample books. */}
+        {selectedStyle && selectedStyle.sampleSpreadUrls.length > 0 ? (
+          <div key={selectedStyle.id} className="animate-page-in">
+            <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
+              {t("styleSampleHeading")}
+            </p>
+            <div className="mt-3 grid max-w-sm grid-cols-2 gap-3 lg:max-w-[17rem]">
+              {selectedStyle.sampleSpreadUrls.map((url) => (
+                <ProgressiveImage
+                  key={url}
+                  src={url}
+                  alt={t("styleSampleAlt", { name: selectedStyle.name })}
+                  className="aspect-square w-full rounded-xl shadow-fuzzy ring-4 ring-white"
+                  imgClassName="h-full w-full object-cover"
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }
@@ -1251,17 +1257,17 @@ function StoryStep({
       </header>
 
       <div
-        className={`grid gap-6 pt-2 lg:min-h-0 lg:flex-1 ${
+        className={`grid gap-6 pt-3 lg:min-h-0 lg:flex-1 ${
           hasBeats ? "lg:grid-cols-2 lg:items-stretch" : ""
         }`}
       >
-        {/* Left: the memory as a big writable taped post-it — the same note
-            the rail scrapbook shows in miniature (same tape, paper, ruled
-            lines). The user writes directly on the card; on lg+ it flexes to
-            fill the step card's available height. */}
-        <div className="flex min-h-0 flex-col">
+        {/* Left: the memory as a generous writable taped post-it — the same
+            note the rail scrapbook shows in miniature (same tape, paper,
+            ruled lines). Capped at a comfortable writing size and centered in
+            the available space; the writing itself is large. */}
+        <div className="flex min-h-0 flex-col lg:items-center lg:justify-center">
           <div
-            className="relative flex min-h-0 flex-1 flex-col rounded-lg bg-white px-6 pb-6 pt-7 shadow-fuzzy ring-1 ring-ink/5 transition-shadow focus-within:ring-2 focus-within:ring-marigold/70"
+            className="relative flex w-full max-w-[36rem] flex-col rounded-lg bg-white px-6 pb-6 pt-7 shadow-fuzzy ring-1 ring-ink/5 transition-shadow focus-within:ring-2 focus-within:ring-marigold/70 lg:min-h-0 lg:max-h-[23rem] lg:flex-1"
             style={{ rotate: "-0.5deg" }}
           >
             {/* The tape strip doubles as the note's label. */}
@@ -1273,12 +1279,12 @@ function StoryStep({
             </label>
             <textarea
               id="memory"
-              className="block min-h-44 w-full flex-1 resize-none border-0 bg-transparent p-0 font-body text-[1rem] text-ink placeholder:text-ink-soft/50 focus:outline-none focus:ring-0"
+              className="block min-h-44 w-full flex-1 resize-none border-0 bg-transparent p-0 font-body text-lg text-ink placeholder:text-ink-soft/50 focus:outline-none focus:ring-0"
               style={{
                 backgroundImage:
-                  "repeating-linear-gradient(to bottom, transparent 0, transparent calc(1.9rem - 1px), rgb(118 30 11 / 0.12) calc(1.9rem - 1px), rgb(118 30 11 / 0.12) 1.9rem)",
+                  "repeating-linear-gradient(to bottom, transparent 0, transparent calc(2.25rem - 1px), rgb(118 30 11 / 0.12) calc(2.25rem - 1px), rgb(118 30 11 / 0.12) 2.25rem)",
                 backgroundAttachment: "local",
-                lineHeight: "1.9rem",
+                lineHeight: "2.25rem",
               }}
               placeholder={
                 template
@@ -1293,7 +1299,7 @@ function StoryStep({
 
         {/* Right: the story shape (template only). */}
         {hasBeats ? (
-          <div className="rounded-2xl bg-gradient-to-br from-lavender/60 via-cream to-peach/50 p-5">
+          <div className="rounded-2xl bg-gradient-to-br from-lavender/60 via-cream to-peach/50 p-5 lg:self-center">
             <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
               {t("storyJourney")}
             </p>
@@ -1335,7 +1341,7 @@ function CastStep({
   const t = useTranslations("wizard");
   const roleLabels = t.raw("roles") as Record<PersonRole, string>;
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-5 lg:h-full">
       <header>
         <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">{t("castTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
@@ -1345,7 +1351,9 @@ function CastStep({
 
       {/* Character cards: the uploaded photo becomes the character preview;
           the last card adds another person. Three-up on sm+ (add-person card
-          in-grid); on <sm three or more people become a swipeable carousel. */}
+          in-grid); on <sm three or more people become a swipeable carousel.
+          On lg+ the group centers vertically instead of hugging the top. */}
+      <div className="lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:justify-center">
       <div
         className={
           people.length >= 3
@@ -1515,6 +1523,7 @@ function CastStep({
           </button>
         ) : null}
       </div>
+      </div>
     </section>
   );
 }
@@ -1556,7 +1565,7 @@ function FinishStep({
   const t = useTranslations("wizard");
 
   return (
-    <section className="flex flex-col gap-6">
+    <section className="flex flex-col gap-6 lg:h-full">
       {/* React hoists this to <head>; loads the cards' display+script fonts. */}
       <link rel="stylesheet" href={fontStylesheetUrl(FM_PAIRING)} />
 
@@ -1567,8 +1576,10 @@ function FinishStep({
         </p>
       </header>
 
-      {/* Writable note cards: the user writes straight onto the card. */}
-      <div className="mx-auto grid w-full max-w-2xl gap-x-8 gap-y-7 pt-2 lg:grid-cols-2 lg:items-start">
+      {/* Writable note cards, vertically centered in the available space on
+          lg+: the user writes straight onto the card. pt-3 keeps the tape
+          strips fully visible. */}
+      <div className="mx-auto grid w-full max-w-2xl gap-x-8 gap-y-7 pt-3 lg:min-h-0 lg:flex-1 lg:content-center lg:grid-cols-2 lg:items-start">
         <div>
           <WritableNoteCard
             id="title"
@@ -1742,7 +1753,7 @@ function EmailCapture({
   const t = useTranslations("wizard");
 
   return (
-    <section className="mx-auto flex w-full max-w-md flex-col gap-5 py-2 sm:py-4">
+    <section className="mx-auto flex w-full max-w-md flex-col gap-5 py-2 sm:py-4 lg:h-full lg:justify-center lg:py-0">
       <header className="text-center">
         <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">
           {t("emailPromptTitle")}
@@ -2301,115 +2312,112 @@ function BookSoFar({
 
   const current = Math.min(index, Math.max(0, pages.length - 1));
 
-  const heading = (
-    <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-ink-soft/80">
-      {t("bookSoFarHeading")}
-    </p>
-  );
-
-  if (pages.length === 0) {
-    if (!showEmpty) return null;
-    return (
-      <section aria-label={t("bookSoFarHeading")} className={className}>
-        {heading}
-        <div className="mt-5 flex justify-center pb-2">
-          <TapedNote tilt="-2deg" className="max-w-[15rem] py-6 text-center">
-            <p className="text-sm leading-relaxed text-ink-soft">{t("bookSoFarEmpty")}</p>
-          </TapedNote>
-        </div>
-      </section>
-    );
-  }
+  if (pages.length === 0 && !showEmpty) return null;
 
   const goTo = (i: number) => setIndex(Math.max(0, Math.min(pages.length - 1, i)));
 
+  // One fixed skeleton for empty AND filled states — heading, an aspect-square
+  // stage, a reserved caption row, a reserved dots row — so nothing jumps when
+  // the first card arrives (the empty note simply swaps for the card inside
+  // the same stage) or when dots appear for the second card.
   return (
     <section aria-label={t("bookSoFarHeading")} className={className}>
       {/* React hoists this to <head>; loads the pairing + script Google fonts
           used by the title / dedication note cards. */}
-      <link rel="stylesheet" href={fontStylesheetUrl(FM_PAIRING)} />
-      {heading}
+      {pages.length > 0 ? <link rel="stylesheet" href={fontStylesheetUrl(FM_PAIRING)} /> : null}
+      <p className="text-center text-[11px] font-semibold uppercase tracking-wide text-ink-soft/80">
+        {t("bookSoFarHeading")}
+      </p>
 
       {/* -mx-3 cancels the slides' px-3 (room for the tilted cards' shadows
           inside the clipping viewport), so the scrapbook stage spans the full
           column like the cards around it. */}
       <div className="relative -mx-3">
-        {/* The viewport clips the sliding track. touch-pan-y leaves vertical
-            scrolling native while we read horizontal swipes. Pointer capture
-            starts only after a real drag (>6px) so plain taps still click the
-            card buttons; a capture-phase click guard swallows the click that
-            trails a swipe. */}
-        <div
-          className="touch-pan-y select-none overflow-hidden"
-          onPointerDown={(e) => {
-            swipeStart.current = e.clientX;
-            movedRef.current = 0;
-          }}
-          onPointerMove={(e) => {
-            if (swipeStart.current === null) return;
-            const moved = Math.abs(e.clientX - swipeStart.current);
-            movedRef.current = Math.max(movedRef.current, moved);
-            if (moved > 6 && !e.currentTarget.hasPointerCapture(e.pointerId)) {
-              e.currentTarget.setPointerCapture(e.pointerId);
-            }
-          }}
-          onPointerUp={(e) => {
-            const start = swipeStart.current;
-            swipeStart.current = null;
-            if (start === null) return;
-            const dx = e.clientX - start;
-            if (dx <= -40) goTo(current + 1);
-            else if (dx >= 40) goTo(current - 1);
-          }}
-          onPointerCancel={() => {
-            swipeStart.current = null;
-          }}
-          onClickCapture={(e) => {
-            // A drag that ended on a card must not also activate it.
-            if (movedRef.current > 8) {
-              e.preventDefault();
-              e.stopPropagation();
-            }
-          }}
-        >
-          <div
-            className="flex transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
-            style={{ transform: `translateX(-${current * 100}%)` }}
-          >
-            {pages.map((page, i) => {
-              const celebrating = flourish?.page === page.key;
-              return (
-                <div
-                  key={page.key}
-                  className="flex aspect-square w-full shrink-0 items-center justify-center px-5 pb-6 pt-3"
-                  aria-hidden={i !== current}
-                >
-                  {/* Keyed on the flourish nonce so repeat celebrations replay
-                      the pulse (reduced motion disables it in CSS). */}
-                  <div
-                    key={celebrating ? flourish.nonce : "still"}
-                    className={`flex w-full justify-center ${celebrating ? "animate-celebrate" : ""}`.trim()}
-                  >
-                    {onEdit ? (
-                      // The card is a shortcut to the step where it's edited.
-                      <button
-                        type="button"
-                        tabIndex={i === current ? 0 : -1}
-                        aria-label={page.editLabel}
-                        onClick={() => onEdit(page.target)}
-                        className="flex w-full cursor-pointer justify-center rounded-lg text-left transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-3 focus-visible:outline-cobalt motion-reduce:transition-none"
-                      >
-                        {page.node}
-                      </button>
-                    ) : (
-                      page.node
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+        {pages.length === 0 ? (
+          // Empty scrapbook: same fixed stage, a small friendly note inside.
+          <div className="flex aspect-square w-full items-center justify-center px-5 pb-5 pt-4">
+            <TapedNote tilt="-2deg" className="max-w-[15rem] py-6 text-center">
+              <p className="text-sm leading-relaxed text-ink-soft">{t("bookSoFarEmpty")}</p>
+            </TapedNote>
           </div>
-        </div>
+        ) : (
+          /* The viewport clips the sliding track. touch-pan-y leaves vertical
+             scrolling native while we read horizontal swipes. Pointer capture
+             starts only after a real drag (>6px) so plain taps still click the
+             card buttons; a capture-phase click guard swallows the click that
+             trails a swipe. */
+          <div
+            className="touch-pan-y select-none overflow-hidden"
+            onPointerDown={(e) => {
+              swipeStart.current = e.clientX;
+              movedRef.current = 0;
+            }}
+            onPointerMove={(e) => {
+              if (swipeStart.current === null) return;
+              const moved = Math.abs(e.clientX - swipeStart.current);
+              movedRef.current = Math.max(movedRef.current, moved);
+              if (moved > 6 && !e.currentTarget.hasPointerCapture(e.pointerId)) {
+                e.currentTarget.setPointerCapture(e.pointerId);
+              }
+            }}
+            onPointerUp={(e) => {
+              const start = swipeStart.current;
+              swipeStart.current = null;
+              if (start === null) return;
+              const dx = e.clientX - start;
+              if (dx <= -40) goTo(current + 1);
+              else if (dx >= 40) goTo(current - 1);
+            }}
+            onPointerCancel={() => {
+              swipeStart.current = null;
+            }}
+            onClickCapture={(e) => {
+              // A drag that ended on a card must not also activate it.
+              if (movedRef.current > 8) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }}
+          >
+            <div
+              className="flex transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+              style={{ transform: `translateX(-${current * 100}%)` }}
+            >
+              {pages.map((page, i) => {
+                const celebrating = flourish?.page === page.key;
+                return (
+                  <div
+                    key={page.key}
+                    className="flex aspect-square w-full shrink-0 items-center justify-center px-5 pb-5 pt-4"
+                    aria-hidden={i !== current}
+                  >
+                    {/* Keyed on the flourish nonce so repeat celebrations replay
+                        the pulse (reduced motion disables it in CSS). */}
+                    <div
+                      key={celebrating ? flourish.nonce : "still"}
+                      className={`flex w-full justify-center ${celebrating ? "animate-celebrate" : ""}`.trim()}
+                    >
+                      {onEdit ? (
+                        // The card is a shortcut to the step where it's edited.
+                        <button
+                          type="button"
+                          tabIndex={i === current ? 0 : -1}
+                          aria-label={page.editLabel}
+                          onClick={() => onEdit(page.target)}
+                          className="flex w-full cursor-pointer justify-center rounded-lg text-left transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-3 focus-visible:outline-cobalt motion-reduce:transition-none"
+                        >
+                          {page.node}
+                        </button>
+                      ) : (
+                        page.node
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {pages.length > 1 ? (
           <>
@@ -2430,9 +2438,10 @@ function BookSoFar({
       </div>
 
       {/* Caption of the visible card (briefly swapped for a celebration line
-          while a flourish runs) + one dot per card. */}
-      <p className="-mt-2 text-center font-display text-sm font-bold text-ink">
-        {flourish?.caption && flourish.page === pages[current].key ? (
+          while a flourish runs); height reserved even while empty. */}
+      <p className="-mt-2 h-5 text-center font-display text-sm font-bold text-ink">
+        {pages.length === 0 ? null : flourish?.caption &&
+          flourish.page === pages[current].key ? (
           <span key={flourish.nonce} className="animate-page-in inline-block text-coral">
             {flourish.caption}
           </span>
@@ -2440,22 +2449,24 @@ function BookSoFar({
           pages[current].caption
         )}
       </p>
-      {pages.length > 1 ? (
-        <div className="mt-2.5 flex justify-center gap-1.5">
-          {pages.map((page, i) => (
-            <button
-              key={page.key}
-              type="button"
-              aria-label={page.caption}
-              aria-current={i === current ? "true" : undefined}
-              onClick={() => goTo(i)}
-              className={`h-2.5 rounded-full transition-all duration-300 ${
-                i === current ? "w-6 bg-coral" : "w-2.5 bg-ink/15 hover:bg-ink/30"
-              }`}
-            />
-          ))}
-        </div>
-      ) : null}
+      {/* One dot per card; row height reserved so the dots' arrival with the
+          second card never shifts the composition. */}
+      <div className="mt-2 flex h-2.5 items-center justify-center gap-1.5">
+        {pages.length > 1
+          ? pages.map((page, i) => (
+              <button
+                key={page.key}
+                type="button"
+                aria-label={page.caption}
+                aria-current={i === current ? "true" : undefined}
+                onClick={() => goTo(i)}
+                className={`h-2.5 rounded-full transition-all duration-300 ${
+                  i === current ? "w-6 bg-coral" : "w-2.5 bg-ink/15 hover:bg-ink/30"
+                }`}
+              />
+            ))
+          : null}
+      </div>
     </section>
   );
 }
