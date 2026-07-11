@@ -830,9 +830,10 @@
     "finishNote": "A personal note",
     "finishNoteHint": "Printed on the dedication page at the front of the book, like a handwritten message inside a gift.",
     "finishNotePlaceholder": "For Mia, who makes every ordinary day an adventure.",
-    "finishSignedFrom": "Signed, from",
-    "finishSignedFromHint": "Shown under the note, e.g. “Love, Mum & Dad”.",
-    "finishSignedFromPlaceholder": "Mum & Dad",
+    "suggestCta": "Not sure? Suggest some",
+    "suggestLoading": "Coming up with ideas…",
+    "suggestRegenerate": "Suggest three more",
+    "suggestError": "We couldn't fetch ideas just now. Please try again in a moment.",
     "finishEmail": "Your email",
     "finishEmailPlaceholder": "you@example.com",
     "finishConsent": "Yes, please use my story and photos to create this book. Details in our",
@@ -843,6 +844,8 @@
     "bookSoFarStory": "Your story",
     "bookSoFarCast": "The cast",
     "bookSoFarCastStarring": "Starring",
-    "bookSoFarCoverTitle": "Our story"
+    "bookSoFarCoverTitle": "Our story",
+    "bookSoFarCoverCaption": "Cover (style preview)",
+    "bookSoFarCoverNote": "A peek at the art style. Your real cover will be illustrated from your story and photos."
   }
 }

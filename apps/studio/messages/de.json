@@ -834,9 +834,10 @@
     "finishNote": "Eine persönliche Widmung",
     "finishNoteHint": "Wird auf der Widmungsseite vorne im Buch gedruckt, wie eine handgeschriebene Nachricht in einem Geschenk.",
     "finishNotePlaceholder": "Für Mia, die jeden gewöhnlichen Tag zu einem Abenteuer macht.",
-    "finishSignedFrom": "Unterschrieben von",
-    "finishSignedFromHint": "Wird unter der Widmung angezeigt, z. B. „Alles Liebe, Mama & Papa“.",
-    "finishSignedFromPlaceholder": "Mama & Papa",
+    "suggestCta": "Unsicher? Vorschläge erhalten",
+    "suggestLoading": "Ideen werden gesammelt…",
+    "suggestRegenerate": "Drei neue Vorschläge",
+    "suggestError": "Das hat gerade nicht geklappt. Versuch es gleich noch einmal.",
     "finishEmail": "Deine E-Mail",
     "finishEmailPlaceholder": "du@beispiel.de",
     "finishConsent": "Ja, meine Geschichte und Fotos dürfen für dieses Buch verwendet werden. Details in unserer",
@@ -847,6 +848,8 @@
     "bookSoFarStory": "Deine Geschichte",
     "bookSoFarCast": "Die Figuren",
     "bookSoFarCastStarring": "Mit dabei",
-    "bookSoFarCoverTitle": "Unsere Geschichte"
+    "bookSoFarCoverTitle": "Unsere Geschichte",
+    "bookSoFarCoverCaption": "Cover (Stil-Vorschau)",
+    "bookSoFarCoverNote": "Ein erster Blick auf den Stil. Dein echtes Cover wird aus eurer Geschichte und euren Fotos illustriert."
   }
 }

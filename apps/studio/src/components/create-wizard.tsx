@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { usePostHog } from "posthog-js/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -32,6 +32,7 @@ import {
   getCategoryTemplates,
   getStyles,
   getTemplate,
+  suggestFrontMatter,
   uploadPhoto,
   type CategorySummary,
   type StyleSummary,
@@ -663,12 +664,13 @@ export function CreateWizard() {
                       onTitleChange={setTitle}
                       greeting={greeting}
                       onGreetingChange={setGreeting}
-                      greetingFrom={greetingFrom}
-                      onGreetingFromChange={setGreetingFrom}
                       email={email}
                       consent={consent}
                       onConsentChange={setConsent}
                       onEmailChange={setEmail}
+                      memoryText={memoryText}
+                      castNames={people.map((p) => p.name.trim()).filter(Boolean)}
+                      targetAge={targetAge}
                     />
                     {/* Abuse control (O5). No-ops in dev: renders nothing and
                         reports an empty token, which the server accepts. */}
@@ -753,7 +755,7 @@ export function CreateWizard() {
 
         {/* Step navigation on <lg: inline under the step card (the rail carries
             the actions on lg+). */}
-        <div className="mt-5 flex items-center justify-between gap-3 lg:hidden">
+        <div className="mt-6 flex items-center justify-between gap-3 lg:hidden">
           {backButton("ghost", "") ?? <span />}
           {forwardButton("")}
         </div>
@@ -1298,24 +1300,27 @@ function FinishStep({
   onTitleChange,
   greeting,
   onGreetingChange,
-  greetingFrom,
-  onGreetingFromChange,
   email,
   onEmailChange,
   consent,
   onConsentChange,
+  memoryText,
+  castNames,
+  targetAge,
 }: {
   template: TemplateSummary | null;
   title: string;
   onTitleChange: (v: string) => void;
   greeting: string;
   onGreetingChange: (v: string) => void;
-  greetingFrom: string;
-  onGreetingFromChange: (v: string) => void;
   email: string;
   onEmailChange: (v: string) => void;
   consent: boolean;
   onConsentChange: (v: boolean) => void;
+  /** Context for the AI suggestion helpers (never displayed here). */
+  memoryText: string;
+  castNames: string[];
+  targetAge: number | null;
 }) {
   const t = useTranslations("wizard");
 
@@ -1340,6 +1345,14 @@ function FinishStep({
             onChange={(e) => onTitleChange(e.target.value)}
             maxLength={120}
           />
+          <SuggestOptions
+            kind="title"
+            memoryText={memoryText}
+            templateTitle={template?.title}
+            castNames={castNames}
+            targetAge={targetAge}
+            onPick={onTitleChange}
+          />
         </Field>
 
         <Field label={t("finishNote")} htmlFor="greeting" optional hint={t("finishNoteHint")}>
@@ -1351,20 +1364,13 @@ function FinishStep({
             onChange={(e) => onGreetingChange(e.target.value)}
             maxLength={600}
           />
-        </Field>
-
-        <Field
-          label={t("finishSignedFrom")}
-          htmlFor="greeting-from"
-          optional
-          hint={t("finishSignedFromHint")}
-        >
-          <TextInput
-            id="greeting-from"
-            placeholder={t("finishSignedFromPlaceholder")}
-            value={greetingFrom}
-            onChange={(e) => onGreetingFromChange(e.target.value)}
-            maxLength={80}
+          <SuggestOptions
+            kind="dedication"
+            memoryText={memoryText}
+            templateTitle={template?.title}
+            castNames={castNames}
+            targetAge={targetAge}
+            onPick={onGreetingChange}
           />
         </Field>
       </div>
@@ -1400,6 +1406,92 @@ function FinishStep({
         </label>
       </div>
     </section>
+  );
+}
+
+/**
+ * Inline AI helper under the title / dedication inputs: a quiet ghost button
+ * that fetches 3 tappable options grounded in the memory and cast; picking one
+ * fills the field (still editable), and a small link fetches 3 fresh ones.
+ * Errors stay quiet: one muted line, never a blocking alert.
+ */
+function SuggestOptions({
+  kind,
+  memoryText,
+  templateTitle,
+  castNames,
+  targetAge,
+  onPick,
+}: {
+  kind: "title" | "dedication";
+  memoryText: string;
+  templateTitle?: string;
+  castNames: string[];
+  targetAge: number | null;
+  onPick: (value: string) => void;
+}) {
+  const t = useTranslations("wizard");
+  const locale = useLocale();
+  const [options, setOptions] = useState<string[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  async function fetchOptions() {
+    setLoading(true);
+    setFailed(false);
+    try {
+      const next = await suggestFrontMatter({
+        kind,
+        memoryText,
+        templateTitle,
+        castNames: castNames.length > 0 ? castNames : undefined,
+        targetAge: targetAge ?? undefined,
+        locale,
+      });
+      setOptions(next);
+    } catch {
+      setFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="mt-2">
+      {options === null ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          pending={loading}
+          pendingLabel={t("suggestLoading")}
+          onClick={() => void fetchOptions()}
+        >
+          {t("suggestCta")}
+        </Button>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => onPick(option)}
+              className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-left text-xs leading-relaxed text-ink transition hover:border-marigold hover:bg-marigold/10"
+            >
+              {option}
+            </button>
+          ))}
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => void fetchOptions()}
+            className="self-start text-xs font-semibold text-ink-soft underline underline-offset-2 transition hover:text-coral disabled:opacity-60"
+          >
+            {loading ? t("suggestLoading") : t("suggestRegenerate")}
+          </button>
+        </div>
+      )}
+      {failed ? <p className="mt-1.5 text-xs text-ink-soft/80">{t("suggestError")}</p> : null}
+    </div>
   );
 }
 
@@ -1616,11 +1708,15 @@ function BookSoFar({
   );
 
   // Pages in the book's own order; each appears once it has real content.
-  const pages: { key: string; caption: string; node: React.ReactNode }[] = [];
+  const pages: { key: string; caption: string; note?: string; node: React.ReactNode }[] = [];
   if (selectedStyle) {
+    // The cover slot shows the chosen style's art, which could read as the
+    // final cover. The caption and note make clear it's a style preview: the
+    // real cover gets illustrated from the family's story and photos.
     pages.push({
       key: "cover",
-      caption: tFlip("cover"),
+      caption: t("bookSoFarCoverCaption"),
+      note: t("bookSoFarCoverNote"),
       node: (
         <CoverArt
           src={selectedStyle.previewImageUrl}
@@ -1716,7 +1812,10 @@ function BookSoFar({
       <link rel="stylesheet" href={fontStylesheetUrl(FM_PAIRING)} />
       {heading}
 
-      <div className="relative">
+      {/* -mx-3 cancels the slides' px-3 (which exists so the page's ring and
+          shadow paint uncut inside the clipping viewport), so the page itself
+          aligns edge-to-edge with the cards around it. */}
+      <div className="relative -mx-3">
         {/* The viewport clips the sliding track; each slide carries padding so
             the page's white ring + polaroid shadow paint uncut. touch-pan-y
             leaves vertical scrolling native while we read horizontal swipes. */}
@@ -1772,7 +1871,7 @@ function BookSoFar({
         ) : null}
       </div>
 
-      {/* Caption of the visible page + one dot per page. */}
+      {/* Caption of the visible page + one dot per page + optional page note. */}
       <p className="-mt-3 text-center font-display text-sm font-bold text-ink">
         {pages[current].caption}
       </p>
@@ -1791,6 +1890,11 @@ function BookSoFar({
             />
           ))}
         </div>
+      ) : null}
+      {pages[current].note ? (
+        <p className="mx-auto mt-2.5 max-w-[17rem] text-center text-[11px] leading-relaxed text-ink-soft/80">
+          {pages[current].note}
+        </p>
       ) : null}
     </section>
   );

@@ -26,7 +26,8 @@ export type RateLimitKind =
   | "regenerate-book"
   | "retry-book"
   | "checkout-ip"
-  | "cart-ip";
+  | "cart-ip"
+  | "suggest-ip";
 
 const LIMITS: Record<RateLimitKind, { windowSeconds: number; max: number }> = {
   // Each create triggers paid preview generation.
@@ -41,6 +42,8 @@ const LIMITS: Record<RateLimitKind, { windowSeconds: number; max: number }> = {
   // Shopify mutation cost.
   "checkout-ip": { windowSeconds: 60 * 60, max: 20 },
   "cart-ip": { windowSeconds: 60 * 60, max: 20 },
+  // Each suggestion request is a (small) paid LLM call.
+  "suggest-ip": { windowSeconds: 60 * 60, max: 10 },
 };
 
 export interface RateLimitResult {
@@ -121,6 +124,7 @@ export const RATE_LIMIT_COPY = {
   regenerate: "You've redrawn quite a few pages just now. Give it a minute.",
   retry: "The illustrators are already on it. Give it a few minutes before restarting again.",
   checkout: "Too many checkout attempts right now. Please wait a moment and try again.",
+  suggest: "So many ideas already! Please wait a little before asking for more suggestions.",
 } as const;
 
 /**

@@ -96,6 +96,24 @@ export async function uploadPhoto(file: File): Promise<string> {
   return json.url;
 }
 
+export interface FrontMatterSuggestionInput {
+  kind: "title" | "dedication";
+  memoryText: string;
+  templateTitle?: string;
+  castNames?: string[];
+  targetAge?: number;
+  locale: string;
+}
+
+/** 3 AI-written title or dedication options for the wizard's Finish step. */
+export async function suggestFrontMatter(input: FrontMatterSuggestionInput): Promise<string[]> {
+  const { options } = await request<{ options: string[] }>("/api/suggest-front-matter", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return options;
+}
+
 export async function createBook(input: CreateBookInput): Promise<string> {
   const { token } = await request<{ token: string }>("/api/books", {
     method: "POST",
