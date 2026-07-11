@@ -859,6 +859,12 @@
     "bookSoFarCast": "The cast",
     "bookSoFarStyleCaption": "Art style",
     "bookSoFarStyleTag": "Style",
-    "bookSoFarJoined": "{name} is in the book!"
+    "bookSoFarJoined": "{name} is in the book!",
+    "bookSoFarEditMemory": "Edit your memory",
+    "bookSoFarEditCast": "Edit the cast",
+    "bookSoFarEditStyle": "Change the style",
+    "bookSoFarEditTitle": "Edit the title",
+    "bookSoFarEditDedication": "Edit the dedication",
+    "draftSaved": "Draft saved"
   }
 }

@@ -863,6 +863,12 @@
     "bookSoFarCast": "Die Figuren",
     "bookSoFarStyleCaption": "Illustrationsstil",
     "bookSoFarStyleTag": "Stil",
-    "bookSoFarJoined": "{name} ist im Buch!"
+    "bookSoFarJoined": "{name} ist im Buch!",
+    "bookSoFarEditMemory": "Erinnerung bearbeiten",
+    "bookSoFarEditCast": "Figuren bearbeiten",
+    "bookSoFarEditStyle": "Stil ändern",
+    "bookSoFarEditTitle": "Titel bearbeiten",
+    "bookSoFarEditDedication": "Widmung bearbeiten",
+    "draftSaved": "Entwurf gespeichert"
   }
 }

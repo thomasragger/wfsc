@@ -211,6 +211,16 @@ export function CreateWizard() {
   // Auto-suggested title: fetched at most once per wizard session.
   const [autoTitleTried, setAutoTitleTried] = useState(false);
 
+  // Draft-saved flash: bumped (debounced) after localStorage writes settle,
+  // cleared again by the timeout effect below. Non-zero = indicator visible.
+  const [savedFlash, setSavedFlash] = useState(0);
+  useEffect(() => {
+    if (savedFlash === 0) return;
+    const timer = setTimeout(() => setSavedFlash(0), 2000);
+    return () => clearTimeout(timer);
+  }, [savedFlash]);
+  const draftSavedVisible = savedFlash > 0;
+
   // Cloudflare Turnstile token (O5). Empty in dev (no site key): see below.
   const [turnstileToken, setTurnstileToken] = useState("");
 
@@ -313,8 +323,12 @@ export function CreateWizard() {
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(draft));
     } catch {
-      // storage full / disabled: non-fatal
+      return; // storage full / disabled: non-fatal, and nothing was saved
     }
+    // Surface "Draft saved" only once writes settle (each change resets the
+    // timer via this effect's cleanup), so it never flickers per keystroke.
+    const settle = setTimeout(() => setSavedFlash(Date.now()), 800);
+    return () => clearTimeout(settle);
   }, [
     draftHydrated,
     storageKey,
@@ -658,6 +672,13 @@ export function CreateWizard() {
     topRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
   };
 
+  // Scrapbook cards double as shortcuts to the step where that ingredient is
+  // edited (the carousel's arrows/dots/swipe still only browse the scrapbook).
+  const editFromScrapbook = (target: StepId) => {
+    const idx = STEPS.indexOf(target);
+    if (idx !== step || confirmOpen) goTo(idx);
+  };
+
   const forwardButton = (className: string) =>
     stepId !== "finish" ? (
       <Button
@@ -711,9 +732,16 @@ export function CreateWizard() {
                   of clipping them at the scroll box edge. */}
               <div
                 ref={stepScrollRef}
-                className="lg:-mx-2 lg:-my-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overflow-x-hidden lg:px-2 lg:py-1"
+                className="lg:-mx-2 lg:-my-1 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:px-2 lg:py-1"
               >
-              <StepTransition stepKey={confirmOpen ? "confirm" : step} direction={direction}>
+              {/* flex-1 (with default min-height:auto) lets short steps fill
+                  the shell so the story note can stretch, while taller steps
+                  still grow the scroll area naturally. */}
+              <StepTransition
+                stepKey={confirmOpen ? "confirm" : step}
+                direction={direction}
+                className="lg:flex-1"
+              >
                 {stepId === "story" && (
                   <StoryStep
                     template={template}
@@ -789,7 +817,9 @@ export function CreateWizard() {
               margin/padding pair keeps the tilted cards' shadows unclipped if
               the rail ever needs its fallback scroll. */}
           <aside className="hidden lg:block lg:min-h-0">
-            <div className="-mx-3 flex h-full min-h-0 flex-col overflow-y-auto overflow-x-hidden px-3 pb-2">
+            {/* pb-0 so the scrapbook's dots sit flush with the step card's
+                bottom edge (the actions card top already matches its top). */}
+            <div className="-mx-3 flex h-full min-h-0 flex-col overflow-y-auto overflow-x-hidden px-3">
               <Card className="shrink-0 p-4">
                 <div className="flex items-center justify-between gap-3">
                   {/* Progress in the user's currency: their story taking
@@ -824,12 +854,24 @@ export function CreateWizard() {
                   {forwardButton("min-w-0 flex-1 whitespace-nowrap")}
                 </div>
                 <p className="mt-3 text-center text-xs text-ink-soft">{t("heroFreePreview")}</p>
+                {/* Draft-saved flash: space is reserved (fixed height) so the
+                    line never shifts the layout. */}
+                <p
+                  aria-live="polite"
+                  className={`mt-1 h-4 text-center text-[11px] font-semibold text-sage transition-opacity duration-300 motion-reduce:transition-none ${
+                    draftSavedVisible ? "opacity-100" : "opacity-0"
+                  }`}
+                >
+                  {draftSavedVisible ? `✓ ${t("draftSaved")}` : null}
+                </p>
               </Card>
 
               {/* The scrapbook of ingredients, growing with every choice —
-                  anchored here on every step, review included. */}
+                  anchored here on every step, review included. mt-auto pins
+                  its bottom edge to the shell's bottom; the width cap keeps
+                  the square stage short enough to fit 730px-tall viewports. */}
               <BookSoFar
-                className="mt-6"
+                className="mx-auto mt-auto w-full max-w-[20rem] pt-6"
                 showEmpty
                 selectedStyle={selectedStyle}
                 memoryText={memoryText}
@@ -837,6 +879,7 @@ export function CreateWizard() {
                 title={title}
                 greeting={greeting}
                 greetingFrom={greetingFrom}
+                onEdit={editFromScrapbook}
               />
             </div>
           </aside>
@@ -852,6 +895,7 @@ export function CreateWizard() {
           title={title}
           greeting={greeting}
           greetingFrom={greetingFrom}
+          onEdit={editFromScrapbook}
         />
 
         {/* Step navigation on <lg: inline under the step card (the rail carries
@@ -860,6 +904,15 @@ export function CreateWizard() {
           {backButton("ghost", "") ?? <span />}
           {forwardButton("")}
         </div>
+        {/* Draft-saved flash (mobile home); height reserved, no layout shift. */}
+        <p
+          aria-live="polite"
+          className={`mt-2 h-4 text-center text-[11px] font-semibold text-sage transition-opacity duration-300 motion-reduce:transition-none lg:hidden ${
+            draftSavedVisible ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          {draftSavedVisible ? `✓ ${t("draftSaved")}` : null}
+        </p>
       </div>
     </PageTransition>
   );
@@ -999,7 +1052,7 @@ function StyleStep({
 }) {
   const t = useTranslations("wizard");
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-5 lg:gap-4">
       <header>
         <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">{t("styleTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
@@ -1038,7 +1091,7 @@ function StyleStep({
           <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
             {t("styleSampleHeading")}
           </p>
-          <div className="mt-3 grid max-w-sm grid-cols-2 gap-3">
+          <div className="mt-3 grid max-w-sm grid-cols-2 gap-3 lg:max-w-xs">
             {selectedStyle.sampleSpreadUrls.map((url) => (
               <ProgressiveImage
                 key={url}
@@ -1094,7 +1147,7 @@ function StyleCard({
       onMouseLeave={leave}
       onFocus={() => setHovered(true)}
       onBlur={leave}
-      className={`tile-lift group relative w-56 shrink-0 overflow-hidden rounded-2xl border-2 bg-white text-left ${
+      className={`tile-lift group relative w-56 shrink-0 overflow-hidden rounded-2xl border-2 bg-white text-left lg:w-48 ${
         selected ? "border-coral" : "border-transparent hover:border-marigold"
       }`}
     >
@@ -1131,7 +1184,7 @@ function StyleCard({
         <div>
           <p className="font-display font-bold text-ink">{style.name}</p>
           {style.description ? (
-            <p className="mt-0.5 line-clamp-3 text-xs leading-relaxed text-ink-soft">{style.description}</p>
+            <p className="mt-0.5 line-clamp-3 text-xs leading-relaxed text-ink-soft lg:line-clamp-2">{style.description}</p>
           ) : null}
         </div>
         <span
@@ -1168,7 +1221,7 @@ function StoryStep({
   const beats = template ? template.storyBeats.slice(0, 10) : [];
   const hasBeats = beats.length > 0;
   return (
-    <section className="flex flex-col gap-6">
+    <section className="flex flex-col gap-6 lg:h-full lg:gap-5">
       <header>
         <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">
           {template ? t("storyTitleTemplate") : t("storyTitleOwn")}
@@ -1197,21 +1250,35 @@ function StoryStep({
         </div>
       </header>
 
-      <div className={hasBeats ? "grid gap-6 lg:grid-cols-2 lg:items-start" : ""}>
-        {/* Left: the memory input — always up top. The memory field is
-            dressed as a page in a diary: a flat paper card with faint ruled
-            lines. The step header above is the prompt; still a real <textarea>. */}
-        <div className="flex flex-col gap-5">
-          <Card className="bg-white p-5 shadow-none ring-1 ring-ink/10 sm:p-6">
+      <div
+        className={`grid gap-6 pt-2 lg:min-h-0 lg:flex-1 ${
+          hasBeats ? "lg:grid-cols-2 lg:items-stretch" : ""
+        }`}
+      >
+        {/* Left: the memory as a big writable taped post-it — the same note
+            the rail scrapbook shows in miniature (same tape, paper, ruled
+            lines). The user writes directly on the card; on lg+ it flexes to
+            fill the step card's available height. */}
+        <div className="flex min-h-0 flex-col">
+          <div
+            className="relative flex min-h-0 flex-1 flex-col rounded-lg bg-white px-6 pb-6 pt-7 shadow-fuzzy ring-1 ring-ink/5 transition-shadow focus-within:ring-2 focus-within:ring-marigold/70"
+            style={{ rotate: "-0.5deg" }}
+          >
+            {/* The tape strip doubles as the note's label. */}
+            <label
+              htmlFor="memory"
+              className="absolute -top-3 left-1/2 -translate-x-1/2 rotate-[-3deg] whitespace-nowrap rounded-[2px] bg-marigold/40 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-ink/70 shadow-sm"
+            >
+              {template ? t("memoryLabelTemplate") : t("memoryLabelOwn")}
+            </label>
             <textarea
               id="memory"
-              aria-label={template ? t("memoryLabelTemplate") : t("memoryLabelOwn")}
-              className="block min-h-48 w-full resize-y border-transparent bg-transparent p-0 font-body text-[1.05rem] leading-8 text-ink placeholder:text-ink-soft/50 focus:outline-none focus:ring-0"
+              className="block min-h-44 w-full flex-1 resize-none border-0 bg-transparent p-0 font-body text-[1rem] text-ink placeholder:text-ink-soft/50 focus:outline-none focus:ring-0"
               style={{
                 backgroundImage:
-                  "repeating-linear-gradient(to bottom, transparent 0, transparent calc(2rem - 1px), rgb(118 30 11 / 0.1) calc(2rem - 1px), rgb(118 30 11 / 0.1) 2rem)",
+                  "repeating-linear-gradient(to bottom, transparent 0, transparent calc(1.9rem - 1px), rgb(118 30 11 / 0.12) calc(1.9rem - 1px), rgb(118 30 11 / 0.12) 1.9rem)",
                 backgroundAttachment: "local",
-                lineHeight: "2rem",
+                lineHeight: "1.9rem",
               }}
               placeholder={
                 template
@@ -1221,7 +1288,7 @@ function StoryStep({
               value={memoryText}
               onChange={(e) => onMemoryChange(e.target.value)}
             />
-          </Card>
+          </div>
         </div>
 
         {/* Right: the story shape (template only). */}
@@ -1607,7 +1674,7 @@ function WritableNoteCard({
       {multiline ? (
         <textarea
           id={id}
-          rows={5}
+          rows={4}
           value={value}
           maxLength={maxLength}
           placeholder={placeholder}
@@ -2071,6 +2138,7 @@ function BookSoFar({
   title,
   greeting,
   greetingFrom,
+  onEdit,
 }: {
   className?: string;
   showEmpty?: boolean;
@@ -2080,13 +2148,20 @@ function BookSoFar({
   title: string;
   greeting: string;
   greetingFrom: string;
+  /** Cards double as shortcuts to the step where the ingredient is edited. */
+  onEdit?: (target: StepId) => void;
 }) {
   const t = useTranslations("wizard");
   const tFlip = useTranslations("flipbook");
 
   const [index, setIndex] = useState(0);
   const [seenKeys, setSeenKeys] = useState<string[] | null>(null);
+  // Swipe tracking: start x + the largest distance moved. Pointer capture is
+  // taken only once a real drag starts (>6px), so plain taps still reach the
+  // card buttons; movedRef survives to the click event so a drag that ends on
+  // a card can be suppressed there.
   const swipeStart = useRef<number | null>(null);
+  const movedRef = useRef(0);
 
   // Theatrical moments: when something lands in the scrapbook (style picked,
   // photo finished uploading), the carousel jumps to that card and pulses it,
@@ -2110,11 +2185,19 @@ function BookSoFar({
     .map((p) => ({ key: p.key, name: p.name.trim(), photo: p.photoUrls[0] }));
 
   // Cards in the order they're gathered; each appears once it has real content.
-  const pages: { key: string; caption: string; node: React.ReactNode }[] = [];
+  const pages: {
+    key: string;
+    caption: string;
+    target: StepId;
+    editLabel: string;
+    node: React.ReactNode;
+  }[] = [];
   if (memoryText.trim()) {
     pages.push({
       key: "memory",
       caption: t("bookSoFarStory"),
+      target: "story",
+      editLabel: t("bookSoFarEditMemory"),
       node: <MemoryNoteCard text={memoryText.trim()} />,
     });
   }
@@ -2122,6 +2205,8 @@ function BookSoFar({
     pages.push({
       key: "cast",
       caption: t("bookSoFarCast"),
+      target: "cast",
+      editLabel: t("bookSoFarEditCast"),
       node: <CastPolaroids members={castMembers} />,
     });
   }
@@ -2129,6 +2214,8 @@ function BookSoFar({
     pages.push({
       key: "style",
       caption: t("bookSoFarStyleCaption"),
+      target: "style",
+      editLabel: t("bookSoFarEditStyle"),
       node: <StyleSwatchCard style={selectedStyle} tag={t("bookSoFarStyleTag")} />,
     });
   }
@@ -2136,6 +2223,8 @@ function BookSoFar({
     pages.push({
       key: "title",
       caption: t("finishBookTitle"),
+      target: "finish",
+      editLabel: t("bookSoFarEditTitle"),
       node: <TitleNoteCard label={t("finishBookTitle")} title={title.trim()} />,
     });
   }
@@ -2143,6 +2232,8 @@ function BookSoFar({
     pages.push({
       key: "dedication",
       caption: tFlip("dedication"),
+      target: "finish",
+      editLabel: t("bookSoFarEditDedication"),
       node: (
         <DedicationNoteCard
           label={tFlip("dedication")}
@@ -2244,12 +2335,23 @@ function BookSoFar({
           column like the cards around it. */}
       <div className="relative -mx-3">
         {/* The viewport clips the sliding track. touch-pan-y leaves vertical
-            scrolling native while we read horizontal swipes. */}
+            scrolling native while we read horizontal swipes. Pointer capture
+            starts only after a real drag (>6px) so plain taps still click the
+            card buttons; a capture-phase click guard swallows the click that
+            trails a swipe. */}
         <div
           className="touch-pan-y select-none overflow-hidden"
           onPointerDown={(e) => {
             swipeStart.current = e.clientX;
-            e.currentTarget.setPointerCapture(e.pointerId);
+            movedRef.current = 0;
+          }}
+          onPointerMove={(e) => {
+            if (swipeStart.current === null) return;
+            const moved = Math.abs(e.clientX - swipeStart.current);
+            movedRef.current = Math.max(movedRef.current, moved);
+            if (moved > 6 && !e.currentTarget.hasPointerCapture(e.pointerId)) {
+              e.currentTarget.setPointerCapture(e.pointerId);
+            }
           }}
           onPointerUp={(e) => {
             const start = swipeStart.current;
@@ -2261,6 +2363,13 @@ function BookSoFar({
           }}
           onPointerCancel={() => {
             swipeStart.current = null;
+          }}
+          onClickCapture={(e) => {
+            // A drag that ended on a card must not also activate it.
+            if (movedRef.current > 8) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
           }}
         >
           <div
@@ -2281,7 +2390,20 @@ function BookSoFar({
                     key={celebrating ? flourish.nonce : "still"}
                     className={`flex w-full justify-center ${celebrating ? "animate-celebrate" : ""}`.trim()}
                   >
-                    {page.node}
+                    {onEdit ? (
+                      // The card is a shortcut to the step where it's edited.
+                      <button
+                        type="button"
+                        tabIndex={i === current ? 0 : -1}
+                        aria-label={page.editLabel}
+                        onClick={() => onEdit(page.target)}
+                        className="flex w-full cursor-pointer justify-center rounded-lg text-left transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-3 focus-visible:outline-cobalt motion-reduce:transition-none"
+                      >
+                        {page.node}
+                      </button>
+                    ) : (
+                      page.node
+                    )}
                   </div>
                 </div>
               );
