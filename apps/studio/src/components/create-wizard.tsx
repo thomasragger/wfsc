@@ -564,8 +564,9 @@ export function CreateWizard() {
   // ---------------------------------------------------------------- resume draft
   if (pendingDraft && !draftHydrated) {
     return (
-      <PageTransition>
-        <div ref={topRef} className="mx-auto max-w-md scroll-mt-24 text-center">
+      // Vertically centered in the app-shell workspace on lg+, like step content.
+      <PageTransition className="lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:justify-center">
+        <div ref={topRef} className="mx-auto w-full max-w-md scroll-mt-24 text-center">
           <Card className="p-8">
             <Eyebrow className="mx-auto">{t("resumeEyebrow")}</Eyebrow>
             <h1 className="mt-4 font-display text-2xl font-extrabold text-ink sm:text-3xl">
@@ -1252,9 +1253,6 @@ function StyleCard({
   };
 
   return (
-    // Image-dominant tile: the art IS the card, filling it edge-to-edge with
-    // object-cover; name + selected check ride a scrim over the art's lower
-    // edge. One row of these, bigger on lg where the art is the star.
     <button
       type="button"
       role="radio"
@@ -1264,20 +1262,25 @@ function StyleCard({
       onMouseLeave={leave}
       onFocus={() => setHovered(true)}
       onBlur={leave}
-      className={`tile-lift group relative w-56 shrink-0 overflow-hidden rounded-2xl border-2 bg-white text-left lg:w-64 ${
+      className={`tile-lift group relative w-56 shrink-0 overflow-hidden rounded-2xl border-2 bg-white text-left lg:w-48 ${
         selected ? "border-coral" : "border-transparent hover:border-marigold"
       }`}
     >
-      <div className="relative aspect-[3/2] w-full overflow-hidden bg-lavender">
+      {/* The art always fills its top box edge-to-edge: everything inside is
+          pinned absolute inset-0 with object-cover (placeholder included), so
+          no image can ever letterbox or float inside the 4/3 area. */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-lavender">
         {style.previewImageUrl ? (
           <ProgressiveImage
             src={style.previewImageUrl}
             alt={t("styleCardAlt", { name: style.name })}
-            className="h-full w-full"
+            className="absolute inset-0"
             imgClassName="h-full w-full object-cover"
           />
         ) : (
-          <ArtPlaceholder label={style.name} />
+          <div className="absolute inset-0">
+            <ArtPlaceholder label={style.name} />
+          </div>
         )}
         {/* Reference images cross-fade over the preview while hovered. */}
         {peeks.map((url, i) => (
@@ -1291,26 +1294,28 @@ function StyleCard({
             <img src={url} alt="" className="h-full w-full object-cover" />
           </div>
         ))}
-        {/* Name + selected check on a scrim over the art's lower edge. */}
-        <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-ink/70 via-ink/25 to-transparent px-3 pb-2.5 pt-8">
-          <span className="font-display text-sm font-bold text-white drop-shadow">
-            {style.name}
-          </span>
-          <span
-            className={`mb-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
-              selected ? "bg-coral text-white" : "bg-white/40 text-transparent"
-            }`}
-            aria-hidden="true"
-          >
-            ✓
-          </span>
-        </div>
       </div>
       {recommended ? (
         <span className="absolute left-3 top-3 rounded-full bg-marigold px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-ink shadow-sm">
           {t("styleRecommended")}
         </span>
       ) : null}
+      <div className="flex items-start justify-between gap-2 p-4">
+        <div>
+          <p className="font-display font-bold text-ink">{style.name}</p>
+          {style.description ? (
+            <p className="mt-0.5 line-clamp-3 text-xs leading-relaxed text-ink-soft lg:line-clamp-2">{style.description}</p>
+          ) : null}
+        </div>
+        <span
+          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+            selected ? "bg-coral text-white" : "bg-ink/10 text-transparent"
+          }`}
+          aria-hidden="true"
+        >
+          ✓
+        </span>
+      </div>
     </button>
   );
 }
@@ -1699,7 +1704,16 @@ function FinishStep({
             label={t("finishBookTitle")}
             tilt="-1.5deg"
             value={title}
-            onChange={onTitleChange}
+            onChange={(v) => {
+              // First character makes the scrapbook card exist: show it once,
+              // quietly, so the user watches it fill in live while typing.
+              const appearing = title.trim() === "" && v.trim() !== "";
+              onTitleChange(v);
+              if (appearing) onSpotlight("title", false);
+            }}
+            onFocus={() => {
+              if (title.trim()) onSpotlight("title", false);
+            }}
             onBlur={() => {
               if (title.trim()) onSpotlight("title", false);
             }}
@@ -1732,7 +1746,16 @@ function FinishStep({
             label={t("finishNote")}
             tilt="1.5deg"
             value={greeting}
-            onChange={onGreetingChange}
+            onChange={(v) => {
+              // First character makes the scrapbook card exist: show it once,
+              // quietly, so the user watches it fill in live while typing.
+              const appearing = greeting.trim() === "" && v.trim() !== "";
+              onGreetingChange(v);
+              if (appearing) onSpotlight("dedication", false);
+            }}
+            onFocus={() => {
+              if (greeting.trim()) onSpotlight("dedication", false);
+            }}
             onBlur={() => {
               if (greeting.trim()) onSpotlight("dedication", false);
             }}
@@ -1778,6 +1801,7 @@ function WritableNoteCard({
   tilt,
   value,
   onChange,
+  onFocus,
   onBlur,
   placeholder,
   maxLength,
@@ -1791,6 +1815,8 @@ function WritableNoteCard({
   tilt: string;
   value: string;
   onChange: (v: string) => void;
+  /** Fired when the user enters the field (used for quiet scrapbook focus). */
+  onFocus?: () => void;
   /** Fired when the user leaves the field (used for quiet scrapbook focus). */
   onBlur?: () => void;
   placeholder: string;
@@ -1826,6 +1852,7 @@ function WritableNoteCard({
         onChange={(e) =>
           onChange(noNewlines ? e.target.value.replace(/\r?\n/g, " ") : e.target.value)
         }
+        onFocus={onFocus}
         onBlur={onBlur}
         onKeyDown={(e) => {
           if (noNewlines && e.key === "Enter") {
