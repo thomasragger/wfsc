@@ -18,7 +18,7 @@ import { Carousel } from "@/components/ui/carousel";
 import { Chip, PillLabel } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { IconCart, IconChevronLeft, IconChevronRight, IconClose, IconUser } from "@/components/ui/icons";
-import { Field, Select, TextArea, TextInput } from "@/components/ui/input";
+import { Field, Select, TextInput } from "@/components/ui/input";
 import { PageTransition, StepTransition } from "@/components/ui/page-transition";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { Skeleton, SkeletonGrid } from "@/components/ui/skeleton";
@@ -205,6 +205,11 @@ export function CreateWizard() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const topRef = useRef<HTMLDivElement>(null);
+  // The step column's internal scroll area (app-shell on lg+): reset to the
+  // top on every step change so a new step never starts half-scrolled.
+  const stepScrollRef = useRef<HTMLDivElement>(null);
+  // Auto-suggested title: fetched at most once per wizard session.
+  const [autoTitleTried, setAutoTitleTried] = useState(false);
 
   // Cloudflare Turnstile token (O5). Empty in dev (no site key): see below.
   const [turnstileToken, setTurnstileToken] = useState("");
@@ -456,6 +461,7 @@ export function CreateWizard() {
     setConfirmOpen(false);
     setDirection(next > step ? "forward" : "back");
     setStep(next);
+    stepScrollRef.current?.scrollTo({ top: 0 });
     topRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
   }
 
@@ -648,6 +654,7 @@ export function CreateWizard() {
 
   const openConfirm = () => {
     setConfirmOpen(true);
+    stepScrollRef.current?.scrollTo({ top: 0 });
     topRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
   };
 
@@ -683,14 +690,29 @@ export function CreateWizard() {
 
   return (
     <PageTransition>
-      <div ref={topRef} className="scroll-mt-24 pb-4">
+      {/* App shell on lg+: the wizard is a fixed workspace filling the
+          viewport below the h-16 studio header (plus the page's own top
+          padding); the step column scrolls internally when a step ever
+          exceeds it, and the rail stays fully visible. The studio footer
+          simply sits below the fold. Normal document scrolling on <lg. */}
+      <div
+        ref={topRef}
+        className="scroll-mt-24 pb-4 lg:flex lg:h-[calc(100dvh-6rem)] lg:min-h-0 lg:flex-col lg:pb-0"
+      >
         {/* Horizontal progress only on <lg; the rail carries it on lg+. */}
-        <StepProgress steps={stepLabels} current={step} className="mb-6 lg:hidden" />
+        <StepProgress steps={stepLabels} current={step} className="mb-5 lg:hidden" />
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,25rem)] lg:items-start lg:gap-8">
+        <div className="grid gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,25rem)] lg:gap-8">
           {/* main step column */}
-          <div className="min-w-0">
-            <Card className="overflow-hidden p-5 sm:p-7">
+          <div className="min-w-0 lg:flex lg:min-h-0 lg:flex-col">
+            <Card className="overflow-hidden p-5 sm:p-7 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+              {/* Internal scroll area (lg+). The negative-margin/padding pair
+                  gives tilted cards' shadows and tape overhangs room instead
+                  of clipping them at the scroll box edge. */}
+              <div
+                ref={stepScrollRef}
+                className="lg:-mx-2 lg:-my-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overflow-x-hidden lg:px-2 lg:py-1"
+              >
               <StepTransition stepKey={confirmOpen ? "confirm" : step} direction={direction}>
                 {stepId === "story" && (
                   <StoryStep
@@ -750,36 +772,25 @@ export function CreateWizard() {
                       memoryText={memoryText}
                       castNames={people.map((p) => p.name.trim()).filter(Boolean)}
                       targetAge={targetAge}
-                      carousel={
-                        <BookSoFar
-                          className="mx-auto w-full max-w-md"
-                          selectedStyle={selectedStyle}
-                          memoryText={memoryText}
-                          people={people}
-                          title={title}
-                          greeting={greeting}
-                          greetingFrom={greetingFrom}
-                        />
-                      }
+                      titleAutoSuggest={!autoTitleTried}
+                      onTitleAutoSuggest={() => setAutoTitleTried(true)}
                     />
                   ))}
               </StepTransition>
 
               {error ? <Alert className="mt-5">{error}</Alert> : null}
+              </div>
             </Card>
           </div>
 
-          {/* Right rail (lg+ only): a slim actions card on top (Continue stays
-              in view without scrolling), then the evolving book preview as the
-              rail's visual anchor. On <lg the inline nav under the step card
-              carries the actions and the carousel renders full-width below the
-              card instead. `lg:self-stretch` makes the aside fill the full
-              grid-row height so the inner sticky div has room to travel (grid
-              `lg:items-start` would otherwise shrink it to content height and
-              sticky would never engage). */}
-          <aside className="hidden lg:block lg:self-stretch">
-            <div className="lg:sticky lg:top-24">
-              <Card className="p-4">
+          {/* Right rail (lg+ only): a slim actions card on top (Continue is
+              always in view inside the fixed shell), then the scrapbook —
+              anchored here on EVERY step, review included. The negative-
+              margin/padding pair keeps the tilted cards' shadows unclipped if
+              the rail ever needs its fallback scroll. */}
+          <aside className="hidden lg:block lg:min-h-0">
+            <div className="-mx-3 flex h-full min-h-0 flex-col overflow-y-auto overflow-x-hidden px-3 pb-2">
+              <Card className="shrink-0 p-4">
                 <div className="flex items-center justify-between gap-3">
                   {/* Progress in the user's currency: their story taking
                       shape, not form steps. The pills keep step orientation
@@ -815,43 +826,37 @@ export function CreateWizard() {
                 <p className="mt-3 text-center text-xs text-ink-soft">{t("heroFreePreview")}</p>
               </Card>
 
-              {/* The scrapbook of ingredients, growing with every choice. On
-                  the review step it moves into the main column (the step IS
-                  the book), so the rail holds only the actions there. */}
-              {stepId !== "finish" ? (
-                <BookSoFar
-                  className="mt-6"
-                  showEmpty
-                  selectedStyle={selectedStyle}
-                  memoryText={memoryText}
-                  people={people}
-                  title={title}
-                  greeting={greeting}
-                  greetingFrom={greetingFrom}
-                />
-              ) : null}
+              {/* The scrapbook of ingredients, growing with every choice —
+                  anchored here on every step, review included. */}
+              <BookSoFar
+                className="mt-6"
+                showEmpty
+                selectedStyle={selectedStyle}
+                memoryText={memoryText}
+                people={people}
+                title={title}
+                greeting={greeting}
+                greetingFrom={greetingFrom}
+              />
             </div>
           </aside>
         </div>
 
-        {/* The scrapbook on <lg: the same carousel between the step card and
-            the inline nav (hidden while empty, and on the review step, where
-            it lives inside the step itself). */}
-        {stepId !== "finish" ? (
-          <BookSoFar
-            className="mx-auto mt-6 w-full max-w-md lg:hidden"
-            selectedStyle={selectedStyle}
-            memoryText={memoryText}
-            people={people}
-            title={title}
-            greeting={greeting}
-            greetingFrom={greetingFrom}
-          />
-        ) : null}
+        {/* The scrapbook on <lg: one fixed home on every step, between the
+            step card and the inline nav (hidden while empty). */}
+        <BookSoFar
+          className="mx-auto mt-5 w-full max-w-md lg:hidden"
+          selectedStyle={selectedStyle}
+          memoryText={memoryText}
+          people={people}
+          title={title}
+          greeting={greeting}
+          greetingFrom={greetingFrom}
+        />
 
         {/* Step navigation on <lg: inline under the step card (the rail carries
             the actions on lg+). */}
-        <div className="mt-6 flex items-center justify-between gap-3 lg:hidden">
+        <div className="mt-5 flex items-center justify-between gap-3 lg:hidden">
           {backButton("ghost", "") ?? <span />}
           {forwardButton("")}
         </div>
@@ -1033,7 +1038,7 @@ function StyleStep({
           <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
             {t("styleSampleHeading")}
           </p>
-          <div className="mt-3 grid max-w-lg grid-cols-2 gap-3">
+          <div className="mt-3 grid max-w-sm grid-cols-2 gap-3">
             {selectedStyle.sampleSpreadUrls.map((url) => (
               <ProgressiveImage
                 key={url}
@@ -1450,11 +1455,11 @@ function CastStep({
 /* ------------------------------------------------------------- review (finish) */
 
 /**
- * The last step is "review your book", not a form: the big book-so-far
- * carousel is the centerpiece (passed in as `carousel` so the wizard's state
- * wiring stays in one place), with title + dedication as light annotations
- * below it and a tiny "what happens next" strip near the CTA. Email capture
- * is deferred to the EmailCapture moment that the CTA reveals.
+ * The last step: the title and dedication are written DIRECTLY onto the same
+ * taped note cards the scrapbook uses (no form fields), each with a subtle
+ * AI suggestion line beneath, plus a tiny "what happens next" strip. Email
+ * capture is deferred to the EmailCapture moment that the CTA reveals; the
+ * scrapbook itself stays anchored in the rail.
  */
 function FinishStep({
   template,
@@ -1465,7 +1470,8 @@ function FinishStep({
   memoryText,
   castNames,
   targetAge,
-  carousel,
+  titleAutoSuggest,
+  onTitleAutoSuggest,
 }: {
   template: TemplateSummary | null;
   title: string;
@@ -1476,13 +1482,17 @@ function FinishStep({
   memoryText: string;
   castNames: string[];
   targetAge: number | null;
-  /** The big book-so-far carousel, rendered by the wizard. */
-  carousel: React.ReactNode;
+  /** Auto-suggest a title on arrival, at most once per wizard session. */
+  titleAutoSuggest: boolean;
+  onTitleAutoSuggest: () => void;
 }) {
   const t = useTranslations("wizard");
 
   return (
     <section className="flex flex-col gap-6">
+      {/* React hoists this to <head>; loads the cards' display+script fonts. */}
+      <link rel="stylesheet" href={fontStylesheetUrl(FM_PAIRING)} />
+
       <header>
         <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">{t("finishTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
@@ -1490,48 +1500,56 @@ function FinishStep({
         </p>
       </header>
 
-      {/* The book itself, front and center. */}
-      {carousel}
-
-      {/* Light annotations around the book: both optional, both land in the
-          carousel above as you type. */}
-      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-        <Field label={t("finishBookTitle")} htmlFor="title" optional>
-          <TextInput
+      {/* Writable note cards: the user writes straight onto the card. */}
+      <div className="mx-auto grid w-full max-w-2xl gap-x-8 gap-y-7 pt-2 lg:grid-cols-2 lg:items-start">
+        <div>
+          <WritableNoteCard
             id="title"
-            placeholder={template ? template.title : t("finishTitlePlaceholder")}
+            label={t("finishBookTitle")}
+            tilt="-1deg"
             value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
+            onChange={onTitleChange}
+            placeholder={template ? template.title : t("finishTitlePlaceholder")}
             maxLength={120}
+            textStyle={FM_DISPLAY}
+            textClassName="font-display text-xl font-extrabold leading-tight"
           />
-          <SuggestOptions
+          <SuggestLine
             kind="title"
+            value={title}
+            onApply={onTitleChange}
             memoryText={memoryText}
             templateTitle={template?.title}
             castNames={castNames}
             targetAge={targetAge}
-            onPick={onTitleChange}
+            autoFetch={titleAutoSuggest}
+            onAutoFetch={onTitleAutoSuggest}
           />
-        </Field>
+        </div>
 
-        <Field label={t("finishNote")} htmlFor="greeting" optional hint={t("finishNoteHint")}>
-          <TextArea
+        <div>
+          <WritableNoteCard
             id="greeting"
-            className="min-h-24 leading-relaxed"
-            placeholder={t("finishNotePlaceholder")}
+            label={t("finishNote")}
+            tilt="1deg"
             value={greeting}
-            onChange={(e) => onGreetingChange(e.target.value)}
+            onChange={onGreetingChange}
+            placeholder={t("finishNotePlaceholder")}
             maxLength={600}
+            multiline
+            textStyle={FM_SCRIPT}
+            textClassName="text-lg leading-relaxed"
           />
-          <SuggestOptions
+          <SuggestLine
             kind="dedication"
+            value={greeting}
+            onApply={onGreetingChange}
             memoryText={memoryText}
             templateTitle={template?.title}
             castNames={castNames}
             targetAge={targetAge}
-            onPick={onGreetingChange}
           />
-        </Field>
+        </div>
       </div>
 
       {/* What happens next: three tiny steps near the CTA. */}
@@ -1541,6 +1559,75 @@ function FinishStep({
         <NextStep icon={<IconCart className="h-3.5 w-3.5" />} text={t("finishNextShip")} />
       </ol>
     </section>
+  );
+}
+
+/**
+ * A taped note card the user writes on: the input visually IS the card
+ * (transparent field, card chrome around it, tape strip doubling as the
+ * label). Same visual language as the scrapbook's note cards.
+ */
+function WritableNoteCard({
+  id,
+  label,
+  tilt,
+  value,
+  onChange,
+  placeholder,
+  maxLength,
+  multiline = false,
+  textStyle,
+  textClassName = "",
+}: {
+  id: string;
+  label: string;
+  tilt: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  maxLength: number;
+  multiline?: boolean;
+  textStyle: React.CSSProperties;
+  textClassName?: string;
+}) {
+  const fieldClass =
+    `block w-full border-0 bg-transparent text-center text-ink placeholder:text-ink/25 focus:outline-none focus:ring-0 ${textClassName}`.trim();
+  return (
+    <div
+      className="relative rounded-lg bg-white px-6 pb-6 pt-7 shadow-fuzzy ring-1 ring-ink/5 transition-shadow focus-within:ring-2 focus-within:ring-marigold/70"
+      style={{ rotate: tilt }}
+    >
+      {/* The tape strip doubles as the card's label. */}
+      <label
+        htmlFor={id}
+        className="absolute -top-3 left-1/2 -translate-x-1/2 rotate-[-3deg] whitespace-nowrap rounded-[2px] bg-marigold/40 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-ink/70 shadow-sm"
+      >
+        {label}
+      </label>
+      {multiline ? (
+        <textarea
+          id={id}
+          rows={5}
+          value={value}
+          maxLength={maxLength}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className={`${fieldClass} resize-none`}
+          style={textStyle}
+        />
+      ) : (
+        <input
+          id={id}
+          type="text"
+          value={value}
+          maxLength={maxLength}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          className={fieldClass}
+          style={textStyle}
+        />
+      )}
+    </div>
   );
 }
 
@@ -1648,87 +1735,118 @@ function EmailCapture({
 }
 
 /**
- * Inline AI helper under the title / dedication inputs: a quiet ghost button
- * that fetches 3 tappable options grounded in the memory and cast; picking one
- * fills the field (still editable), and a small link fetches 3 fresh ones.
- * Errors stay quiet: one muted line, never a blocking alert.
+ * The subtle AI line beneath a writable note card. One tap fills the card
+ * with a suggestion; "try another" cycles the remaining fetched options
+ * before refetching. With `autoFetch`, it fetches once on arrival and
+ * prefills an EMPTY card, marked with a small "our suggestion" pill until
+ * the user edits (a typed or edited value is never overwritten). Errors stay
+ * quiet: one muted line; auto-fetch fails completely silently.
  */
-function SuggestOptions({
+function SuggestLine({
   kind,
+  value,
+  onApply,
   memoryText,
   templateTitle,
   castNames,
   targetAge,
-  onPick,
+  autoFetch = false,
+  onAutoFetch,
 }: {
   kind: "title" | "dedication";
+  value: string;
+  onApply: (v: string) => void;
   memoryText: string;
   templateTitle?: string;
   castNames: string[];
   targetAge: number | null;
-  onPick: (value: string) => void;
+  autoFetch?: boolean;
+  onAutoFetch?: () => void;
 }) {
   const t = useTranslations("wizard");
   const locale = useLocale();
-  const [options, setOptions] = useState<string[] | null>(null);
+  const [options, setOptions] = useState<string[]>([]);
+  const [cursor, setCursor] = useState(0);
+  const [lastApplied, setLastApplied] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  async function fetchOptions() {
-    setLoading(true);
-    setFailed(false);
-    try {
-      const next = await suggestFrontMatter({
-        kind,
-        memoryText,
-        templateTitle,
-        castNames: castNames.length > 0 ? castNames : undefined,
-        targetAge: targetAge ?? undefined,
-        locale,
-      });
-      setOptions(next);
-    } catch {
-      setFailed(true);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Latest field value, so the async auto-apply never clobbers fresh typing.
+  const valueRef = useRef(value);
+  useEffect(() => {
+    valueRef.current = value;
+  });
+
+  const fetchNext = useCallback(
+    async (isAuto: boolean) => {
+      // Cycle through already-fetched options before hitting the API again.
+      if (!isAuto && options.length > 0 && cursor + 1 < options.length) {
+        const next = options[cursor + 1];
+        setCursor(cursor + 1);
+        setLastApplied(next);
+        onApply(next);
+        return;
+      }
+      setLoading(true);
+      setFailed(false);
+      try {
+        const fetched = await suggestFrontMatter({
+          kind,
+          memoryText,
+          templateTitle,
+          castNames: castNames.length > 0 ? castNames : undefined,
+          targetAge: targetAge ?? undefined,
+          locale,
+        });
+        setOptions(fetched);
+        setCursor(0);
+        const first = fetched[0];
+        // Auto mode never overwrites something the user typed meanwhile.
+        if (first && (!isAuto || valueRef.current.trim() === "")) {
+          setLastApplied(first);
+          onApply(first);
+        }
+      } catch {
+        if (!isAuto) setFailed(true); // auto-suggest fails silently
+      } finally {
+        setLoading(false);
+      }
+    },
+    [options, cursor, kind, memoryText, templateTitle, castNames, targetAge, locale, onApply],
+  );
+
+  // Auto-suggest once per wizard session: the parent flag gates remounts, the
+  // ref gates re-runs within this mount. Only for an empty field with enough
+  // memory text to ground a suggestion (the API minimum).
+  const autoRan = useRef(false);
+  useEffect(() => {
+    if (!autoFetch || autoRan.current) return;
+    if (memoryText.trim().length < 20) return;
+    if (valueRef.current.trim() !== "") return;
+    autoRan.current = true;
+    onAutoFetch?.();
+    void fetchNext(true);
+  }, [autoFetch, memoryText, onAutoFetch, fetchNext]);
+
+  const isSuggested =
+    lastApplied !== null && value.trim() !== "" && value.trim() === lastApplied.trim();
 
   return (
-    <div className="mt-2">
-      {options === null ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          pending={loading}
-          pendingLabel={t("suggestLoading")}
-          onClick={() => void fetchOptions()}
-        >
-          {t("suggestCta")}
-        </Button>
-      ) : (
-        <div className="flex flex-col gap-1.5">
-          {options.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onPick(option)}
-              className="rounded-xl border border-ink/10 bg-white px-3 py-2 text-left text-xs leading-relaxed text-ink transition hover:border-marigold hover:bg-marigold/10"
-            >
-              {option}
-            </button>
-          ))}
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() => void fetchOptions()}
-            className="self-start text-xs font-semibold text-ink-soft underline underline-offset-2 transition hover:text-coral disabled:opacity-60"
-          >
-            {loading ? t("suggestLoading") : t("suggestRegenerate")}
-          </button>
-        </div>
-      )}
-      {failed ? <p className="mt-1.5 text-xs text-ink-soft/80">{t("suggestError")}</p> : null}
+    <div className="mt-2.5 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-xs">
+      {isSuggested ? (
+        <span className="rounded-full bg-marigold/25 px-2 py-0.5 text-[10px] font-bold text-ink">
+          {t("suggestPill")}
+        </span>
+      ) : null}
+      <button
+        type="button"
+        disabled={loading}
+        onClick={() => void fetchNext(false)}
+        className="font-semibold text-ink-soft underline underline-offset-2 transition hover:text-coral disabled:opacity-60"
+      >
+        {loading ? t("suggestLoading") : options.length > 0 ? t("suggestTryAnother") : t("suggestCta")}
+      </button>
+      {failed ? <span className="text-ink-soft/70">{t("suggestError")}</span> : null}
     </div>
   );
 }
@@ -1774,10 +1892,12 @@ function TapedNote({
   );
 }
 
-/** The memory, as a handwritten-style diary note on ruled lines. */
+/** The memory, as a handwritten-style diary note on ruled lines. The card has
+ * a FIXED footprint (height + clamped text) so typing never makes it move,
+ * grow, or shrink. */
 function MemoryNoteCard({ text }: { text: string }) {
   return (
-    <TapedNote tilt="-1.5deg" className="w-full max-w-[19rem]">
+    <TapedNote tilt="-1.5deg" className="h-[14.5rem] w-full max-w-[19rem] overflow-hidden">
       <p
         className="overflow-hidden font-body text-[0.9rem] text-ink/85"
         style={{
@@ -1795,23 +1915,28 @@ function MemoryNoteCard({ text }: { text: string }) {
   );
 }
 
-/** The working title, as a note card in the book's display face. */
+/** The working title, as a note card in the book's display face (fixed
+ * footprint: typing on the review step never reflows the scrapbook). */
 function TitleNoteCard({ label, title }: { label: string; title: string }) {
   return (
-    <TapedNote tilt="1.5deg" className="w-full max-w-[17rem] py-6 text-center">
+    <TapedNote
+      tilt="1.5deg"
+      className="flex h-[11.5rem] w-full max-w-[17rem] flex-col items-center justify-center overflow-hidden py-6 text-center"
+    >
       <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-ink/40">{label}</p>
       <p
-        className="mt-2 line-clamp-4 text-balance font-display text-xl font-extrabold leading-tight text-ink"
+        className="mt-2 line-clamp-3 text-balance font-display text-xl font-extrabold leading-tight text-ink"
         style={FM_DISPLAY}
       >
         {title}
       </p>
-      <Sparkle className="mx-auto mt-2 text-marigold" size={16} />
+      <Sparkle className="mx-auto mt-2 shrink-0 text-marigold" size={16} />
     </TapedNote>
   );
 }
 
-/** The dedication, as a note card in the shared script face. */
+/** The dedication, as a note card in the shared script face (fixed footprint,
+ * like the other note cards). */
 function DedicationNoteCard({
   label,
   greeting,
@@ -1822,16 +1947,19 @@ function DedicationNoteCard({
   fromText: string | null;
 }) {
   return (
-    <TapedNote tilt="-1deg" className="w-full max-w-[18rem] py-6 text-center">
+    <TapedNote
+      tilt="-1deg"
+      className="flex h-[15rem] w-full max-w-[18rem] flex-col items-center justify-center overflow-hidden py-6 text-center"
+    >
       <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-ink/40">{label}</p>
       <p
-        className="mt-2 line-clamp-6 whitespace-pre-line text-[1.15rem] leading-snug text-ink"
+        className="mt-2 line-clamp-5 whitespace-pre-line text-[1.15rem] leading-snug text-ink"
         style={FM_SCRIPT}
       >
         {greeting}
       </p>
       {fromText ? (
-        <p className="mt-1 text-[0.95rem] text-ink-soft" style={FM_SCRIPT}>
+        <p className="mt-1 shrink-0 text-[0.95rem] text-ink-soft" style={FM_SCRIPT}>
           {fromText}
         </p>
       ) : null}
@@ -2027,17 +2155,18 @@ function BookSoFar({
     });
   }
 
-  // Auto-advance: when a card newly appears, slide to it so the user's
-  // addition visibly lands. State is adjusted during render (React's
-  // documented "adjust state when props change" pattern), so the track moves
-  // in the same commit the new card mounts in. The very first render with
-  // content (including a resumed draft) records the cards without advancing.
+  // Auto-advance ONLY for discrete events (a photo landing, a style pick):
+  // text-driven cards (memory, title, dedication) appear silently in the dots
+  // so typing never yanks the carousel around. State is adjusted during
+  // render (React's documented "adjust state when props change" pattern), so
+  // the track moves in the same commit the new card mounts in. The very first
+  // render with content (a resumed draft) records the cards without advancing.
   const keys = pages.map((p) => p.key);
   if (seenKeys === null ? keys.length > 0 : seenKeys.join("\n") !== keys.join("\n")) {
     if (seenKeys !== null) {
       let appeared = -1;
       keys.forEach((k, i) => {
-        if (!seenKeys.includes(k)) appeared = i;
+        if (!seenKeys.includes(k) && (k === "cast" || k === "style")) appeared = i;
       });
       if (appeared >= 0) setIndex(appeared);
       else if (index >= keys.length) setIndex(Math.max(0, keys.length - 1));
