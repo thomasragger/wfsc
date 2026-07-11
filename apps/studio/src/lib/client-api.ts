@@ -12,6 +12,8 @@ export interface StyleSummary {
   previewImageUrl: string | null;
   /** Curated in-style reference illustrations for a richer style preview. */
   referenceImageUrls: string[];
+  /** Up to 2 REAL rendered spreads from sample books in this style. */
+  sampleSpreadUrls: string[];
 }
 
 export interface TemplateSummary {

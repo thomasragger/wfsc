@@ -52,6 +52,14 @@ export function MagicHappening({
   const microCopy = t.raw("microCopy") as string[];
   const stage = useMemo(() => deriveStage(book, t), [book, t]);
 
+  // The real book coming to life: the pipeline persists the generated title
+  // and every spread's text before any image, then fills spread images in one
+  // by one — all of it lands here through the same 5s poll. Old books / edge
+  // states without spreads simply render the plain progress screen.
+  const writtenSpreads = book.spreads.filter(
+    (s) => s.kind === "story" && (s.text ?? "").trim().length > 0,
+  );
+
   // Rotate a warm line every few seconds.
   const [lineIndex, setLineIndex] = useState(0);
   useEffect(() => {
@@ -101,6 +109,18 @@ export function MagicHappening({
 
       <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">{title}</h1>
       <p className="max-w-md text-sm leading-relaxed text-ink-soft">{body}</p>
+
+      {/* The generated title, revealed the moment the story lands. */}
+      {book.title ? (
+        <div key={book.title} className="animate-page-in">
+          <p className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-ink/40">
+            {t("titleReveal")}
+          </p>
+          <p className="mt-1 font-display text-xl font-extrabold leading-snug text-ink">
+            {book.title}
+          </p>
+        </div>
+      ) : null}
 
       {/* Live stage from the polled payload */}
       <div className="flex flex-col items-center gap-2.5">
@@ -152,6 +172,39 @@ export function MagicHappening({
               />
             </div>
           ))}
+        </div>
+      ) : null}
+
+      {/* The story so far: real spread text readable while the art is still
+          being painted (shimmer), each finished illustration fading in via
+          the polled payload. */}
+      {writtenSpreads.length > 0 ? (
+        <div className="mt-2 w-full text-left">
+          <p className="text-center text-[0.65rem] font-bold uppercase tracking-[0.14em] text-ink/40">
+            {t("storySoFar")}
+          </p>
+          <div className="-mx-2 mt-3 flex snap-x gap-3 overflow-x-auto px-2 pb-2 [scrollbar-width:thin]">
+            {writtenSpreads.map((spread) => (
+              <figure
+                key={spread.id}
+                className="w-36 shrink-0 snap-start rounded-xl bg-white p-2 shadow-fuzzy ring-1 ring-ink/5"
+              >
+                {spread.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={spread.imageUrl}
+                    alt=""
+                    className="animate-page-in aspect-square w-full rounded-lg object-cover"
+                  />
+                ) : (
+                  <Skeleton className="aspect-square w-full" rounded="rounded-lg" />
+                )}
+                <figcaption className="mt-1.5 line-clamp-3 px-0.5 text-[10px] leading-snug text-ink-soft">
+                  {spread.text}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
         </div>
       ) : null}
 

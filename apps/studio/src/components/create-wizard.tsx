@@ -13,10 +13,9 @@ import { Alert } from "@/components/ui/alert";
 import { BookTileVisual } from "@/components/ui/book-tile";
 import { ProductCard } from "@/components/ui/product-card";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, Polaroid } from "@/components/ui/card";
 import { Carousel } from "@/components/ui/carousel";
 import { Chip, PillLabel } from "@/components/ui/chip";
-import { CoverArt } from "@/components/ui/cover-art";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { IconCart, IconChevronLeft, IconChevronRight, IconClose, IconUser } from "@/components/ui/icons";
 import { Field, Select, TextArea, TextInput } from "@/components/ui/input";
@@ -437,17 +436,19 @@ export function CreateWizard() {
     turnstileToken,
   ]);
 
-  // Progress in the user's currency: how many pages the book-so-far carousel
-  // holds right now (must mirror BookSoFar's page conditions).
-  const bookPageCount = useMemo(() => {
-    let n = 0;
-    if (styleId) n += 1;
-    if (title.trim()) n += 1;
-    if (greeting.trim()) n += 1;
-    if (memoryText.trim()) n += 1;
-    if (people.some((p) => p.photoUrls[0] || p.name.trim())) n += 1;
-    return n;
-  }, [styleId, title, greeting, memoryText, people]);
+  // Whether anything has landed in the scrapbook yet (mirrors BookSoFar's
+  // card conditions) — gates the rail's "taking shape" motivator.
+  const scrapbookHasCards = useMemo(
+    () =>
+      Boolean(
+        memoryText.trim() ||
+          people.some((p) => p.photoUrls[0]) ||
+          styleId ||
+          title.trim() ||
+          greeting.trim(),
+      ),
+    [styleId, title, greeting, memoryText, people],
+  );
 
   function goTo(next: number) {
     if (next > step) track("wizard_step_completed", { step, step_name: STEPS[step] });
@@ -753,7 +754,6 @@ export function CreateWizard() {
                         <BookSoFar
                           className="mx-auto w-full max-w-md"
                           selectedStyle={selectedStyle}
-                          template={template}
                           memoryText={memoryText}
                           people={people}
                           title={title}
@@ -781,13 +781,14 @@ export function CreateWizard() {
             <div className="lg:sticky lg:top-24">
               <Card className="p-4">
                 <div className="flex items-center justify-between gap-3">
-                  {/* Progress in the user's currency: pages in the book, not
-                      form steps. The pills keep step orientation on the right. */}
+                  {/* Progress in the user's currency: their story taking
+                      shape, not form steps. The pills keep step orientation
+                      on the right. */}
                   <p className="min-w-0 truncate font-display text-sm font-bold text-ink">
                     {stepId === "finish"
                       ? t("railAlmost")
-                      : bookPageCount > 0
-                        ? t("railPages", { count: bookPageCount })
+                      : scrapbookHasCards
+                        ? t("railProgress")
                         : stepLabels[step]}
                   </p>
                   {/* Condensed step progress: one pill per step. */}
@@ -814,16 +815,14 @@ export function CreateWizard() {
                 <p className="mt-3 text-center text-xs text-ink-soft">{t("heroFreePreview")}</p>
               </Card>
 
-              {/* The book itself, one big page at a time, growing with every
-                  choice. On the review step the big carousel moves into the
-                  main column (the step IS the book), so the rail holds only
-                  the actions there. */}
+              {/* The scrapbook of ingredients, growing with every choice. On
+                  the review step it moves into the main column (the step IS
+                  the book), so the rail holds only the actions there. */}
               {stepId !== "finish" ? (
                 <BookSoFar
                   className="mt-6"
                   showEmpty
                   selectedStyle={selectedStyle}
-                  template={template}
                   memoryText={memoryText}
                   people={people}
                   title={title}
@@ -835,14 +834,13 @@ export function CreateWizard() {
           </aside>
         </div>
 
-        {/* The evolving book on <lg: the same big one-page carousel between the
-            step card and the inline nav (hidden while it has no pages, and on
-            the review step, where the carousel lives inside the step itself). */}
+        {/* The scrapbook on <lg: the same carousel between the step card and
+            the inline nav (hidden while empty, and on the review step, where
+            it lives inside the step itself). */}
         {stepId !== "finish" ? (
           <BookSoFar
             className="mx-auto mt-6 w-full max-w-md lg:hidden"
             selectedStyle={selectedStyle}
-            template={template}
             memoryText={memoryText}
             people={people}
             title={title}
@@ -984,6 +982,7 @@ function StyleStep({
   stylesError,
   styleId,
   onSelect,
+  selectedStyle,
   recommendedId,
 }: {
   styles: StyleSummary[] | null;
@@ -1024,6 +1023,27 @@ function StyleStep({
               />
             ))}
           </Carousel>
+        </div>
+      ) : null}
+
+      {/* Honest proof: real rendered spreads from sample books in the chosen
+          style. Omitted gracefully for styles without sample books. */}
+      {selectedStyle && selectedStyle.sampleSpreadUrls.length > 0 ? (
+        <div key={selectedStyle.id} className="animate-page-in">
+          <p className="font-display text-xs font-extrabold uppercase tracking-wide text-ink/70">
+            {t("styleSampleHeading")}
+          </p>
+          <div className="mt-3 grid max-w-lg grid-cols-2 gap-3">
+            {selectedStyle.sampleSpreadUrls.map((url) => (
+              <ProgressiveImage
+                key={url}
+                src={url}
+                alt={t("styleSampleAlt", { name: selectedStyle.name })}
+                className="aspect-square w-full rounded-xl shadow-fuzzy ring-4 ring-white"
+                imgClassName="h-full w-full object-cover"
+              />
+            ))}
+          </div>
         </div>
       ) : null}
     </section>
@@ -1713,10 +1733,13 @@ function SuggestOptions({
   );
 }
 
-/* --------------------------------------------------------------- book so far */
-// The book pages render in the book's own font language (no font picker in the
-// wizard, so we use the default "storybook" pairing + the shared script face,
-// exactly like the flipbook and the sample page's cover).
+/* -------------------------------------------------------------- the scrapbook */
+// The scrapbook shows the INGREDIENTS going into the book — the memory as a
+// handwritten note, the people as polaroids, the style as a labeled swatch,
+// title and dedication as note cards. Nothing here pretends to be a printed
+// page. The title/dedication notes borrow the book's default font language
+// ("storybook" display face + the shared script face) as a wink at where
+// they'll end up.
 const FM_PAIRING = FONT_PAIRINGS.storybook;
 const FM_DISPLAY = {
   fontFamily: `'${FM_PAIRING.display.family}', sans-serif`,
@@ -1727,117 +1750,144 @@ const FM_SCRIPT = {
   fontWeight: SCRIPT_FONT.weight,
 } as const;
 
-/** The printed title page, centred title + imprint line. */
-function TitlePageInner({ title, imprint }: { title: string; imprint: string }) {
-  return (
-    <>
-      <div className="flex h-full flex-col items-center justify-center gap-3 px-[12%] pb-[12%] text-center">
-        <h3
-          className="line-clamp-4 text-balance font-display text-[1.45rem] font-extrabold leading-tight text-ink"
-          style={FM_DISPLAY}
-        >
-          {title}
-        </h3>
-        <Sparkle className="text-marigold" size={20} />
-      </div>
-      <p className="absolute inset-x-0 bottom-[7%] text-center text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-ink/40">
-        {imprint}
-      </p>
-    </>
-  );
-}
-
-/** The printed dedication page: label, the note in a script face, and a signoff. */
-function DedicationPageInner({
-  label,
-  greeting,
-  placeholder,
-  fromText,
+/** A scrapbook note card: white paper, soft shadow, a strip of "tape" on top. */
+function TapedNote({
+  tilt = "-1.5deg",
+  className = "",
+  children,
 }: {
-  label: string;
-  greeting: string;
-  placeholder: string;
-  fromText: string | null;
+  tilt?: string;
+  className?: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 px-[11%] text-center">
-      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-ink/35">{label}</p>
-      <p
-        className="line-clamp-6 whitespace-pre-line text-[1.3rem] leading-snug text-ink"
-        style={FM_SCRIPT}
-      >
-        {greeting.trim() || placeholder}
-      </p>
-      {fromText ? (
-        <p className="text-[1.05rem] text-ink-soft" style={FM_SCRIPT}>
-          {fromText}
-        </p>
-      ) : null}
+    <div
+      className={`relative rounded-lg bg-white p-5 shadow-fuzzy ring-1 ring-ink/5 ${className}`.trim()}
+      style={{ rotate: tilt }}
+    >
+      <span
+        aria-hidden="true"
+        className="absolute -top-2.5 left-1/2 h-5 w-16 -translate-x-1/2 rotate-[-4deg] rounded-[2px] bg-marigold/40 shadow-sm"
+      />
+      {children}
     </div>
   );
 }
 
-/** The typed memory as a manuscript page on faint ruled lines. */
-function StoryPageInner({ text }: { text: string }) {
+/** The memory, as a handwritten-style diary note on ruled lines. */
+function MemoryNoteCard({ text }: { text: string }) {
   return (
-    <div className="flex h-full flex-col px-[12%] pb-[12%] pt-[14%]">
+    <TapedNote tilt="-1.5deg" className="w-full max-w-[19rem]">
       <p
-        className="overflow-hidden font-body text-ink/85"
+        className="overflow-hidden font-body text-[0.9rem] text-ink/85"
         style={{
-          fontSize: "0.85rem",
           lineHeight: "1.5rem",
           backgroundImage:
             "repeating-linear-gradient(to bottom, transparent 0, transparent calc(1.5rem - 1px), rgb(118 30 11 / 0.12) calc(1.5rem - 1px), rgb(118 30 11 / 0.12) 1.5rem)",
           display: "-webkit-box",
-          WebkitLineClamp: 10,
+          WebkitLineClamp: 8,
           WebkitBoxOrient: "vertical",
         }}
       >
         {text}
       </p>
+    </TapedNote>
+  );
+}
+
+/** The working title, as a note card in the book's display face. */
+function TitleNoteCard({ label, title }: { label: string; title: string }) {
+  return (
+    <TapedNote tilt="1.5deg" className="w-full max-w-[17rem] py-6 text-center">
+      <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-ink/40">{label}</p>
+      <p
+        className="mt-2 line-clamp-4 text-balance font-display text-xl font-extrabold leading-tight text-ink"
+        style={FM_DISPLAY}
+      >
+        {title}
+      </p>
+      <Sparkle className="mx-auto mt-2 text-marigold" size={16} />
+    </TapedNote>
+  );
+}
+
+/** The dedication, as a note card in the shared script face. */
+function DedicationNoteCard({
+  label,
+  greeting,
+  fromText,
+}: {
+  label: string;
+  greeting: string;
+  fromText: string | null;
+}) {
+  return (
+    <TapedNote tilt="-1deg" className="w-full max-w-[18rem] py-6 text-center">
+      <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-ink/40">{label}</p>
+      <p
+        className="mt-2 line-clamp-6 whitespace-pre-line text-[1.15rem] leading-snug text-ink"
+        style={FM_SCRIPT}
+      >
+        {greeting}
+      </p>
+      {fromText ? (
+        <p className="mt-1 text-[0.95rem] text-ink-soft" style={FM_SCRIPT}>
+          {fromText}
+        </p>
+      ) : null}
+    </TapedNote>
+  );
+}
+
+/** The chosen style as a labeled swatch card — clearly a swatch, not a cover. */
+function StyleSwatchCard({ style, tag }: { style: StyleSummary; tag: string }) {
+  return (
+    <div className="relative w-full max-w-[15rem]" style={{ rotate: "1.5deg" }}>
+      <Polaroid
+        media={
+          style.previewImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={style.previewImageUrl} alt="" className="aspect-[4/3] w-full object-cover" />
+          ) : (
+            <div className="aspect-[4/3] w-full">
+              <ArtPlaceholder />
+            </div>
+          )
+        }
+        caption={style.name}
+      />
+      <span className="absolute -top-2 left-3 rounded-full bg-white px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-ink-soft shadow-sm ring-1 ring-ink/10">
+        {tag}
+      </span>
     </div>
   );
 }
 
-/** The cast page: "starring" over a row of portrait thumbnails + names. */
-function CastPageInner({
-  label,
+/** The cast as a small fan of overlapping polaroids (photo + name). */
+function CastPolaroids({
   members,
 }: {
-  label: string;
-  members: { key: string; name: string; photo: string | null }[];
+  members: { key: string; name: string; photo: string }[];
 }) {
   const shown = members.slice(0, 4);
-  const names = members.map((m) => m.name).filter((n) => n.length > 0);
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 px-[10%] text-center">
-      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-ink/40">{label}</p>
-      <div className="flex flex-wrap items-center justify-center gap-2.5">
-        {shown.map((m) =>
-          m.photo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={m.key}
-              src={m.photo}
-              alt=""
-              className="h-16 w-16 rounded-full object-cover shadow-sm ring-4 ring-white"
-            />
-          ) : (
-            <span
-              key={m.key}
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-lavender font-display text-xl font-bold text-ink ring-4 ring-white"
-              aria-hidden="true"
-            >
-              {m.name.slice(0, 1).toUpperCase() || "?"}
-            </span>
-          ),
-        )}
-      </div>
-      {names.length > 0 ? (
-        <p className="font-display text-[0.95rem] font-bold leading-snug text-ink">
-          {names.join(", ")}
-        </p>
-      ) : null}
+    <div className="flex items-center justify-center">
+      {shown.map((m, i) => (
+        <div
+          key={m.key}
+          className={i > 0 ? "-ml-7" : ""}
+          style={{ rotate: i % 2 === 0 ? "-4deg" : "4deg", zIndex: i }}
+        >
+          <Polaroid
+            className={shown.length > 2 ? "w-24" : "w-32"}
+            media={
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={m.photo} alt={m.name} className="aspect-square w-full object-cover" />
+            }
+            caption={m.name || undefined}
+          />
+        </div>
+      ))}
     </div>
   );
 }
@@ -1874,21 +1924,20 @@ function BookNavArrow({
 }
 
 /**
- * The persistent "your book so far" preview — the wizard's companion book,
- * presented like the sample page's hero: ONE big page at a time (CoverArt for
- * the cover, cream page / white ring / polaroid shadow for the rest) in a
- * gentle slide carousel with arrows, swipe and dots. Purely presentational —
- * every value comes from the wizard's own state; pages exist only once they
- * have real content. When a new page appears the carousel auto-advances to it
- * so the user sees their choice land in the book. While empty it renders a
- * page-sized placeholder when `showEmpty` is set (desktop rail), otherwise
- * nothing (mobile).
+ * The persistent scrapbook — a moodboard of the real ingredients going into
+ * the book: the memory as a handwritten note, the people as polaroids, the
+ * chosen style as a labeled swatch, title + dedication as note cards. Shown
+ * as a gentle card-flipping carousel (arrows, swipe, dots). Purely
+ * presentational — every value comes from the wizard's own state; cards exist
+ * only once they have real content. When a new card appears the carousel
+ * auto-advances to it so the user sees their addition land. While empty it
+ * renders a small friendly note when `showEmpty` is set (desktop rail),
+ * otherwise nothing (mobile).
  */
 function BookSoFar({
   className = "",
   showEmpty = false,
   selectedStyle,
-  template,
   memoryText,
   people,
   title,
@@ -1898,7 +1947,6 @@ function BookSoFar({
   className?: string;
   showEmpty?: boolean;
   selectedStyle: StyleSummary | null;
-  template: TemplateSummary | null;
   memoryText: string;
   people: PersonDraft[];
   title: string;
@@ -1912,9 +1960,9 @@ function BookSoFar({
   const [seenKeys, setSeenKeys] = useState<string[] | null>(null);
   const swipeStart = useRef<number | null>(null);
 
-  // Theatrical moments: when a choice lands in the book (style picked, photo
-  // finished uploading), the carousel jumps to that page and pulses it, with
-  // an optional transient caption ("Mia is in the book!"). The nonce (the
+  // Theatrical moments: when something lands in the scrapbook (style picked,
+  // photo finished uploading), the carousel jumps to that card and pulses it,
+  // with an optional transient caption ("Mia is in the book!"). The nonce (the
   // style id / person key that triggered it — deterministic, render-pure)
   // retriggers the CSS animation; a timeout (in the effect below) clears it.
   const [flourish, setFlourish] = useState<{
@@ -1928,83 +1976,62 @@ function BookSoFar({
     return () => clearTimeout(timer);
   }, [flourish]);
 
-  const coverTitle = title.trim() || template?.title || t("bookSoFarCoverTitle");
+  // Polaroids need an actual photo (the scrapbook holds real ingredients).
   const castMembers = people
-    .filter((p) => p.photoUrls[0] || p.name.trim())
-    .map((p) => ({ key: p.key, name: p.name.trim(), photo: p.photoUrls[0] ?? null }));
+    .filter((p) => p.photoUrls[0])
+    .map((p) => ({ key: p.key, name: p.name.trim(), photo: p.photoUrls[0] }));
 
-  // Non-cover pages share the flipbook's page chrome (cream page, white ring,
-  // polaroid shadow); the cover uses the design system's CoverArt directly.
-  const framed = (inner: React.ReactNode) => (
-    <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-cream shadow-polaroid ring-8 ring-white">
-      {inner}
-    </div>
-  );
-
-  // Pages in the book's own order; each appears once it has real content.
-  const pages: { key: string; caption: string; note?: string; node: React.ReactNode }[] = [];
-  if (selectedStyle) {
-    // The cover slot shows the chosen style's art, which could read as the
-    // final cover. The caption and note make clear it's a style preview: the
-    // real cover gets illustrated from the family's story and photos.
-    pages.push({
-      key: "cover",
-      caption: t("bookSoFarCoverCaption"),
-      note: t("bookSoFarCoverNote"),
-      node: (
-        <CoverArt
-          src={selectedStyle.previewImageUrl}
-          alt={t("styleCardAlt", { name: selectedStyle.name })}
-          title={coverTitle}
-          titleStyle={FM_DISPLAY}
-        />
-      ),
-    });
-  }
-  if (title.trim()) {
-    pages.push({
-      key: "title",
-      caption: tFlip("titlePage"),
-      node: framed(<TitlePageInner title={title.trim()} imprint={tFlip("imprint")} />),
-    });
-  }
-  if (greeting.trim()) {
-    pages.push({
-      key: "dedication",
-      caption: tFlip("dedication"),
-      node: framed(
-        <DedicationPageInner
-          label={tFlip("dedication")}
-          greeting={greeting}
-          placeholder={tFlip("dedicationPlaceholder")}
-          fromText={
-            greetingFrom.trim() ? tFlip("dedicationFrom", { name: greetingFrom.trim() }) : null
-          }
-        />,
-      ),
-    });
-  }
+  // Cards in the order they're gathered; each appears once it has real content.
+  const pages: { key: string; caption: string; node: React.ReactNode }[] = [];
   if (memoryText.trim()) {
     pages.push({
-      key: "story",
+      key: "memory",
       caption: t("bookSoFarStory"),
-      node: framed(<StoryPageInner text={memoryText.trim()} />),
+      node: <MemoryNoteCard text={memoryText.trim()} />,
     });
   }
   if (castMembers.length > 0) {
     pages.push({
       key: "cast",
       caption: t("bookSoFarCast"),
-      node: framed(<CastPageInner label={t("bookSoFarCastStarring")} members={castMembers} />),
+      node: <CastPolaroids members={castMembers} />,
+    });
+  }
+  if (selectedStyle) {
+    pages.push({
+      key: "style",
+      caption: t("bookSoFarStyleCaption"),
+      node: <StyleSwatchCard style={selectedStyle} tag={t("bookSoFarStyleTag")} />,
+    });
+  }
+  if (title.trim()) {
+    pages.push({
+      key: "title",
+      caption: t("finishBookTitle"),
+      node: <TitleNoteCard label={t("finishBookTitle")} title={title.trim()} />,
+    });
+  }
+  if (greeting.trim()) {
+    pages.push({
+      key: "dedication",
+      caption: tFlip("dedication"),
+      node: (
+        <DedicationNoteCard
+          label={tFlip("dedication")}
+          greeting={greeting}
+          fromText={
+            greetingFrom.trim() ? tFlip("dedicationFrom", { name: greetingFrom.trim() }) : null
+          }
+        />
+      ),
     });
   }
 
-  // Auto-advance: when a page newly appears, slide to it so the user's choice
-  // visibly lands in the book. State is adjusted during render (React's
+  // Auto-advance: when a card newly appears, slide to it so the user's
+  // addition visibly lands. State is adjusted during render (React's
   // documented "adjust state when props change" pattern), so the track moves
-  // in the same commit the new page mounts in. The very first render with
-  // content (including a resumed draft) records the pages without advancing,
-  // keeping the book cover-led like the sample page.
+  // in the same commit the new card mounts in. The very first render with
+  // content (including a resumed draft) records the cards without advancing.
   const keys = pages.map((p) => p.key);
   if (seenKeys === null ? keys.length > 0 : seenKeys.join("\n") !== keys.join("\n")) {
     if (seenKeys !== null) {
@@ -2018,31 +2045,28 @@ function BookSoFar({
     setSeenKeys(keys);
   }
 
-  // Style choice landing: a different style repaints the existing cover page,
+  // Style choice landing: a different style repaints the existing swatch card,
   // so jump back to it and pulse. Same render-time adjustment pattern; the
   // initializer swallows a style preselected before mount (template, draft).
   const [lastStyleId, setLastStyleId] = useState<string | null>(selectedStyle?.id ?? null);
   if ((selectedStyle?.id ?? null) !== lastStyleId) {
     setLastStyleId(selectedStyle?.id ?? null);
     if (selectedStyle && seenKeys !== null) {
-      const coverIndex = keys.indexOf("cover");
-      if (coverIndex >= 0) setIndex(coverIndex);
-      setFlourish({ page: "cover", nonce: selectedStyle.id });
+      const styleIndex = keys.indexOf("style");
+      if (styleIndex >= 0) setIndex(styleIndex);
+      setFlourish({ page: "style", nonce: selectedStyle.id });
     }
   }
 
-  // Photo landing: a cast member gaining their first photo jumps to the cast
-  // page with a short caption flourish ("{name} is in the book!").
-  const photoSig = castMembers
-    .filter((m) => m.photo)
-    .map((m) => m.key)
-    .join("|");
+  // Photo landing: a cast member gaining their first photo jumps to the
+  // polaroids with a short caption flourish ("{name} is in the book!").
+  const photoSig = castMembers.map((m) => m.key).join("|");
   const [lastPhotoSig, setLastPhotoSig] = useState<string | null>(null);
   if (lastPhotoSig === null) {
     setLastPhotoSig(photoSig); // first render only records (drafts, remounts)
   } else if (photoSig !== lastPhotoSig) {
     const before = new Set(lastPhotoSig.split("|").filter(Boolean));
-    const joined = castMembers.find((m) => m.photo && !before.has(m.key));
+    const joined = castMembers.find((m) => !before.has(m.key));
     setLastPhotoSig(photoSig);
     if (joined) {
       const castIndex = keys.indexOf("cast");
@@ -2068,9 +2092,10 @@ function BookSoFar({
     return (
       <section aria-label={t("bookSoFarHeading")} className={className}>
         {heading}
-        <div className="mt-4 flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-ink/15 px-10 text-center">
-          <Sparkle className="text-marigold/70" size={26} />
-          <p className="text-sm leading-relaxed text-ink-soft/80">{t("bookSoFarEmpty")}</p>
+        <div className="mt-5 flex justify-center pb-2">
+          <TapedNote tilt="-2deg" className="max-w-[15rem] py-6 text-center">
+            <p className="text-sm leading-relaxed text-ink-soft">{t("bookSoFarEmpty")}</p>
+          </TapedNote>
         </div>
       </section>
     );
@@ -2080,17 +2105,17 @@ function BookSoFar({
 
   return (
     <section aria-label={t("bookSoFarHeading")} className={className}>
-      {/* React hoists this to <head>; loads the pairing + script Google fonts. */}
+      {/* React hoists this to <head>; loads the pairing + script Google fonts
+          used by the title / dedication note cards. */}
       <link rel="stylesheet" href={fontStylesheetUrl(FM_PAIRING)} />
       {heading}
 
-      {/* -mx-3 cancels the slides' px-3 (which exists so the page's ring and
-          shadow paint uncut inside the clipping viewport), so the page itself
-          aligns edge-to-edge with the cards around it. */}
+      {/* -mx-3 cancels the slides' px-3 (room for the tilted cards' shadows
+          inside the clipping viewport), so the scrapbook stage spans the full
+          column like the cards around it. */}
       <div className="relative -mx-3">
-        {/* The viewport clips the sliding track; each slide carries padding so
-            the page's white ring + polaroid shadow paint uncut. touch-pan-y
-            leaves vertical scrolling native while we read horizontal swipes. */}
+        {/* The viewport clips the sliding track. touch-pan-y leaves vertical
+            scrolling native while we read horizontal swipes. */}
         <div
           className="touch-pan-y select-none overflow-hidden"
           onPointerDown={(e) => {
@@ -2118,14 +2143,14 @@ function BookSoFar({
               return (
                 <div
                   key={page.key}
-                  className="w-full shrink-0 px-3 pb-9 pt-4"
+                  className="flex aspect-square w-full shrink-0 items-center justify-center px-5 pb-6 pt-3"
                   aria-hidden={i !== current}
                 >
                   {/* Keyed on the flourish nonce so repeat celebrations replay
                       the pulse (reduced motion disables it in CSS). */}
                   <div
                     key={celebrating ? flourish.nonce : "still"}
-                    className={celebrating ? "animate-celebrate" : undefined}
+                    className={`flex w-full justify-center ${celebrating ? "animate-celebrate" : ""}`.trim()}
                   >
                     {page.node}
                   </div>
@@ -2153,9 +2178,9 @@ function BookSoFar({
         ) : null}
       </div>
 
-      {/* Caption of the visible page (briefly swapped for a celebration line
-          while a flourish runs) + one dot per page + optional page note. */}
-      <p className="-mt-3 text-center font-display text-sm font-bold text-ink">
+      {/* Caption of the visible card (briefly swapped for a celebration line
+          while a flourish runs) + one dot per card. */}
+      <p className="-mt-2 text-center font-display text-sm font-bold text-ink">
         {flourish?.caption && flourish.page === pages[current].key ? (
           <span key={flourish.nonce} className="animate-page-in inline-block text-coral">
             {flourish.caption}
@@ -2179,11 +2204,6 @@ function BookSoFar({
             />
           ))}
         </div>
-      ) : null}
-      {pages[current].note ? (
-        <p className="mx-auto mt-2.5 max-w-[17rem] text-center text-[11px] leading-relaxed text-ink-soft/80">
-          {pages[current].note}
-        </p>
       ) : null}
     </section>
   );
