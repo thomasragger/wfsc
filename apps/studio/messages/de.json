@@ -744,10 +744,10 @@
   },
   "wizard": {
     "steps": [
-      "Stil",
       "Deine Geschichte",
       "Die Figuren",
-      "Fertig"
+      "Der Look",
+      "Dein Buch"
     ],
     "roles": {
       "child": "Kind",
@@ -760,9 +760,9 @@
       "other": "Jemand anderes"
     },
     "ageBands": [
-      "0-2 Jahre",
-      "3-5 Jahre",
-      "6-8 Jahre"
+      "0 bis 2 Jahren",
+      "3 bis 5 Jahren",
+      "6 bis 8 Jahren"
     ],
     "memoryPrompts": [
       "Der Sommer, in dem wir in Opas Garten eine Höhle gebaut haben und nicht mehr reinkommen wollten, nicht mal zum Abendessen…",
@@ -796,7 +796,7 @@
     "heroFreePreview": "Erst die kostenlose Vorschau, du zahlst erst, wenn sie dir gefällt.",
     "heroHowStoryGoes": "So geht die Geschichte",
     "agesRange": "{min}-{max} Jahre",
-    "styleTitle": "Wähle deinen Stil",
+    "styleTitle": "Gib deiner Geschichte ihren Look",
     "styleSubtitle": "Jede Seite wird in dem Stil illustriert, den du wählst, fahr mit der Maus drüber, um ihn in Aktion zu sehen. Du kannst ihn später ändern.",
     "styleError": "Wir konnten die Illustrationsstile gerade nicht laden. Bitte lade die Seite neu und versuch es noch mal.",
     "styleRadioLabel": "Illustrationsstil",
@@ -811,15 +811,14 @@
     "memoryHintTemplate": "Namen, Orte, das, worüber alle gelacht haben, je echter, desto besser.",
     "memoryHintOwn": "Brauchst du einen Anstoß? „{prompt}“",
     "memoryPlaceholderTemplate": "Erzähl uns von DEINEM {noun}, wer dabei war, wie der Tag begann, der Moment, über den alle noch lachen, und das kleine Detail, das du nie vergessen willst…",
-    "whoFor": "Für wen ist es?",
-    "whoForHint": "(wir stimmen die Worte auf das Alter ab)",
+    "whoForInline": "Erzählt für Kinder von",
     "ageRadioLabel": "Lesealter",
     "storyJourney": "Die Reise, die dein Buch nimmt",
     "castTitle": "Wer ist dabei?",
-    "castSubtitle": "Füg bis zu vier Personen hinzu, mit 1 bis 3 Fotos pro Person. Klare, gut beleuchtete Fotos ihres Gesichts funktionieren am besten.",
+    "castSubtitle": "Füg bis zu vier Personen hinzu. Aus jedem Foto wird eine Bilderbuchfigur.",
     "castPerson": "Person {n}",
     "castRemove": "Entfernen",
-    "castName": "Name",
+    "castNamePrompt": "Von wem handelt die Geschichte?",
     "castNamePlaceholder": "Mia",
     "castRole": "Rolle in der Geschichte",
     "castPhotoAlt": "Foto von {name}",
@@ -827,8 +826,11 @@
     "castRemovePhoto": "Foto entfernen",
     "castAddPhoto": "Foto hinzufügen",
     "castAddPerson": "+ Weitere Person hinzufügen",
-    "finishTitle": "Fast geschafft",
-    "finishSubtitle": "Füg den letzten Schliff hinzu und sag uns dann, wohin wir deine kostenlose Vorschau schicken sollen, meist in wenigen Minuten fertig.",
+    "castPhotoGuide": "Je klarer das Foto, desto ähnlicher die Figur.",
+    "castPhotoDo": "Gesicht gut zu sehen, gutes Licht",
+    "castPhotoDont": "Keine Sonnenbrille, nicht zu weit weg",
+    "finishTitle": "Sieh dir dein Buch an",
+    "finishSubtitle": "Blätter durch die Anfänge deines Buchs. Titel und Widmung sind der letzte Schliff, beides optional.",
     "finishBookTitle": "Buchtitel",
     "finishTitlePlaceholder": "Wir schlagen einen vor, wenn du dies leer lässt",
     "finishNote": "Eine persönliche Widmung",
@@ -842,6 +844,14 @@
     "finishEmailPlaceholder": "du@beispiel.de",
     "finishConsent": "Ja, meine Geschichte und Fotos dürfen für dieses Buch verwendet werden. Details in unserer",
     "finishConsentLink": "Datenschutzerklärung",
+    "finishNextPreview": "Kostenlose Vorschau in Minuten",
+    "finishNextReview": "Du prüfst jede Seite",
+    "finishNextShip": "Wir drucken und liefern dein Buch",
+    "emailPromptTitle": "Wohin dürfen wir deine Vorschau schicken?",
+    "emailPromptBody": "Wir schicken dir einen Link, sobald sie fertig ist, meist in wenigen Minuten.",
+    "emailPromptBack": "Zurück zu deinem Buch",
+    "railPages": "{count, plural, one {Schon # Seite in deinem Buch} other {Schon # Seiten in deinem Buch}}",
+    "railAlmost": "Deine Vorschau ist nur Minuten entfernt",
     "stepCount": "Schritt {current} von {total}",
     "bookSoFarHeading": "Dein Buch bisher",
     "bookSoFarEmpty": "Hier entsteht dein Buch, Schritt für Schritt mit jeder Entscheidung.",
@@ -849,6 +859,7 @@
     "bookSoFarCast": "Die Figuren",
     "bookSoFarCastStarring": "Mit dabei",
     "bookSoFarCoverTitle": "Unsere Geschichte",
+    "bookSoFarJoined": "{name} ist im Buch!",
     "bookSoFarCoverCaption": "Cover (Stil-Vorschau)",
     "bookSoFarCoverNote": "Ein erster Blick auf den Stil. Dein echtes Cover wird aus eurer Geschichte und euren Fotos illustriert."
   }

@@ -18,7 +18,7 @@ import { Carousel } from "@/components/ui/carousel";
 import { Chip, PillLabel } from "@/components/ui/chip";
 import { CoverArt } from "@/components/ui/cover-art";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { IconChevronLeft, IconChevronRight } from "@/components/ui/icons";
+import { IconCart, IconChevronLeft, IconChevronRight, IconClose, IconUser } from "@/components/ui/icons";
 import { Field, Select, TextArea, TextInput } from "@/components/ui/input";
 import { PageTransition, StepTransition } from "@/components/ui/page-transition";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
@@ -40,10 +40,14 @@ import {
 } from "@/lib/client-api";
 
 // One focused decision per screen (Typeform/Duolingo-style). The template
-// hero is a pre-step; these four are the stepper. STEPS drives internal logic
-// and stable (locale-independent) analytics step names; the displayed labels
-// come from the "steps" translation array.
-const STEPS = ["Style", "Your story", "The cast", "Finish"] as const;
+// hero is a pre-step; these four are the stepper. The story leads (the memory
+// is the emotional hook), then who's in it, then dressing THAT story in a
+// look, then reviewing the book. All logic addresses steps by id — indices
+// are derived — so this array is the single source of truth for ordering; the
+// ids double as stable, locale-independent analytics step names. Displayed
+// labels come from the "steps" translation array (same order).
+const STEPS = ["story", "cast", "style", "finish"] as const;
+type StepId = (typeof STEPS)[number];
 
 /** "Who is it for?" bands; value is the midpoint sent as targetAge. Labels
  * come from the "ageBands" translation array (same order). */
@@ -72,12 +76,15 @@ function templateNoun(title: string): string {
 // server-side (their URLs are what we store here). Draft is keyed per entry
 // point (template / category / own-memory) so different starts don't collide.
 
-const DRAFT_VERSION = 2 as const;
+const DRAFT_VERSION = 3 as const;
 const DRAFT_PREFIX = "wfsc:wizard-draft";
+
+/** Step order of draft schema v2 (numeric step), for migrating stored drafts. */
+const V2_STEP_ORDER: readonly StepId[] = ["style", "story", "cast", "finish"];
 
 interface WizardDraft {
   v: typeof DRAFT_VERSION;
-  step: number;
+  step: StepId;
   started: boolean;
   memoryText: string;
   title: string;
@@ -109,7 +116,18 @@ function readDraft(key: string): WizardDraft | null {
     const d = JSON.parse(raw) as unknown;
     if (!d || typeof d !== "object") return null;
     const o = d as Record<string, unknown>;
-    if (o.v !== DRAFT_VERSION) return null;
+    // v3 stores the step as an id; v2 stored a numeric index under the OLD
+    // step order and migrates by mapping (never crash on a stale draft —
+    // anything unrecognizable clamps back to the first step).
+    if (o.v !== DRAFT_VERSION && o.v !== 2) return null;
+    let step: StepId = STEPS[0];
+    if (o.v === DRAFT_VERSION) {
+      if (typeof o.step === "string" && (STEPS as readonly string[]).includes(o.step)) {
+        step = o.step as StepId;
+      }
+    } else if (typeof o.step === "number") {
+      step = V2_STEP_ORDER[o.step] ?? STEPS[0];
+    }
     const people = Array.isArray(o.people)
       ? (o.people as unknown[]).flatMap((p) => {
           if (!p || typeof p !== "object") return [];
@@ -129,7 +147,7 @@ function readDraft(key: string): WizardDraft | null {
       : [];
     return {
       v: DRAFT_VERSION,
-      step: typeof o.step === "number" ? o.step : 0,
+      step,
       started: o.started === true,
       memoryText: typeof o.memoryText === "string" ? o.memoryText : "",
       title: typeof o.title === "string" ? o.title : "",
@@ -148,7 +166,7 @@ function readDraft(key: string): WizardDraft | null {
 /** Whether a draft holds enough real input to be worth resuming. */
 function draftIsResumable(d: WizardDraft): boolean {
   return (
-    d.step > 0 ||
+    d.step !== STEPS[0] ||
     d.memoryText.trim().length > 0 ||
     d.title.trim().length > 0 ||
     d.greeting.trim().length > 0 ||
@@ -166,7 +184,11 @@ export function CreateWizard() {
   const categoryId = searchParams.get("category");
 
   const [step, setStep] = useState(0);
+  const stepId: StepId = STEPS[step];
   const [started, setStarted] = useState(false); // dismisses the template hero
+  // Deferred email capture: the review step's CTA first reveals a compact
+  // "where should we send it?" moment; only its confirm actually submits.
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [memoryText, setMemoryText] = useState("");
   const [title, setTitle] = useState("");
@@ -273,7 +295,7 @@ export function CreateWizard() {
     if (!draftHydrated || typeof window === "undefined") return;
     const draft: WizardDraft = {
       v: DRAFT_VERSION,
-      step,
+      step: STEPS[step],
       started,
       memoryText,
       title,
@@ -315,7 +337,7 @@ export function CreateWizard() {
   function resumeDraft() {
     if (!pendingDraft) return;
     const d = pendingDraft;
-    setStep(d.step);
+    setStep(Math.max(0, STEPS.indexOf(d.step)));
     setStarted(d.started);
     setMemoryText(d.memoryText);
     setTitle(d.title);
@@ -377,28 +399,60 @@ export function CreateWizard() {
 
   const uploadsInFlight = people.some((p) => p.uploading > 0);
 
+  // Only block submit on a token when Turnstile is actually configured. In dev
+  // the widget calls onVerify("") immediately and the server skips verification.
+  const turnstileRequired = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
   const canContinue = useMemo(() => {
-    switch (step) {
-      case 0:
-        return styleId !== null;
-      case 1:
+    switch (stepId) {
+      case "story":
         return memoryText.trim().length >= 20;
-      case 2:
+      case "cast":
         return (
           people.length >= 1 &&
           people.every((p) => p.name.trim().length > 0 && p.photoUrls.length >= 1) &&
           !uploadsInFlight
         );
-      case 3:
-        return consent && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-      default:
-        return false;
+      case "style":
+        return styleId !== null;
+      case "finish":
+        // The review step's CTA is always available (title/dedication are
+        // optional); once the email capture is open, the same button becomes
+        // the real submit and needs email + consent (+ Turnstile when set up).
+        return confirmOpen
+          ? consent && emailValid && (!turnstileRequired || turnstileToken !== "")
+          : true;
     }
-  }, [step, styleId, memoryText, people, uploadsInFlight, email, consent]);
+  }, [
+    stepId,
+    styleId,
+    memoryText,
+    people,
+    uploadsInFlight,
+    emailValid,
+    consent,
+    confirmOpen,
+    turnstileRequired,
+    turnstileToken,
+  ]);
+
+  // Progress in the user's currency: how many pages the book-so-far carousel
+  // holds right now (must mirror BookSoFar's page conditions).
+  const bookPageCount = useMemo(() => {
+    let n = 0;
+    if (styleId) n += 1;
+    if (title.trim()) n += 1;
+    if (greeting.trim()) n += 1;
+    if (memoryText.trim()) n += 1;
+    if (people.some((p) => p.photoUrls[0] || p.name.trim())) n += 1;
+    return n;
+  }, [styleId, title, greeting, memoryText, people]);
 
   function goTo(next: number) {
     if (next > step) track("wizard_step_completed", { step, step_name: STEPS[step] });
     setError(null);
+    setConfirmOpen(false);
     setDirection(next > step ? "forward" : "back");
     setStep(next);
     topRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
@@ -466,10 +520,6 @@ export function CreateWizard() {
   }
 
   const selectedStyle = styles?.find((s) => s.id === styleId) ?? null;
-
-  // Only block submit on a token when Turnstile is actually configured. In dev
-  // the widget calls onVerify("") immediately and the server skips verification.
-  const turnstileRequired = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
   // ---------------------------------------------------------------- resume draft
   if (pendingDraft && !draftHydrated) {
@@ -577,10 +627,15 @@ export function CreateWizard() {
 
   // ---------------------------------------------------------------- stepper
   // The back action is shared by the rail (lg+) and the inline mobile nav
-  // (<lg): step 0 with a template goes back to the hero, otherwise to the
-  // previous step. Rendered fresh in each place so both stay in sync.
+  // (<lg): an open email capture dismisses back to the review, step 0 with a
+  // template goes back to the hero, otherwise to the previous step. Rendered
+  // fresh in each place so both stay in sync.
   const backButton = (variant: "ghost", className: string) =>
-    step > 0 ? (
+    confirmOpen ? (
+      <Button variant={variant} className={className} onClick={() => setConfirmOpen(false)}>
+        {t("back")}
+      </Button>
+    ) : step > 0 ? (
       <Button variant={variant} className={className} onClick={() => goTo(step - 1)}>
         {t("back")}
       </Button>
@@ -590,22 +645,33 @@ export function CreateWizard() {
       </Button>
     ) : null;
 
+  const openConfirm = () => {
+    setConfirmOpen(true);
+    topRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  };
+
   const forwardButton = (className: string) =>
-    step < STEPS.length - 1 ? (
+    stepId !== "finish" ? (
       <Button
         variant="secondary"
         className={className}
         disabled={!canContinue}
-        pending={step === 2 && uploadsInFlight}
+        pending={stepId === "cast" && uploadsInFlight}
         pendingLabel={t("uploadingPhotos")}
         onClick={() => goTo(step + 1)}
       >
         {t("continue")}
       </Button>
+    ) : !confirmOpen ? (
+      // First press reveals the email capture; the actual submit happens there
+      // (or via this same button once the capture is open, below).
+      <Button className={className} onClick={openConfirm}>
+        {t("createPreview")}
+      </Button>
     ) : (
       <Button
         className={className}
-        disabled={!canContinue || (turnstileRequired && !turnstileToken)}
+        disabled={!canContinue}
         pending={submitting}
         pendingLabel={t("creatingPreview")}
         onClick={() => void submit()}
@@ -624,8 +690,28 @@ export function CreateWizard() {
           {/* main step column */}
           <div className="min-w-0">
             <Card className="overflow-hidden p-5 sm:p-7">
-              <StepTransition stepKey={step} direction={direction}>
-                {step === 0 && (
+              <StepTransition stepKey={confirmOpen ? "confirm" : step} direction={direction}>
+                {stepId === "story" && (
+                  <StoryStep
+                    template={template}
+                    memoryText={memoryText}
+                    onMemoryChange={setMemoryText}
+                    targetAge={targetAge}
+                    onAgeChange={setTargetAge}
+                  />
+                )}
+
+                {stepId === "cast" && (
+                  <CastStep
+                    people={people}
+                    onAdd={() => setPeople((prev) => [...prev, newPerson("other")])}
+                    onRemove={(key) => setPeople((prev) => prev.filter((p) => p.key !== key))}
+                    onUpdate={updatePerson}
+                    onAddPhotos={addPhotos}
+                  />
+                )}
+
+                {stepId === "style" && (
                   <StyleStep
                     styles={styles}
                     stylesError={stylesError}
@@ -636,49 +722,47 @@ export function CreateWizard() {
                   />
                 )}
 
-                {step === 1 && (
-                  <StoryStep
-                    template={template}
-                    memoryText={memoryText}
-                    onMemoryChange={setMemoryText}
-                    targetAge={targetAge}
-                    onAgeChange={setTargetAge}
-                  />
-                )}
-
-                {step === 2 && (
-                  <CastStep
-                    people={people}
-                    onAdd={() => setPeople((prev) => [...prev, newPerson("other")])}
-                    onRemove={(key) => setPeople((prev) => prev.filter((p) => p.key !== key))}
-                    onUpdate={updatePerson}
-                    onAddPhotos={addPhotos}
-                  />
-                )}
-
-                {step === 3 && (
-                  <>
+                {stepId === "finish" &&
+                  (confirmOpen ? (
+                    // Deferred email capture: the review CTA swapped the card
+                    // content for this compact confirm moment.
+                    <EmailCapture
+                      email={email}
+                      onEmailChange={setEmail}
+                      consent={consent}
+                      onConsentChange={setConsent}
+                      canConfirm={canContinue}
+                      submitting={submitting}
+                      onConfirm={() => void submit()}
+                      onDismiss={() => setConfirmOpen(false)}
+                      // Abuse control (O5). No-ops in dev: renders nothing and
+                      // reports an empty token, which the server accepts.
+                      turnstile={<Turnstile onVerify={setTurnstileToken} action="create-book" />}
+                    />
+                  ) : (
                     <FinishStep
                       template={template}
                       title={title}
                       onTitleChange={setTitle}
                       greeting={greeting}
                       onGreetingChange={setGreeting}
-                      email={email}
-                      consent={consent}
-                      onConsentChange={setConsent}
-                      onEmailChange={setEmail}
                       memoryText={memoryText}
                       castNames={people.map((p) => p.name.trim()).filter(Boolean)}
                       targetAge={targetAge}
+                      carousel={
+                        <BookSoFar
+                          className="mx-auto w-full max-w-md"
+                          selectedStyle={selectedStyle}
+                          template={template}
+                          memoryText={memoryText}
+                          people={people}
+                          title={title}
+                          greeting={greeting}
+                          greetingFrom={greetingFrom}
+                        />
+                      }
                     />
-                    {/* Abuse control (O5). No-ops in dev: renders nothing and
-                        reports an empty token, which the server accepts. */}
-                    <div className="mt-5 flex justify-center">
-                      <Turnstile onVerify={setTurnstileToken} action="create-book" />
-                    </div>
-                  </>
-                )}
+                  ))}
               </StepTransition>
 
               {error ? <Alert className="mt-5">{error}</Alert> : null}
@@ -697,8 +781,14 @@ export function CreateWizard() {
             <div className="lg:sticky lg:top-24">
               <Card className="p-4">
                 <div className="flex items-center justify-between gap-3">
+                  {/* Progress in the user's currency: pages in the book, not
+                      form steps. The pills keep step orientation on the right. */}
                   <p className="min-w-0 truncate font-display text-sm font-bold text-ink">
-                    {stepLabels[step]}
+                    {stepId === "finish"
+                      ? t("railAlmost")
+                      : bookPageCount > 0
+                        ? t("railPages", { count: bookPageCount })
+                        : stepLabels[step]}
                   </p>
                   {/* Condensed step progress: one pill per step. */}
                   <div
@@ -724,34 +814,42 @@ export function CreateWizard() {
                 <p className="mt-3 text-center text-xs text-ink-soft">{t("heroFreePreview")}</p>
               </Card>
 
-              {/* The book itself, one big page at a time, growing with every choice. */}
-              <BookSoFar
-                className="mt-6"
-                showEmpty
-                selectedStyle={selectedStyle}
-                template={template}
-                memoryText={memoryText}
-                people={people}
-                title={title}
-                greeting={greeting}
-                greetingFrom={greetingFrom}
-              />
+              {/* The book itself, one big page at a time, growing with every
+                  choice. On the review step the big carousel moves into the
+                  main column (the step IS the book), so the rail holds only
+                  the actions there. */}
+              {stepId !== "finish" ? (
+                <BookSoFar
+                  className="mt-6"
+                  showEmpty
+                  selectedStyle={selectedStyle}
+                  template={template}
+                  memoryText={memoryText}
+                  people={people}
+                  title={title}
+                  greeting={greeting}
+                  greetingFrom={greetingFrom}
+                />
+              ) : null}
             </div>
           </aside>
         </div>
 
         {/* The evolving book on <lg: the same big one-page carousel between the
-            step card and the inline nav (hidden entirely while it has no pages). */}
-        <BookSoFar
-          className="mx-auto mt-6 w-full max-w-md lg:hidden"
-          selectedStyle={selectedStyle}
-          template={template}
-          memoryText={memoryText}
-          people={people}
-          title={title}
-          greeting={greeting}
-          greetingFrom={greetingFrom}
-        />
+            step card and the inline nav (hidden while it has no pages, and on
+            the review step, where the carousel lives inside the step itself). */}
+        {stepId !== "finish" ? (
+          <BookSoFar
+            className="mx-auto mt-6 w-full max-w-md lg:hidden"
+            selectedStyle={selectedStyle}
+            template={template}
+            memoryText={memoryText}
+            people={people}
+            title={title}
+            greeting={greeting}
+            greetingFrom={greetingFrom}
+          />
+        ) : null}
 
         {/* Step navigation on <lg: inline under the step card (the rail carries
             the actions on lg+). */}
@@ -1053,10 +1151,29 @@ function StoryStep({
         <p className="mt-1 text-sm text-ink-soft">
           {template ? t("storySubtitleTemplate") : t("storySubtitleOwn")}
         </p>
+        {/* Age band as a sentence-like inline choice (tunes the wording). */}
+        <div
+          className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5"
+          role="radiogroup"
+          aria-label={t("ageRadioLabel")}
+        >
+          <span className="text-sm text-ink-soft">{t("whoForInline")}</span>
+          {AGE_BANDS.map((band, i) => (
+            <Chip
+              key={band.value}
+              role="radio"
+              selected={targetAge === band.value}
+              onClick={() => onAgeChange(targetAge === band.value ? null : band.value)}
+              className="!px-3 !py-1 !text-xs"
+            >
+              {ageBandLabels[i]}
+            </Chip>
+          ))}
+        </div>
       </header>
 
       <div className={hasBeats ? "grid gap-6 lg:grid-cols-2 lg:items-start" : ""}>
-        {/* Left: the memory input + age — always up top. The memory field is
+        {/* Left: the memory input — always up top. The memory field is
             dressed as a page in a diary: a flat paper card with faint ruled
             lines. The step header above is the prompt; still a real <textarea>. */}
         <div className="flex flex-col gap-5">
@@ -1080,25 +1197,6 @@ function StoryStep({
               onChange={(e) => onMemoryChange(e.target.value)}
             />
           </Card>
-
-          <div>
-            <p className="mb-1.5 text-sm font-bold text-ink">
-              {t("whoFor")}{" "}
-              <span className="font-normal text-ink-soft">{t("whoForHint")}</span>
-            </p>
-            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("ageRadioLabel")}>
-              {AGE_BANDS.map((band, i) => (
-                <Chip
-                  key={band.value}
-                  role="radio"
-                  selected={targetAge === band.value}
-                  onClick={() => onAgeChange(targetAge === band.value ? null : band.value)}
-                >
-                  {ageBandLabels[i]}
-                </Chip>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Right: the story shape (template only). */}
@@ -1163,7 +1261,13 @@ function CastStep({
             : "grid grid-cols-2 gap-4 sm:grid-cols-3"
         }
       >
-        {people.map((person) => (
+        {people.map((person) => {
+          // Progressive capture: a fresh person is just a friendly name
+          // question; the photo upload and relation picker reveal once a
+          // name is typed (or the card already has photos/uploads).
+          const personStarted =
+            person.name.trim().length > 0 || person.photoUrls.length > 0 || person.uploading > 0;
+          return (
           <div
             key={person.key}
             className={`relative flex flex-col rounded-2xl border-2 border-ink/10 bg-white p-2.5 ${
@@ -1183,97 +1287,128 @@ function CastStep({
               </button>
             ) : null}
 
-            <label className="group relative block aspect-square w-full cursor-pointer overflow-hidden rounded-xl bg-lavender">
-              {person.photoUrls[0] ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={person.photoUrls[0]}
-                  alt={t("castPhotoAlt", { name: person.name || t("castPhotoAltFallback") })}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                />
-              ) : person.uploading > 0 ? (
-                <Skeleton className="h-full w-full" rounded="rounded-none" />
-              ) : (
-                <span className="flex h-full flex-col items-center justify-center gap-1 text-ink-soft transition-colors group-hover:text-ink">
-                  <span className="text-2xl leading-none">+</span>
-                  <span className="text-[10px] font-semibold">{t("castAddPhoto")}</span>
-                </span>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="sr-only"
-                onChange={(e) => {
-                  onAddPhotos(person, e.target.files);
-                  e.target.value = "";
-                }}
-              />
+            <label
+              htmlFor={`name-${person.key}`}
+              className="mb-1 mt-0.5 block pr-8 text-xs font-bold text-ink"
+            >
+              {t("castNamePrompt")}
             </label>
-
-            {person.photoUrls.length > 0 || person.uploading > 0 ? (
-              <div className="mt-2 flex items-center gap-1.5">
-                {person.photoUrls.map((url) => (
-                  <div key={url} className="relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt="" className="h-8 w-8 rounded-md object-cover" />
-                    <button
-                      type="button"
-                      aria-label={t("castRemovePhoto")}
-                      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] text-ink shadow-sm ring-1 ring-ink/10 transition hover:bg-coral hover:text-white"
-                      onClick={() =>
-                        onUpdate(person.key, { photoUrls: person.photoUrls.filter((u) => u !== url) })
-                      }
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-                {Array.from({ length: person.uploading }).map((_, i) => (
-                  <Skeleton key={`up-${i}`} className="h-8 w-8" rounded="rounded-md" />
-                ))}
-                {person.photoUrls.length + person.uploading < 3 ? (
-                  <label className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border-2 border-dashed border-ink/20 text-xs text-ink-soft hover:border-marigold hover:text-ink">
-                    +
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="sr-only"
-                      onChange={(e) => {
-                        onAddPhotos(person, e.target.files);
-                        e.target.value = "";
-                      }}
-                    />
-                  </label>
-                ) : null}
-              </div>
-            ) : null}
-
             <TextInput
               id={`name-${person.key}`}
-              aria-label={t("castName")}
               placeholder={t("castNamePlaceholder")}
               value={person.name}
               maxLength={80}
-              className="mt-2 py-2 text-sm"
+              className="py-2 text-sm"
               onChange={(e) => onUpdate(person.key, { name: e.target.value })}
             />
-            <Select
-              id={`role-${person.key}`}
-              aria-label={t("castRole")}
-              value={person.role}
-              className="mt-1.5 py-2 text-sm"
-              onChange={(e) => onUpdate(person.key, { role: e.target.value as PersonRole })}
-            >
-              {PERSON_ROLES.map((role) => (
-                <option key={role} value={role}>
-                  {roleLabels[role]}
-                </option>
-              ))}
-            </Select>
+
+            {personStarted ? (
+              <>
+                <label className="group relative mt-2 block aspect-square w-full cursor-pointer overflow-hidden rounded-xl bg-lavender">
+                  {person.photoUrls[0] ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={person.photoUrls[0]}
+                      alt={t("castPhotoAlt", { name: person.name || t("castPhotoAltFallback") })}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                    />
+                  ) : person.uploading > 0 ? (
+                    <Skeleton className="h-full w-full" rounded="rounded-none" />
+                  ) : (
+                    <span className="flex h-full flex-col items-center justify-center gap-1 text-ink-soft transition-colors group-hover:text-ink">
+                      <span className="text-2xl leading-none">+</span>
+                      <span className="text-[10px] font-semibold">{t("castAddPhoto")}</span>
+                    </span>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="sr-only"
+                    onChange={(e) => {
+                      onAddPhotos(person, e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+
+                {/* Compact do/don't photo guidance, right at the upload point
+                    (only while there's no photo yet). */}
+                {person.photoUrls.length === 0 && person.uploading === 0 ? (
+                  <div className="mt-2">
+                    <p className="text-[11px] leading-snug text-ink-soft">{t("castPhotoGuide")}</p>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-sage/15 px-2 py-0.5 text-[10px] font-semibold text-ink">
+                        <span className="font-bold text-sage" aria-hidden="true">
+                          ✓
+                        </span>
+                        {t("castPhotoDo")}
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-coral/10 px-2 py-0.5 text-[10px] font-semibold text-ink">
+                        <IconClose className="h-3 w-3 text-coral" />
+                        {t("castPhotoDont")}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+
+                {person.photoUrls.length > 0 || person.uploading > 0 ? (
+                  <div className="mt-2 flex items-center gap-1.5">
+                    {person.photoUrls.map((url) => (
+                      <div key={url} className="relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={url} alt="" className="h-8 w-8 rounded-md object-cover" />
+                        <button
+                          type="button"
+                          aria-label={t("castRemovePhoto")}
+                          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] text-ink shadow-sm ring-1 ring-ink/10 transition hover:bg-coral hover:text-white"
+                          onClick={() =>
+                            onUpdate(person.key, { photoUrls: person.photoUrls.filter((u) => u !== url) })
+                          }
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    {Array.from({ length: person.uploading }).map((_, i) => (
+                      <Skeleton key={`up-${i}`} className="h-8 w-8" rounded="rounded-md" />
+                    ))}
+                    {person.photoUrls.length + person.uploading < 3 ? (
+                      <label className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border-2 border-dashed border-ink/20 text-xs text-ink-soft hover:border-marigold hover:text-ink">
+                        +
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="sr-only"
+                          onChange={(e) => {
+                            onAddPhotos(person, e.target.files);
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <Select
+                  id={`role-${person.key}`}
+                  aria-label={t("castRole")}
+                  value={person.role}
+                  className="mt-2 py-2 text-sm"
+                  onChange={(e) => onUpdate(person.key, { role: e.target.value as PersonRole })}
+                >
+                  {PERSON_ROLES.map((role) => (
+                    <option key={role} value={role}>
+                      {roleLabels[role]}
+                    </option>
+                  ))}
+                </Select>
+              </>
+            ) : null}
           </div>
-        ))}
+          );
+        })}
 
         {people.length < 4 ? (
           <button
@@ -1292,40 +1427,42 @@ function CastStep({
   );
 }
 
-/* ------------------------------------------------------------------ finish step */
+/* ------------------------------------------------------------- review (finish) */
 
+/**
+ * The last step is "review your book", not a form: the big book-so-far
+ * carousel is the centerpiece (passed in as `carousel` so the wizard's state
+ * wiring stays in one place), with title + dedication as light annotations
+ * below it and a tiny "what happens next" strip near the CTA. Email capture
+ * is deferred to the EmailCapture moment that the CTA reveals.
+ */
 function FinishStep({
   template,
   title,
   onTitleChange,
   greeting,
   onGreetingChange,
-  email,
-  onEmailChange,
-  consent,
-  onConsentChange,
   memoryText,
   castNames,
   targetAge,
+  carousel,
 }: {
   template: TemplateSummary | null;
   title: string;
   onTitleChange: (v: string) => void;
   greeting: string;
   onGreetingChange: (v: string) => void;
-  email: string;
-  onEmailChange: (v: string) => void;
-  consent: boolean;
-  onConsentChange: (v: boolean) => void;
   /** Context for the AI suggestion helpers (never displayed here). */
   memoryText: string;
   castNames: string[];
   targetAge: number | null;
+  /** The big book-so-far carousel, rendered by the wizard. */
+  carousel: React.ReactNode;
 }) {
   const t = useTranslations("wizard");
 
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-6">
       <header>
         <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">{t("finishTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
@@ -1333,10 +1470,12 @@ function FinishStep({
         </p>
       </header>
 
-      {/* Front-matter inputs. Comfortable single column; the live title +
-          dedication pages appear in the "book so far" carousel (right rail on
-          lg+, full-width below the card on <lg), auto-advancing as you type. */}
-      <div className="flex flex-col gap-4">
+      {/* The book itself, front and center. */}
+      {carousel}
+
+      {/* Light annotations around the book: both optional, both land in the
+          carousel above as you type. */}
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
         <Field label={t("finishBookTitle")} htmlFor="title" optional>
           <TextInput
             id="title"
@@ -1375,8 +1514,69 @@ function FinishStep({
         </Field>
       </div>
 
-      {/* Delivery + consent, clearly after the front matter. */}
-      <div className="grid gap-4 border-t border-ink/10 pt-5 sm:grid-cols-2 sm:items-start">
+      {/* What happens next: three tiny steps near the CTA. */}
+      <ol className="grid gap-2.5 border-t border-ink/10 pt-5 sm:grid-cols-3">
+        <NextStep icon={<Sparkle size={13} />} text={t("finishNextPreview")} />
+        <NextStep icon={<IconUser className="h-3.5 w-3.5" />} text={t("finishNextReview")} />
+        <NextStep icon={<IconCart className="h-3.5 w-3.5" />} text={t("finishNextShip")} />
+      </ol>
+    </section>
+  );
+}
+
+/** One entry of the review step's "what happens next" strip. */
+function NextStep({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <li className="flex items-center gap-2">
+      <span
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-marigold/20 text-ink"
+        aria-hidden="true"
+      >
+        {icon}
+      </span>
+      <span className="text-xs leading-snug text-ink-soft">{text}</span>
+    </li>
+  );
+}
+
+/**
+ * Deferred email capture: revealed by the review step's CTA, right before
+ * submit. The API contract is unchanged — email + consent still ship with
+ * book creation; they're just asked for at the moment they matter.
+ */
+function EmailCapture({
+  email,
+  onEmailChange,
+  consent,
+  onConsentChange,
+  canConfirm,
+  submitting,
+  onConfirm,
+  onDismiss,
+  turnstile,
+}: {
+  email: string;
+  onEmailChange: (v: string) => void;
+  consent: boolean;
+  onConsentChange: (v: boolean) => void;
+  canConfirm: boolean;
+  submitting: boolean;
+  onConfirm: () => void;
+  onDismiss: () => void;
+  turnstile: React.ReactNode;
+}) {
+  const t = useTranslations("wizard");
+
+  return (
+    <section className="mx-auto flex w-full max-w-md flex-col gap-5 py-2 sm:py-4">
+      <header className="text-center">
+        <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">
+          {t("emailPromptTitle")}
+        </h1>
+        <p className="mt-1 text-sm text-ink-soft">{t("emailPromptBody")}</p>
+      </header>
+
+      <div className="flex flex-col gap-4">
         <Field label={t("finishEmail")} htmlFor="email">
           <TextInput
             id="email"
@@ -1388,7 +1588,7 @@ function FinishStep({
           />
         </Field>
 
-        {/* Explicit privacy opt-in — gates the submit button. */}
+        {/* Explicit privacy opt-in — gates the confirm button. */}
         <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-lavender/60 p-4 text-xs leading-relaxed text-ink-soft">
           <input
             type="checkbox"
@@ -1404,6 +1604,24 @@ function FinishStep({
             .
           </span>
         </label>
+      </div>
+
+      {/* Abuse control (O5); renders nothing in dev. */}
+      <div className="flex justify-center empty:hidden">{turnstile}</div>
+
+      <div className="flex flex-col gap-2.5">
+        <Button
+          className="w-full"
+          disabled={!canConfirm}
+          pending={submitting}
+          pendingLabel={t("creatingPreview")}
+          onClick={onConfirm}
+        >
+          {t("createPreview")}
+        </Button>
+        <Button variant="ghost" className="w-full" onClick={onDismiss}>
+          {t("emailPromptBack")}
+        </Button>
       </div>
     </section>
   );
@@ -1694,6 +1912,22 @@ function BookSoFar({
   const [seenKeys, setSeenKeys] = useState<string[] | null>(null);
   const swipeStart = useRef<number | null>(null);
 
+  // Theatrical moments: when a choice lands in the book (style picked, photo
+  // finished uploading), the carousel jumps to that page and pulses it, with
+  // an optional transient caption ("Mia is in the book!"). The nonce (the
+  // style id / person key that triggered it — deterministic, render-pure)
+  // retriggers the CSS animation; a timeout (in the effect below) clears it.
+  const [flourish, setFlourish] = useState<{
+    page: string;
+    nonce: string;
+    caption?: string;
+  } | null>(null);
+  useEffect(() => {
+    if (!flourish) return;
+    const timer = setTimeout(() => setFlourish(null), flourish.caption ? 2000 : 900);
+    return () => clearTimeout(timer);
+  }, [flourish]);
+
   const coverTitle = title.trim() || template?.title || t("bookSoFarCoverTitle");
   const castMembers = people
     .filter((p) => p.photoUrls[0] || p.name.trim())
@@ -1783,6 +2017,44 @@ function BookSoFar({
     }
     setSeenKeys(keys);
   }
+
+  // Style choice landing: a different style repaints the existing cover page,
+  // so jump back to it and pulse. Same render-time adjustment pattern; the
+  // initializer swallows a style preselected before mount (template, draft).
+  const [lastStyleId, setLastStyleId] = useState<string | null>(selectedStyle?.id ?? null);
+  if ((selectedStyle?.id ?? null) !== lastStyleId) {
+    setLastStyleId(selectedStyle?.id ?? null);
+    if (selectedStyle && seenKeys !== null) {
+      const coverIndex = keys.indexOf("cover");
+      if (coverIndex >= 0) setIndex(coverIndex);
+      setFlourish({ page: "cover", nonce: selectedStyle.id });
+    }
+  }
+
+  // Photo landing: a cast member gaining their first photo jumps to the cast
+  // page with a short caption flourish ("{name} is in the book!").
+  const photoSig = castMembers
+    .filter((m) => m.photo)
+    .map((m) => m.key)
+    .join("|");
+  const [lastPhotoSig, setLastPhotoSig] = useState<string | null>(null);
+  if (lastPhotoSig === null) {
+    setLastPhotoSig(photoSig); // first render only records (drafts, remounts)
+  } else if (photoSig !== lastPhotoSig) {
+    const before = new Set(lastPhotoSig.split("|").filter(Boolean));
+    const joined = castMembers.find((m) => m.photo && !before.has(m.key));
+    setLastPhotoSig(photoSig);
+    if (joined) {
+      const castIndex = keys.indexOf("cast");
+      if (castIndex >= 0) setIndex(castIndex);
+      setFlourish({
+        page: "cast",
+        nonce: joined.key,
+        caption: joined.name ? t("bookSoFarJoined", { name: joined.name }) : undefined,
+      });
+    }
+  }
+
   const current = Math.min(index, Math.max(0, pages.length - 1));
 
   const heading = (
@@ -1841,15 +2113,25 @@ function BookSoFar({
             className="flex transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{ transform: `translateX(-${current * 100}%)` }}
           >
-            {pages.map((page, i) => (
-              <div
-                key={page.key}
-                className="w-full shrink-0 px-3 pb-9 pt-4"
-                aria-hidden={i !== current}
-              >
-                {page.node}
-              </div>
-            ))}
+            {pages.map((page, i) => {
+              const celebrating = flourish?.page === page.key;
+              return (
+                <div
+                  key={page.key}
+                  className="w-full shrink-0 px-3 pb-9 pt-4"
+                  aria-hidden={i !== current}
+                >
+                  {/* Keyed on the flourish nonce so repeat celebrations replay
+                      the pulse (reduced motion disables it in CSS). */}
+                  <div
+                    key={celebrating ? flourish.nonce : "still"}
+                    className={celebrating ? "animate-celebrate" : undefined}
+                  >
+                    {page.node}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -1871,9 +2153,16 @@ function BookSoFar({
         ) : null}
       </div>
 
-      {/* Caption of the visible page + one dot per page + optional page note. */}
+      {/* Caption of the visible page (briefly swapped for a celebration line
+          while a flourish runs) + one dot per page + optional page note. */}
       <p className="-mt-3 text-center font-display text-sm font-bold text-ink">
-        {pages[current].caption}
+        {flourish?.caption && flourish.page === pages[current].key ? (
+          <span key={flourish.nonce} className="animate-page-in inline-block text-coral">
+            {flourish.caption}
+          </span>
+        ) : (
+          pages[current].caption
+        )}
       </p>
       {pages.length > 1 ? (
         <div className="mt-2.5 flex justify-center gap-1.5">

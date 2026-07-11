@@ -544,6 +544,23 @@ body::after {
   }
 }
 
+/* A page of the book-so-far carousel celebrating a fresh choice: one quick,
+   springy scale pulse as the carousel lands on it. */
+@keyframes wfsc-celebrate {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.045) rotate(-0.6deg);
+  }
+  70% {
+    transform: scale(0.992);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 /* Marquee: a track holding two identical copies drifts left by exactly one
    copy, so the loop is seamless. Each item carries its spacing as a right
    margin (not flex gap) so half the track width lands on an exact seam. */
@@ -623,6 +640,9 @@ body::after {
   animation: wfsc-bounce-soft 1.9s ease-in-out infinite;
   transform-origin: 50% 100%;
 }
+.animate-celebrate {
+  animation: wfsc-celebrate 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .animate-float,
@@ -639,6 +659,7 @@ body::after {
   .animate-fade-out,
   .animate-flip-in,
   .animate-bounce-soft,
+  .animate-celebrate,
   .hover-wobble:hover {
     animation: none;
   }

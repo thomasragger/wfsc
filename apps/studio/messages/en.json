@@ -740,10 +740,10 @@
   },
   "wizard": {
     "steps": [
-      "Style",
       "Your story",
       "The cast",
-      "Finish"
+      "The look",
+      "Your book"
     ],
     "roles": {
       "child": "Child",
@@ -756,9 +756,9 @@
       "other": "Someone else"
     },
     "ageBands": [
-      "0-2 years",
-      "3-5 years",
-      "6-8 years"
+      "0 to 2",
+      "3 to 5",
+      "6 to 8"
     ],
     "memoryPrompts": [
       "The summer we built a den in grandpa's garden and refused to come inside, even for dinner…",
@@ -792,7 +792,7 @@
     "heroFreePreview": "Free preview first, you only pay once you love it.",
     "heroHowStoryGoes": "How the story goes",
     "agesRange": "Ages {min}-{max}",
-    "styleTitle": "Choose your look",
+    "styleTitle": "Dress your story",
     "styleSubtitle": "Every page will be illustrated in the style you pick, hover to see it in action. You can change it later.",
     "styleError": "We couldn't load the illustration styles right now. Please refresh to try again.",
     "styleRadioLabel": "Illustration style",
@@ -807,15 +807,14 @@
     "memoryHintTemplate": "Names, places, the thing that made everyone laugh, the more real, the better.",
     "memoryHintOwn": "Need a nudge? “{prompt}”",
     "memoryPlaceholderTemplate": "Tell us about YOUR {noun}, who was there, how the day started, the moment everyone still laughs about, and the little detail you never want to forget…",
-    "whoFor": "Who is it for?",
-    "whoForHint": "(we'll tune the words to their age)",
+    "whoForInline": "Made for ages",
     "ageRadioLabel": "Reader age",
     "storyJourney": "The journey your book will take",
     "castTitle": "Who's in it?",
-    "castSubtitle": "Add up to four people, with 1 to 3 photos each. Clear, well-lit photos of their face work best.",
+    "castSubtitle": "Add up to four people. Each photo becomes a storybook character.",
     "castPerson": "Person {n}",
     "castRemove": "Remove",
-    "castName": "Name",
+    "castNamePrompt": "Who is this story about?",
     "castNamePlaceholder": "Mia",
     "castRole": "Role in the story",
     "castPhotoAlt": "Photo of {name}",
@@ -823,8 +822,11 @@
     "castRemovePhoto": "Remove photo",
     "castAddPhoto": "Add photo",
     "castAddPerson": "+ Add another person",
-    "finishTitle": "Almost there",
-    "finishSubtitle": "Add the finishing touches, then tell us where to send your free preview, usually ready in a few minutes.",
+    "castPhotoGuide": "The clearer the photo, the truer the character.",
+    "castPhotoDo": "Clear face, good light",
+    "castPhotoDont": "No sunglasses, not too far away",
+    "finishTitle": "Review your book",
+    "finishSubtitle": "Flip through the beginnings of your book. A title and a dedication are the finishing touches, both optional.",
     "finishBookTitle": "Book title",
     "finishTitlePlaceholder": "We'll suggest one if you leave this empty",
     "finishNote": "A personal note",
@@ -838,6 +840,14 @@
     "finishEmailPlaceholder": "you@example.com",
     "finishConsent": "Yes, please use my story and photos to create this book. Details in our",
     "finishConsentLink": "privacy policy",
+    "finishNextPreview": "Free preview in minutes",
+    "finishNextReview": "You review every page",
+    "finishNextShip": "We print and ship your book",
+    "emailPromptTitle": "Where should we send your preview?",
+    "emailPromptBody": "We'll email you a link as soon as it's ready, usually within a few minutes.",
+    "emailPromptBack": "Back to your book",
+    "railPages": "{count, plural, one {# page in your book so far} other {# pages in your book so far}}",
+    "railAlmost": "Your preview is minutes away",
     "stepCount": "Step {current} of {total}",
     "bookSoFarHeading": "Your book so far",
     "bookSoFarEmpty": "Your book will appear here as you make each choice.",
@@ -845,6 +855,7 @@
     "bookSoFarCast": "The cast",
     "bookSoFarCastStarring": "Starring",
     "bookSoFarCoverTitle": "Our story",
+    "bookSoFarJoined": "{name} is in the book!",
     "bookSoFarCoverCaption": "Cover (style preview)",
     "bookSoFarCoverNote": "A peek at the art style. Your real cover will be illustrated from your story and photos."
   }
