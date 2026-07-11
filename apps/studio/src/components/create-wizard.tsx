@@ -24,7 +24,6 @@ import { PageTransition, StepTransition } from "@/components/ui/page-transition"
 import { ProgressiveImage } from "@/components/ui/progressive-image";
 import { Skeleton, SkeletonGrid } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import { StepProgress } from "@/components/ui/steps";
 import { BottomBar } from "@/components/ui/bottom-bar";
 import { Turnstile } from "@/components/ui/turnstile";
 import { PERSON_ROLES, type BookPayload, type PersonRole } from "@/lib/book-payload";
@@ -225,7 +224,7 @@ export function CreateWizard() {
     nonce: string;
     pulse: boolean;
   } | null>(null);
-  const requestSpotlight = (page: "title" | "dedication", pulse: boolean) => {
+  const requestSpotlight = (page: "title" | "dedication" | "style", pulse: boolean) => {
     spotlightCount.current += 1;
     setSpotlight({ page, nonce: `s${spotlightCount.current}`, pulse });
   };
@@ -306,6 +305,22 @@ export function CreateWizard() {
       .then(setStyles)
       .catch((err: Error) => setStylesError(err.message));
   }, []);
+
+  // Default style: once styles are loaded and the draft decision is settled,
+  // quietly preselect the template's suggestion (waiting for a pending
+  // template first) or the first style. The functional update only ever fills
+  // a null, so a resumed draft's choice, the template preselect, and any user
+  // pick all win. Deliberately QUIET: no celebrate pulse, no scrapbook jump
+  // (the swatch pulse fires only from the user's own pick, via spotlight).
+  useEffect(() => {
+    if (!draftHydrated || !styles || styles.length === 0) return;
+    if (templateId && !template && !templateFailed) return; // suggestion pending
+    const suggested = template?.suggestedStyleId;
+    const fallback =
+      suggested && styles.some((s) => s.id === suggested) ? suggested : styles[0].id;
+    const timer = setTimeout(() => setStyleId((current) => current ?? fallback), 0);
+    return () => clearTimeout(timer);
+  }, [draftHydrated, styles, template, templateId, templateFailed]);
 
   // On load (per entry point): surface a resumable draft, otherwise unlock saving.
   // localStorage is client-only, so this must run post-mount (a lazy initializer
@@ -566,7 +581,7 @@ export function CreateWizard() {
     return (
       // Vertically centered in the app-shell workspace on lg+, like step content.
       <PageTransition className="lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:justify-center">
-        <div ref={topRef} className="mx-auto w-full max-w-md scroll-mt-24 text-center">
+        <div ref={topRef} className="mx-auto w-full max-w-md scroll-mt-24 pb-10 text-center lg:pb-0">
           <Card className="p-8">
             <Eyebrow className="mx-auto">{t("resumeEyebrow")}</Eyebrow>
             <h1 className="mt-4 font-display text-2xl font-extrabold text-ink sm:text-3xl">
@@ -594,7 +609,7 @@ export function CreateWizard() {
   if (showPicker) {
     return (
       <PageTransition>
-        <div ref={topRef} className="scroll-mt-24">
+        <div ref={topRef} className="scroll-mt-24 pb-10 sm:pb-14">
           <header className="text-center">
             <Eyebrow className="mx-auto">
               {category ? t("pickerEyebrowCategory", { name: category.name }) : t("pickerEyebrowDefault")}
@@ -641,7 +656,7 @@ export function CreateWizard() {
   if (templateId && !template && !templateFailed) {
     return (
       <PageTransition>
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-3xl pb-10">
           <Skeleton className="h-[26rem] w-full" rounded="rounded-[2.5rem]" />
         </div>
       </PageTransition>
@@ -734,26 +749,28 @@ export function CreateWizard() {
       {/* App shell on lg+: the studio layout is a bounded viewport column
           (header / main / footer, zero body scroll) and the wizard fills the
           main area exactly; the step column scrolls internally in the rare
-          case a step exceeds it, and the rail stays fully visible. Normal
-          document scrolling on <lg. */}
-      <div
-        ref={topRef}
-        className="scroll-mt-24 pb-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:pb-0"
-      >
-        {/* Horizontal progress only on <lg; the rail carries it on lg+. */}
-        <StepProgress steps={stepLabels} current={step} className="mb-5 lg:hidden" />
-
-        <div className="grid gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,25rem)] lg:gap-8">
+          case a step exceeds it, and the rail stays fully visible. On <lg the
+          document scrolls, but the workspace still aims at the viewport: the
+          grid reserves at least the space between header and the sticky
+          action bar (dvh-aware), so steps that fit occupy it exactly. */}
+      <div ref={topRef} className="scroll-mt-24 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+        <div
+          className={`grid gap-6 md:max-lg:min-h-[calc(100dvh-13rem)] lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,25rem)] lg:gap-8 ${
+            stepId === "finish"
+              ? ""
+              : "md:grid-cols-[minmax(0,1fr)_17rem] md:gap-5"
+          }`}
+        >
           {/* main step column */}
-          <div className="min-w-0 lg:flex lg:min-h-0 lg:flex-col">
-            <Card className="overflow-hidden p-5 sm:p-7 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:p-5">
-              {/* Internal scroll area (lg+). The negative-margin/padding pair
-                  gives tilted cards' shadows and tape overhangs (which reach
-                  ~1rem above a note card) room instead of clipping them at
-                  the scroll box edge. */}
+          <div className="min-w-0 md:flex md:flex-col lg:min-h-0">
+            <Card className="overflow-hidden p-5 sm:p-7 md:flex md:flex-1 md:flex-col lg:min-h-0 lg:p-5">
+              {/* Internal scroll area (lg+ only; below lg the card simply
+                  grows). The negative-margin/padding pair gives tilted cards'
+                  shadows and tape overhangs (which reach ~1rem above a note
+                  card) room instead of clipping them at the scroll box edge. */}
               <div
                 ref={stepScrollRef}
-                className="lg:-mx-2 lg:-mt-4 lg:-mb-1 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:px-2 lg:pb-1 lg:pt-4"
+                className="md:flex md:flex-1 md:flex-col lg:-mx-2 lg:-mb-1 lg:-mt-4 lg:min-h-0 lg:overflow-y-auto lg:overflow-x-hidden lg:px-2 lg:pb-1 lg:pt-4"
               >
               {/* flex-1 (with default min-height:auto) lets short steps fill
                   the shell so the story note can stretch, while taller steps
@@ -761,7 +778,7 @@ export function CreateWizard() {
               <StepTransition
                 stepKey={confirmOpen ? "confirm" : step}
                 direction={direction}
-                className="lg:flex-1"
+                className="md:flex-1"
               >
                 {stepId === "story" && (
                   <StoryStep
@@ -788,7 +805,12 @@ export function CreateWizard() {
                     styles={styles}
                     stylesError={stylesError}
                     styleId={styleId}
-                    onSelect={setStyleId}
+                    onSelect={(id) => {
+                      // A user's OWN pick celebrates in the scrapbook; the
+                      // programmatic default/draft/template preselects don't.
+                      setStyleId(id);
+                      requestSpotlight("style", true);
+                    }}
                     selectedStyle={selectedStyle}
                     recommendedId={template?.suggestedStyleId ?? null}
                   />
@@ -833,16 +855,19 @@ export function CreateWizard() {
             </Card>
           </div>
 
-          {/* Right rail (lg+ only): a slim actions card on top (Continue is
+          {/* Right rail: on lg+ a slim actions card on top (Continue is
               always in view inside the fixed shell), then the scrapbook —
-              anchored here on EVERY step, review included. The negative-
-              margin/padding pair keeps the tilted cards' shadows unclipped if
-              the rail ever needs its fallback scroll. */}
-          <aside className="hidden lg:block lg:min-h-0">
+              anchored here on EVERY step, review included. On md (tablet
+              portrait) the rail is a slim scrapbook-only column that sticks
+              high beside the step card (the sticky action bar carries the
+              actions); the review step drops it so the post-its get the full
+              width. The negative-margin/padding pair keeps the tilted cards'
+              shadows unclipped if the rail ever needs its fallback scroll. */}
+          <aside className={`hidden lg:min-h-0 ${stepId === "finish" ? "lg:block" : "md:block"}`}>
             {/* pb-0 so the scrapbook's dots sit flush with the step card's
                 bottom edge (the actions card top already matches its top). */}
-            <div className="-mx-3 flex h-full min-h-0 flex-col overflow-y-auto overflow-x-hidden px-3">
-              <Card className="shrink-0 p-4">
+            <div className="-mx-3 flex flex-col px-3 md:max-lg:sticky md:max-lg:top-20 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:overflow-x-hidden">
+              <Card className="hidden shrink-0 p-4 lg:block">
                 <div className="flex items-center justify-between gap-3">
                   {/* Progress in the user's currency: their story taking
                       shape, not form steps. The pills keep step orientation
@@ -896,7 +921,7 @@ export function CreateWizard() {
                   730px-tall viewports, and the fixed stage/caption/dot rows
                   mean the block's footprint is identical empty or full. */}
               <BookSoFar
-                className="mx-auto my-auto w-full max-w-[18rem] py-5"
+                className="mx-auto my-auto w-full max-w-[18rem] py-5 md:max-lg:pt-2"
                 showEmpty
                 selectedStyle={selectedStyle}
                 memoryText={memoryText}
@@ -911,10 +936,14 @@ export function CreateWizard() {
           </aside>
         </div>
 
-        {/* The scrapbook on <lg: one fixed home on every step, between the
-            step card and the inline nav (hidden while empty). */}
+        {/* The scrapbook below the step card: on phones its one fixed home on
+            every step; on md the rail takes over except on the review step
+            (which trades the rail for full-width post-its), where it returns
+            here. Hidden while empty. */}
         <BookSoFar
-          className="mx-auto mt-5 w-full max-w-md lg:hidden"
+          className={`mx-auto mt-5 w-full max-w-[18rem] ${
+            stepId === "finish" ? "lg:hidden" : "md:hidden"
+          }`}
           selectedStyle={selectedStyle}
           memoryText={memoryText}
           people={people}
@@ -925,21 +954,53 @@ export function CreateWizard() {
           spotlight={spotlight}
         />
 
-        {/* Step navigation on <lg: inline under the step card (the rail carries
-            the actions on lg+). */}
-        <div className="mt-5 flex items-center justify-between gap-3 lg:hidden">
-          {backButton("ghost", "") ?? <span />}
-          {forwardButton("")}
+        {/* The persistent action bar on <lg: sticky at the bottom of the
+            viewport (position:sticky, never fixed — animated transform
+            ancestors would detach fixed elements), mirroring the desktop
+            rail's actions card: story-shaped context line + condensed step
+            pills, a quiet Back beside a full-prominence Continue, and the
+            draft-saved flash folded into the context line. Safe-area aware;
+            full-bleed against the page gutters so it reads as app chrome. */}
+        <div className="sticky bottom-0 z-30 -mx-4 mt-6 border-t border-ink/10 bg-cream/95 px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-2.5 backdrop-blur sm:-mx-6 sm:px-6 lg:hidden">
+          <div className="mx-auto w-full max-w-2xl">
+            <div className="flex items-center justify-between gap-3">
+              <p
+                aria-live="polite"
+                className="min-w-0 truncate font-display text-xs font-bold text-ink"
+              >
+                {draftSavedVisible ? (
+                  <span className="text-sage">✓ {t("draftSaved")}</span>
+                ) : stepId === "finish" ? (
+                  t("railAlmost")
+                ) : scrapbookHasCards ? (
+                  t("railProgress")
+                ) : (
+                  stepLabels[step]
+                )}
+              </p>
+              {/* Condensed step progress: one pill per step. */}
+              <div
+                className="flex shrink-0 items-center gap-1.5"
+                role="img"
+                aria-label={t("stepCount", { current: step + 1, total: STEPS.length })}
+              >
+                {stepLabels.map((label, i) => (
+                  <span
+                    key={label}
+                    title={label}
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      i === step ? "w-6 bg-coral" : i < step ? "w-2 bg-sage" : "w-2 bg-ink/15"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              {backButton("ghost", "shrink-0")}
+              {forwardButton("min-w-0 flex-1 whitespace-nowrap")}
+            </div>
+          </div>
         </div>
-        {/* Draft-saved flash (mobile home); height reserved, no layout shift. */}
-        <p
-          aria-live="polite"
-          className={`mt-2 h-4 text-center text-[11px] font-semibold text-sage transition-opacity duration-300 motion-reduce:transition-none lg:hidden ${
-            draftSavedVisible ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          {draftSavedVisible ? `✓ ${t("draftSaved")}` : null}
-        </p>
       </div>
     </PageTransition>
   );
@@ -1124,7 +1185,7 @@ function StyleStep({
   }, [readerBook, tFlip]);
 
   return (
-    <section className="flex flex-col gap-5 lg:h-full lg:gap-4">
+    <section className="flex flex-col gap-5 md:h-full lg:gap-4">
       <header>
         <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">{t("styleTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
@@ -1132,8 +1193,8 @@ function StyleStep({
         </p>
       </header>
 
-      {/* Picker + real sample books center vertically as a group on lg+. */}
-      <div className="flex flex-col gap-5 lg:min-h-0 lg:flex-1 lg:justify-center lg:gap-4">
+      {/* Picker + real sample books center vertically as a group on md+. */}
+      <div className="flex flex-col gap-5 md:flex-1 md:justify-center lg:min-h-0 lg:gap-4">
         {styles === null && !stylesError ? (
           <SkeletonGrid count={3} className="grid gap-4 sm:grid-cols-3" itemClassName="h-52" />
         ) : null}
@@ -1341,7 +1402,7 @@ function StoryStep({
   const beats = template ? template.storyBeats.slice(0, 10) : [];
   const hasBeats = beats.length > 0;
   return (
-    <section className="flex flex-col gap-6 lg:h-full lg:gap-5">
+    <section className="flex flex-col gap-6 md:h-full lg:gap-5">
       <header>
         <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">
           {template ? t("storyTitleTemplate") : t("storyTitleOwn")}
@@ -1371,7 +1432,7 @@ function StoryStep({
       </header>
 
       <div
-        className={`grid gap-6 pt-3 lg:min-h-0 lg:flex-1 ${
+        className={`grid gap-6 pt-3 md:flex-1 md:max-lg:content-center lg:min-h-0 ${
           hasBeats ? "lg:grid-cols-2 lg:items-stretch" : ""
         }`}
       >
@@ -1379,9 +1440,9 @@ function StoryStep({
             note the rail scrapbook shows in miniature (same tape, paper,
             ruled lines). Capped at a comfortable writing size and centered in
             the available space; the writing itself is large. */}
-        <div className="flex min-h-0 flex-col lg:items-center lg:justify-center">
+        <div className="flex min-h-0 flex-col md:items-center md:justify-center">
           <div
-            className="relative flex w-full max-w-[36rem] flex-col rounded-lg bg-white px-6 pb-6 pt-7 shadow-fuzzy ring-1 ring-ink/5 transition-shadow focus-within:ring-2 focus-within:ring-marigold/70 lg:min-h-0 lg:max-h-[23rem] lg:flex-1"
+            className="relative flex w-full max-w-[36rem] flex-col rounded-lg bg-white px-6 pb-6 pt-7 shadow-fuzzy ring-1 ring-ink/5 transition-shadow focus-within:ring-2 focus-within:ring-marigold/70 md:max-h-[23rem] md:flex-1 lg:min-h-0"
             style={{ rotate: "-0.5deg" }}
           >
             {/* The tape strip doubles as the note's label. */}
@@ -1461,7 +1522,7 @@ function CastStep({
   const t = useTranslations("wizard");
   const roleLabels = t.raw("roles") as Record<PersonRole, string>;
   return (
-    <section className="flex flex-col gap-5 lg:h-full">
+    <section className="flex flex-col gap-5 md:h-full">
       <header>
         <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">{t("castTitle")}</h1>
         <p className="mt-1 text-sm text-ink-soft">
@@ -1472,8 +1533,8 @@ function CastStep({
       {/* Character cards: the uploaded photo becomes the character preview;
           the last card adds another person. Three-up on sm+ (add-person card
           in-grid); on <sm three or more people become a swipeable carousel.
-          On lg+ the group centers vertically instead of hugging the top. */}
-      <div className="lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:justify-center">
+          On md+ the group centers vertically instead of hugging the top. */}
+      <div className="md:flex md:flex-1 md:flex-col md:justify-center lg:min-h-0">
       <div
         className={
           people.length >= 3
@@ -1689,7 +1750,7 @@ function FinishStep({
   const t = useTranslations("wizard");
 
   return (
-    <section className="flex flex-col gap-6 lg:h-full">
+    <section className="flex flex-col gap-6 md:h-full">
       {/* React hoists this to <head>; loads the cards' display+script fonts. */}
       <link rel="stylesheet" href={fontStylesheetUrl(FM_PAIRING)} />
 
@@ -1701,10 +1762,12 @@ function FinishStep({
       </header>
 
       {/* Writable note cards, staggered like post-its pinned to a wall
-          (title up-left, dedication down-right, opposite tilts), centered as
-          a composition on lg+. pt-3 keeps the tape strips fully visible. */}
-      <div className="mx-auto grid w-full max-w-2xl gap-x-8 gap-y-7 pt-3 lg:min-h-0 lg:flex-1 lg:content-center lg:grid-cols-2 lg:items-start lg:gap-x-4">
-        <div className="lg:mb-12">
+          (title up-left, dedication down-right, opposite tilts): side by side
+          with the desktop stagger from md up, stacked and capped to post-it
+          width on phones; centered as a composition in the free space.
+          pt-3 keeps the tape strips fully visible. */}
+      <div className="mx-auto grid w-full max-w-2xl gap-x-8 gap-y-7 pt-3 md:flex-1 md:content-center md:grid-cols-2 md:items-start md:gap-x-4 lg:min-h-0">
+        <div className="mx-auto w-full max-w-[20rem] md:mx-0 md:mb-12 md:max-w-none">
           <WritableNoteCard
             id="title"
             label={t("finishBookTitle")}
@@ -1746,7 +1809,7 @@ function FinishStep({
           />
         </div>
 
-        <div className="lg:mt-12">
+        <div className="mx-auto w-full max-w-[20rem] md:mx-0 md:mt-12 md:max-w-none">
           <WritableNoteCard
             id="greeting"
             label={t("finishNote")}
@@ -1922,7 +1985,7 @@ function EmailCapture({
   const t = useTranslations("wizard");
 
   return (
-    <section className="mx-auto flex w-full max-w-md flex-col gap-5 py-2 sm:py-4 lg:h-full lg:justify-center lg:py-0">
+    <section className="mx-auto flex w-full max-w-md flex-col gap-5 py-2 sm:py-4 md:h-full md:justify-center md:py-0">
       <header className="text-center">
         <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">
           {t("emailPromptTitle")}
@@ -2432,18 +2495,20 @@ function BookSoFar({
     });
   }
 
-  // Auto-advance ONLY for discrete events (a photo landing, a style pick):
-  // text-driven cards (memory, title, dedication) appear silently in the dots
-  // so typing never yanks the carousel around. State is adjusted during
-  // render (React's documented "adjust state when props change" pattern), so
-  // the track moves in the same commit the new card mounts in. The very first
-  // render with content (a resumed draft) records the cards without advancing.
+  // Auto-advance ONLY for one discrete event (a photo landing creates the
+  // cast card): text-driven cards appear silently in the dots so typing never
+  // yanks the carousel around, and the style card may be created by the QUIET
+  // programmatic default, so its celebrations come exclusively through the
+  // spotlight channel (user picks). State is adjusted during render (React's
+  // documented "adjust state when props change" pattern), so the track moves
+  // in the same commit the new card mounts in. The very first render with
+  // content (a resumed draft) records the cards without advancing.
   const keys = pages.map((p) => p.key);
   if (seenKeys === null ? keys.length > 0 : seenKeys.join("\n") !== keys.join("\n")) {
     if (seenKeys !== null) {
       let appeared = -1;
       keys.forEach((k, i) => {
-        if (!seenKeys.includes(k) && (k === "cast" || k === "style")) appeared = i;
+        if (!seenKeys.includes(k) && k === "cast") appeared = i;
       });
       if (appeared >= 0) setIndex(appeared);
       else if (index >= keys.length) setIndex(Math.max(0, keys.length - 1));
@@ -2451,24 +2516,11 @@ function BookSoFar({
     setSeenKeys(keys);
   }
 
-  // Style choice landing: a different style repaints the existing swatch card,
-  // so jump back to it and pulse. Same render-time adjustment pattern; the
-  // initializer swallows a style preselected before mount (template, draft).
-  const [lastStyleId, setLastStyleId] = useState<string | null>(selectedStyle?.id ?? null);
-  if ((selectedStyle?.id ?? null) !== lastStyleId) {
-    setLastStyleId(selectedStyle?.id ?? null);
-    if (selectedStyle && seenKeys !== null) {
-      const styleIndex = keys.indexOf("style");
-      if (styleIndex >= 0) setIndex(styleIndex);
-      setFlourish({ page: "style", nonce: selectedStyle.id });
-    }
-  }
-
-  // Spotlight requests from the review step: a suggestion landing on the
-  // title/dedication card jumps to it WITH the celebrate pulse; finishing an
-  // edit (blur) jumps quietly, and only when that card isn't already showing.
-  // Same render-time adjustment pattern; the initializer swallows anything
-  // requested before this instance mounted.
+  // Spotlight requests from the steps: a user's own style pick or a
+  // suggestion landing on the title/dedication card jumps to it WITH the
+  // celebrate pulse; finishing an edit (blur) jumps quietly, and only when
+  // that card isn't already showing. Same render-time adjustment pattern; the
+  // initializer swallows anything requested before this instance mounted.
   const spotKey = spotlight ? `${spotlight.page}:${spotlight.nonce}` : null;
   const [lastSpotKey, setLastSpotKey] = useState<string | null>(spotKey);
   if (spotKey !== lastSpotKey) {
