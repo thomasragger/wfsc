@@ -18,7 +18,7 @@ import { Card, Polaroid } from "@/components/ui/card";
 import { Carousel } from "@/components/ui/carousel";
 import { Chip, PillLabel } from "@/components/ui/chip";
 import { Eyebrow } from "@/components/ui/eyebrow";
-import { IconCart, IconChevronLeft, IconChevronRight, IconClose, IconUser } from "@/components/ui/icons";
+import { IconArrowLeft, IconArrowRight, IconCart, IconChevronLeft, IconChevronRight, IconClose, IconUser } from "@/components/ui/icons";
 import { Field, Select, TextInput } from "@/components/ui/input";
 import { PageTransition, StepTransition } from "@/components/ui/page-transition";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
@@ -1410,20 +1410,22 @@ function StoryStep({
         <p className="mt-1 text-sm text-ink-soft">
           {template ? t("storySubtitleTemplate") : t("storySubtitleOwn")}
         </p>
-        {/* Age band as a sentence-like inline choice (tunes the wording). */}
+        {/* Age band as a sentence-like inline choice (tunes the wording). On
+            tablet the lead takes its own line so the three chips stay in one
+            row within the narrower step column. */}
         <div
           className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5"
           role="radiogroup"
           aria-label={t("ageRadioLabel")}
         >
-          <span className="text-sm text-ink-soft">{t("whoForInline")}</span>
+          <span className="text-sm text-ink-soft md:max-lg:w-full">{t("whoForInline")}</span>
           {AGE_BANDS.map((band, i) => (
             <Chip
               key={band.value}
               role="radio"
               selected={targetAge === band.value}
               onClick={() => onAgeChange(targetAge === band.value ? null : band.value)}
-              className="!px-3 !py-1 !text-xs"
+              className="whitespace-nowrap !px-3 !py-1 !text-xs"
             >
               {ageBandLabels[i]}
             </Chip>
@@ -1432,7 +1434,7 @@ function StoryStep({
       </header>
 
       <div
-        className={`grid gap-6 pt-3 md:flex-1 md:max-lg:content-center lg:min-h-0 ${
+        className={`grid gap-6 pt-3 md:flex-1 md:max-lg:content-start lg:min-h-0 ${
           hasBeats ? "lg:grid-cols-2 lg:items-stretch" : ""
         }`}
       >
@@ -1440,9 +1442,11 @@ function StoryStep({
             note the rail scrapbook shows in miniature (same tape, paper,
             ruled lines). Capped at a comfortable writing size and centered in
             the available space; the writing itself is large. */}
-        <div className="flex min-h-0 flex-col md:items-center md:justify-center">
+        {/* Top-anchored on tablet (the note sits right under the header);
+            centered in the tall desktop shell. */}
+        <div className="flex min-h-0 flex-col md:items-center lg:justify-center">
           <div
-            className="relative flex w-full max-w-[36rem] flex-col rounded-lg bg-white px-6 pb-6 pt-7 shadow-fuzzy ring-1 ring-ink/5 transition-shadow focus-within:ring-2 focus-within:ring-marigold/70 md:max-h-[23rem] md:flex-1 lg:min-h-0"
+            className="relative flex w-full max-w-[36rem] flex-col rounded-lg bg-white px-6 pb-6 pt-7 shadow-fuzzy ring-1 ring-ink/5 transition-shadow focus-within:ring-2 focus-within:ring-marigold/70 md:max-h-[23rem] md:max-lg:h-[21rem] lg:min-h-0 lg:flex-1"
             style={{ rotate: "-0.5deg" }}
           >
             {/* The tape strip doubles as the note's label. */}
@@ -1521,6 +1525,29 @@ function CastStep({
 }) {
   const t = useTranslations("wizard");
   const roleLabels = t.raw("roles") as Record<PersonRole, string>;
+  // Tablet slider (md to <lg): one character per view via scroll-snap; arrows
+  // and dots below track/drive the scroller. The same container is the mobile
+  // 3+ carousel or the sm/lg grid, so cards render exactly once (stable ids).
+  const listRef = useRef<HTMLDivElement>(null);
+  const [slide, setSlide] = useState(0);
+  const prevLenRef = useRef(people.length);
+  const slideCount = people.length + (people.length < 4 ? 1 : 0);
+  const goToSlide = (i: number) => {
+    const el = listRef.current;
+    if (!el) return;
+    const clamped = Math.max(0, Math.min(slideCount - 1, i));
+    el.scrollTo({ left: clamped * el.clientWidth, behavior: "smooth" });
+  };
+  useEffect(() => {
+    const prev = prevLenRef.current;
+    prevLenRef.current = people.length;
+    // A newly added person slides into view (no-op where the list isn't a
+    // one-per-view scroller: scrollTo on a non-overflowing box does nothing).
+    if (people.length > prev && listRef.current) {
+      const el = listRef.current;
+      el.scrollTo({ left: (people.length - 1) * el.clientWidth, behavior: "smooth" });
+    }
+  }, [people.length]);
   return (
     <section className="flex flex-col gap-5 md:h-full">
       <header>
@@ -1531,16 +1558,22 @@ function CastStep({
       </header>
 
       {/* Character cards: the uploaded photo becomes the character preview;
-          the last card adds another person. Three-up on sm+ (add-person card
-          in-grid); on <sm three or more people become a swipeable carousel.
+          the last card adds another person. Three-up on sm and lg+; on <sm
+          three or more people become a swipeable carousel; on md-<lg a
+          one-at-a-time slider (full-width snap slides + arrows/dots below).
           On md+ the group centers vertically instead of hugging the top. */}
       <div className="md:flex md:flex-1 md:flex-col md:justify-center lg:min-h-0">
       <div
-        className={
+        ref={listRef}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          setSlide(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
+        }}
+        className={`md:max-lg:-mx-1 md:max-lg:flex md:max-lg:snap-x md:max-lg:snap-mandatory md:max-lg:gap-4 md:max-lg:overflow-x-auto md:max-lg:px-1 md:max-lg:pb-2 md:max-lg:[scrollbar-width:none] md:max-lg:[&::-webkit-scrollbar]:hidden ${
           people.length >= 3
             ? "-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 sm:pb-0"
             : "grid grid-cols-2 gap-4 sm:grid-cols-3"
-        }
+        }`}
       >
         {people.map((person) => {
           // Progressive capture: a fresh person is just a friendly name
@@ -1551,9 +1584,12 @@ function CastStep({
           return (
           <div
             key={person.key}
-            className={`relative flex flex-col rounded-2xl border-2 border-ink/10 bg-white p-2.5 ${
+            className={`md:max-lg:flex md:max-lg:w-full md:max-lg:shrink-0 md:max-lg:snap-center md:max-lg:justify-center ${
               people.length >= 3 ? "w-56 shrink-0 snap-start sm:w-auto sm:shrink" : ""
             }`}
+          >
+          <div
+            className="relative flex w-full flex-col rounded-2xl border-2 border-ink/10 bg-white p-2.5 md:max-lg:max-w-[21rem]"
           >
             {people.length > 1 ? (
               <button
@@ -1688,21 +1724,62 @@ function CastStep({
               </>
             ) : null}
           </div>
+          </div>
           );
         })}
 
         {people.length < 4 ? (
-          <button
-            type="button"
-            onClick={onAdd}
-            className={`flex min-h-[12rem] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink/20 text-ink-soft transition-colors hover:border-marigold hover:text-ink ${
+          <div
+            className={`md:max-lg:flex md:max-lg:w-full md:max-lg:shrink-0 md:max-lg:snap-center md:max-lg:justify-center ${
               people.length >= 3 ? "w-56 shrink-0 snap-start sm:w-auto sm:shrink" : ""
             }`}
           >
-            <span className="text-2xl leading-none">+</span>
-            <span className="text-xs font-semibold">{t("castAddPerson")}</span>
-          </button>
+            <button
+              type="button"
+              onClick={onAdd}
+              className="flex min-h-[12rem] w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink/20 text-ink-soft transition-colors hover:border-marigold hover:text-ink md:max-lg:max-w-[21rem]"
+            >
+              <span className="text-2xl leading-none">+</span>
+              <span className="text-xs font-semibold">{t("castAddPerson")}</span>
+            </button>
+          </div>
         ) : null}
+      </div>
+
+      {/* Slider controls, tablet only: arrows + dots under the one-per-view list. */}
+      <div className="mt-3 hidden items-center justify-center gap-3 md:max-lg:flex">
+        <button
+          type="button"
+          aria-label={t("castPrev")}
+          disabled={slide === 0}
+          onClick={() => goToSlide(slide - 1)}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-ink/10 transition hover:bg-cream disabled:opacity-30"
+        >
+          <IconArrowLeft className="h-4 w-4" />
+        </button>
+        <div className="flex items-center gap-1.5">
+          {Array.from({ length: slideCount }).map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              aria-label={`${i + 1} / ${slideCount}`}
+              aria-current={i === slide}
+              onClick={() => goToSlide(i)}
+              className={`h-2 rounded-full transition-all ${
+                i === slide ? "w-5 bg-coral" : "w-2 bg-ink/15 hover:bg-ink/30"
+              }`}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          aria-label={t("castNext")}
+          disabled={slide >= slideCount - 1}
+          onClick={() => goToSlide(slide + 1)}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink shadow-sm ring-1 ring-ink/10 transition hover:bg-cream disabled:opacity-30"
+        >
+          <IconArrowRight className="h-4 w-4" />
+        </button>
       </div>
       </div>
     </section>
